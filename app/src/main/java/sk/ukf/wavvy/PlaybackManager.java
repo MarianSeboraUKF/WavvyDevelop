@@ -35,6 +35,9 @@ public class PlaybackManager {
     private RepeatMode repeatMode = RepeatMode.OFF;
     private final List<WeakReference<Listener>> listeners = new ArrayList<>();
     private final android.os.Handler progressHandler = new android.os.Handler(android.os.Looper.getMainLooper());
+    private static final String PREFS = "wavvy_playback_prefs";
+    private static final String KEY_SHUFFLE = "shuffle";
+    private static final String KEY_REPEAT = "repeat";
     private final Runnable progressTick = new Runnable() {
         @Override public void run() {
             if (player != null) {
@@ -50,6 +53,7 @@ public class PlaybackManager {
         this.player = new ExoPlayer.Builder(appContext).build();
 
         restoreFromNowPlayingRepository();
+        loadPlaybackSettings();
 
         player.addListener(new Player.Listener() {
             @Override
@@ -90,6 +94,26 @@ public class PlaybackManager {
         MediaItem item = MediaItem.fromUri("android.resource://" + appContext.getPackageName() + "/" + currentAudioResId);
         player.setMediaItem(item);
         player.prepare();
+    }
+    private void savePlaybackSettings() {
+        appContext.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
+                .edit()
+                .putBoolean(KEY_SHUFFLE, shuffleEnabled)
+                .putString(KEY_REPEAT, repeatMode.name())
+                .apply();
+    }
+    private void loadPlaybackSettings() {
+        android.content.SharedPreferences sp =
+                appContext.getSharedPreferences(PREFS, Context.MODE_PRIVATE);
+
+        shuffleEnabled = sp.getBoolean(KEY_SHUFFLE, false);
+
+        String r = sp.getString(KEY_REPEAT, RepeatMode.OFF.name());
+        try {
+            repeatMode = RepeatMode.valueOf(r);
+        } catch (Exception e) {
+            repeatMode = RepeatMode.OFF;
+        }
     }
     private void ensureQueueLoadedIfPossible() {
         if (activeQueue != null && activeQueue.length > 0 && currentAudioResId != 0) return;
@@ -243,12 +267,20 @@ public class PlaybackManager {
             queueIndex = indexOf(activeQueue, keepId);
         }
         notifyNowPlaying();
+        savePlaybackSettings();
     }
     public void cycleRepeatMode() {
-        if (repeatMode == RepeatMode.OFF) repeatMode = RepeatMode.ONE;
-        else if (repeatMode == RepeatMode.ONE) repeatMode = RepeatMode.ALL;
-        else repeatMode = RepeatMode.OFF;
+        if (repeatMode == RepeatMode.OFF) {
+            repeatMode = RepeatMode.ALL;
+        }
+        else if (repeatMode == RepeatMode.ALL) {
+            repeatMode = RepeatMode.ONE;
+        }
+        else {
+            repeatMode = RepeatMode.OFF;
+        }
         notifyNowPlaying();
+        savePlaybackSettings();
     }
     private void loadCurrent(boolean autoPlay) {
         if (activeQueue == null || activeQueue.length == 0) return;
