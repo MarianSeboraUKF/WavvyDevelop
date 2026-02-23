@@ -12,6 +12,8 @@ import androidx.fragment.app.Fragment;
 import com.google.android.material.bottomnavigation.BottomNavigationView;
 import android.widget.ProgressBar;
 import sk.ukf.wavvy.model.Song;
+import androidx.core.view.WindowCompat;
+import androidx.core.view.WindowInsetsControllerCompat;
 
 public class MainActivity extends AppCompatActivity implements PlaybackManager.Listener {
     private BottomNavigationView bottomNav;
@@ -28,6 +30,11 @@ public class MainActivity extends AppCompatActivity implements PlaybackManager.L
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+        WindowCompat.setDecorFitsSystemWindows(getWindow(), false);
+
+        WindowInsetsControllerCompat insets =
+                new WindowInsetsControllerCompat(getWindow(), getWindow().getDecorView());
+        insets.setAppearanceLightStatusBars(false);
 
         bottomNav = findViewById(R.id.bottomNav);
 

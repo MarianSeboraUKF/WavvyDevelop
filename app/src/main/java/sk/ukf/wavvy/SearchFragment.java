@@ -50,6 +50,9 @@ public class SearchFragment extends Fragment {
         rv.setLayoutManager(new LinearLayoutManager(requireContext()));
 
         allSongs = SongRepository.getSongs();
+        for (Song s : allSongs) {
+            GradientPreloader.preload(requireContext(), s.getCoverResId());
+        }
 
         topSongs = new ArrayList<>();
         recomputeTopSongs();

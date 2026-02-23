@@ -101,7 +101,6 @@ public class PlayerActivity extends AppCompatActivity implements PlaybackManager
             }
         });
         handleIntentPlayback();
-
         updateShuffleUi();
         updateRepeatUi();
         updatePlaybackStatusText();
@@ -122,30 +121,25 @@ public class PlayerActivity extends AppCompatActivity implements PlaybackManager
         pm.removeListener(this);
     }
     private void handleIntentPlayback() {
+
         boolean openExisting = getIntent().getBooleanExtra(EXTRA_OPEN_EXISTING, false);
         boolean autoPlay = getIntent().getBooleanExtra(EXTRA_AUTOPLAY, true);
 
         int[] ids = getIntent().getIntArrayExtra(EXTRA_QUEUE_AUDIO_IDS);
         int idx = getIntent().getIntExtra(EXTRA_QUEUE_INDEX, 0);
 
-        if (openExisting && pm.getCurrentAudioResId() != 0 && pm.getQueueIds() != null) { return; }
-
-        if (ids == null || ids.length == 0) {
-            int singleAudio = getIntent().getIntExtra("audioResId", 0);
-            if (singleAudio != 0) {
-                ids = new int[]{ singleAudio };
-                idx = 0;
-            } else {
-                int audioResId = NowPlayingRepository.getAudioResId(this);
-                int[] q = NowPlayingRepository.getQueueIds(this);
-                int qi = NowPlayingRepository.getQueueIndex(this);
-                if (audioResId != 0) {
-                    if (q == null || q.length == 0) q = new int[]{ audioResId };
-                    pm.playQueue(q, Math.max(0, Math.min(qi, q.length - 1)), autoPlay);
-                }
-                return;
-            }
+        if (openExisting
+                && ids == null
+                && pm.getCurrentAudioResId() != 0
+                && pm.getQueueIds() != null) {
+            return;
         }
+
+        if (openExisting) {
+            return;
+        }
+
+        if (ids == null || ids.length == 0) return;
         pm.playQueue(ids, idx, autoPlay);
     }
     @Override
@@ -238,28 +232,48 @@ public class PlayerActivity extends AppCompatActivity implements PlaybackManager
         ));
     }
     private void applyDynamicGradient(int coverResId) {
-        Bitmap bitmap = BitmapFactory.decodeResource(getResources(), coverResId);
-        if (bitmap == null) return;
+        if (GradientPrefs.has(this, coverResId)) {
 
-        Palette.from(bitmap).generate(palette -> {
-            int dominant = palette.getDominantColor(
-                    ContextCompat.getColor(this, R.color.bg)
-            );
-
-            int dark = palette.getDarkMutedColor(dominant);
-            int vibrant = palette.getVibrantColor(dominant);
+            int vibrant = GradientPrefs.getVibrant(this, coverResId);
+            int dark = GradientPrefs.getDark(this, coverResId);
 
             GradientDrawable gradient = new GradientDrawable(
                     GradientDrawable.Orientation.TOP_BOTTOM,
-                    new int[]{
-                            vibrant,
-                            dark,
-                            ContextCompat.getColor(this, R.color.bg)
-                    }
+                    new int[]{vibrant, dark, ContextCompat.getColor(this, R.color.bg)}
             );
-            gradient.setCornerRadius(0f);
+
             findViewById(R.id.playerRoot).setBackground(gradient);
-        });
+            return;
+        }
+
+        new Thread(() -> {
+            Bitmap bitmap = BitmapFactory.decodeResource(getResources(), coverResId);
+            if (bitmap == null) return;
+
+            Palette.from(bitmap).generate(palette -> {
+
+                int dominant = palette.getDominantColor(
+                        ContextCompat.getColor(this, R.color.bg)
+                );
+
+                int dark = palette.getDarkMutedColor(dominant);
+                int vibrant = palette.getVibrantColor(dominant);
+
+                GradientPrefs.save(this, coverResId, vibrant, dark);
+
+                GradientDrawable gradient = new GradientDrawable(
+                        GradientDrawable.Orientation.TOP_BOTTOM,
+                        new int[]{
+                                vibrant,
+                                dark,
+                                ContextCompat.getColor(this, R.color.bg)
+                        }
+                );
+                runOnUiThread(() ->
+                        findViewById(R.id.playerRoot).setBackground(gradient)
+                );
+            });
+        }).start();
     }
     private void tintOn(ImageButton btn) {
         btn.setColorFilter(ContextCompat.getColor(this, R.color.accent));

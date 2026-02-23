@@ -10,14 +10,13 @@ public class SongRepository {
         if (cached != null) return new ArrayList<>(cached);
 
         cached = new ArrayList<>();
-        cached.add(new Song("BERI 3", "RAYYY P, Vašo Patejdl, Majkyyy", "kto.som.?", R.drawable.test_cover, R.raw.test_track));
-        cached.add(new Song("NEPÝTAM SA", "RAYYY P, Majkyyy", "kto.som.?", R.drawable.test_cover, R.raw.demo_track));
-        cached.add(new Song("DO OČÍ", "RAYYY P, Majkyyy", "kto.som.?", R.drawable.test_cover, R.raw.prototype_track));
+        cached.add(new Song("BERI 3", "RAYYY P, Vašo Patejdl, Majkyyy", "kto.som.?", R.drawable.kto_som_cover, R.raw.beri_3));
+        cached.add(new Song("NEPÝTAM SA", "RAYYY P, Majkyyy", "kto.som.?", R.drawable.kto_som_cover, R.raw.nepytam_sa));
+        cached.add(new Song("DO OČÍ", "RAYYY P, Majkyyy", "kto.som.?", R.drawable.kto_som_cover, R.raw.do_oci));
         cached.add(new Song("DIG ON(A)", "Frayer Flexking, Separ", "DIG ON(A)", R.drawable.dig_ona_cover, R.raw.frayer_flexking_separ_dig_ona));
 
         return new ArrayList<>(cached);
     }
-
     public static Song findByAudioResId(int audioResId) {
         ArrayList<Song> songs = getSongs();
         for (Song s : songs) {

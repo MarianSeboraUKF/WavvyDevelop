@@ -8,6 +8,7 @@ public class NowPlayingRepository {
     private static final String KEY_AUDIO_ID = "now_audio_id";
     private static final String KEY_QUEUE_IDS = "now_queue_ids";
     private static final String KEY_QUEUE_INDEX = "now_queue_index";
+    private static final String KEY_POSITION = "now_position";
     private static SharedPreferences sp(Context ctx) {
         return ctx.getSharedPreferences(PREFS, Context.MODE_PRIVATE);
     }
@@ -55,5 +56,13 @@ public class NowPlayingRepository {
                 .remove(KEY_QUEUE_IDS)
                 .remove(KEY_QUEUE_INDEX)
                 .apply();
+    }
+    public static void savePosition(Context ctx, long positionMs) {
+        sp(ctx).edit()
+                .putLong(KEY_POSITION, positionMs)
+                .apply();
+    }
+    public static long getPosition(Context ctx) {
+        return sp(ctx).getLong(KEY_POSITION, 0);
     }
 }

@@ -44,6 +44,7 @@ public class PlaybackManager {
                 long pos = player.getCurrentPosition();
                 long dur = player.getDuration();
                 notifyProgress(pos, dur);
+                NowPlayingRepository.savePosition(appContext, pos);
             }
             progressHandler.postDelayed(this, 500);
         }
@@ -94,6 +95,10 @@ public class PlaybackManager {
         MediaItem item = MediaItem.fromUri("android.resource://" + appContext.getPackageName() + "/" + currentAudioResId);
         player.setMediaItem(item);
         player.prepare();
+        long savedPos = NowPlayingRepository.getPosition(appContext);
+        if (savedPos > 0) {
+            player.seekTo(savedPos);
+        }
     }
     private void savePlaybackSettings() {
         appContext.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
@@ -226,7 +231,6 @@ public class PlaybackManager {
             loadCurrent(autoPlay);
             return true;
         }
-
         return false;
     }
     public boolean playPrev(boolean autoPlay) {

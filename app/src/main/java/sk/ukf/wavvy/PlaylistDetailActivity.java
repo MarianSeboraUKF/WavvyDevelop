@@ -90,6 +90,9 @@ public class PlaylistDetailActivity extends AppCompatActivity implements Playbac
         btnMiniNext.setOnClickListener(v -> pm.playNext(true));
 
         loadSongs();
+        for (Song s : songsInPlaylist) {
+            GradientPreloader.preload(this, s.getCoverResId());
+        }
         updateMiniPlayerUi();
     }
 

@@ -33,6 +33,9 @@ public class HomeFragment extends Fragment {
         rvSongs.setLayoutManager(new LinearLayoutManager(requireContext()));
 
         ArrayList<Song> songs = SongRepository.getSongs();
+        for (Song s : songs) {
+            GradientPreloader.preload(requireContext(), s.getCoverResId());
+        }
 
         SongAdapter adapter = new SongAdapter(
                 songs,
