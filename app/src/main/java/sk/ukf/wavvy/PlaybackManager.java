@@ -38,13 +38,20 @@ public class PlaybackManager {
     private static final String PREFS = "wavvy_playback_prefs";
     private static final String KEY_SHUFFLE = "shuffle";
     private static final String KEY_REPEAT = "repeat";
+    private long lastSave = 0;
     private final Runnable progressTick = new Runnable() {
         @Override public void run() {
             if (player != null) {
                 long pos = player.getCurrentPosition();
                 long dur = player.getDuration();
+
                 notifyProgress(pos, dur);
-                NowPlayingRepository.savePosition(appContext, pos);
+
+                long now = System.currentTimeMillis();
+                if (player.isPlaying() && now - lastSave > 3000) {
+                    NowPlayingRepository.savePosition(appContext, pos);
+                    lastSave = now;
+                }
             }
             progressHandler.postDelayed(this, 500);
         }

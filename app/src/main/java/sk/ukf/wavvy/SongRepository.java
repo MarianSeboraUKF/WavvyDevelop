@@ -5,7 +5,6 @@ import sk.ukf.wavvy.model.Song;
 
 public class SongRepository {
     private static ArrayList<Song> cached;
-
     public static ArrayList<Song> getSongs() {
         if (cached != null) return new ArrayList<>(cached);
 
@@ -15,7 +14,7 @@ public class SongRepository {
         cached.add(new Song("DO OČÍ", "RAYYY P, Majkyyy", "kto.som.?", R.drawable.kto_som_cover, R.raw.do_oci));
         cached.add(new Song("DIG ON(A)", "Frayer Flexking, Separ", "DIG ON(A)", R.drawable.dig_ona_cover, R.raw.frayer_flexking_separ_dig_ona));
 
-        return new ArrayList<>(cached);
+        return cached;
     }
     public static Song findByAudioResId(int audioResId) {
         ArrayList<Song> songs = getSongs();

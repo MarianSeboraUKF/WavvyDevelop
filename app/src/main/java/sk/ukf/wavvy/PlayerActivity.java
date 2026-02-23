@@ -239,41 +239,40 @@ public class PlayerActivity extends AppCompatActivity implements PlaybackManager
 
             GradientDrawable gradient = new GradientDrawable(
                     GradientDrawable.Orientation.TOP_BOTTOM,
-                    new int[]{vibrant, dark, ContextCompat.getColor(this, R.color.bg)}
+                    new int[]{
+                            vibrant,
+                            dark,
+                            ContextCompat.getColor(this, R.color.bg)
+                    }
             );
-
             findViewById(R.id.playerRoot).setBackground(gradient);
             return;
         }
 
-        new Thread(() -> {
-            Bitmap bitmap = BitmapFactory.decodeResource(getResources(), coverResId);
-            if (bitmap == null) return;
+        Bitmap bitmap = BitmapFactory.decodeResource(getResources(), coverResId);
+        if (bitmap == null) return;
 
-            Palette.from(bitmap).generate(palette -> {
+        Palette.from(bitmap).generate(palette -> {
 
-                int dominant = palette.getDominantColor(
-                        ContextCompat.getColor(this, R.color.bg)
-                );
+            int dominant = palette.getDominantColor(
+                    ContextCompat.getColor(this, R.color.bg)
+            );
 
-                int dark = palette.getDarkMutedColor(dominant);
-                int vibrant = palette.getVibrantColor(dominant);
+            int dark = palette.getDarkMutedColor(dominant);
+            int vibrant = palette.getVibrantColor(dominant);
 
-                GradientPrefs.save(this, coverResId, vibrant, dark);
+            GradientPrefs.save(this, coverResId, vibrant, dark);
 
-                GradientDrawable gradient = new GradientDrawable(
-                        GradientDrawable.Orientation.TOP_BOTTOM,
-                        new int[]{
-                                vibrant,
-                                dark,
-                                ContextCompat.getColor(this, R.color.bg)
-                        }
-                );
-                runOnUiThread(() ->
-                        findViewById(R.id.playerRoot).setBackground(gradient)
-                );
-            });
-        }).start();
+            GradientDrawable gradient = new GradientDrawable(
+                    GradientDrawable.Orientation.TOP_BOTTOM,
+                    new int[]{
+                            vibrant,
+                            dark,
+                            ContextCompat.getColor(this, R.color.bg)
+                    }
+            );
+            findViewById(R.id.playerRoot).setBackground(gradient);
+        });
     }
     private void tintOn(ImageButton btn) {
         btn.setColorFilter(ContextCompat.getColor(this, R.color.accent));
