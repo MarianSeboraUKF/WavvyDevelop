@@ -11,4 +11,10 @@
         <item name="android:windowLightStatusBar">false</item>
     </style>
 
+    <style name="Theme.Wavvy.Splash" parent="Theme.SplashScreen" tools:targetApi="31">
+        <item name="windowSplashScreenBackground">@color/bg</item>
+        <item name="windowSplashScreenAnimatedIcon">@drawable/wavvy_splash</item>
+        <item name="postSplashScreenTheme">@style/Theme.Wavvy</item>
+    </style>
+
 </resources>
