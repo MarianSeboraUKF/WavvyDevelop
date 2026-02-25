@@ -8,6 +8,8 @@ import android.widget.ImageView;
 import android.widget.TextView;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.constraintlayout.widget.ConstraintLayout;
+import androidx.core.view.ViewCompat;
+import androidx.core.view.WindowInsetsCompat;
 import androidx.fragment.app.Fragment;
 import com.google.android.material.bottomnavigation.BottomNavigationView;
 import android.widget.ProgressBar;
@@ -80,6 +82,20 @@ public class MainActivity extends AppCompatActivity implements PlaybackManager.L
             pm.playPrev(true);
         });
         btnMiniNext.setOnClickListener(v -> PlaybackManager.get(this).playNext(true));
+
+        ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.bottomNav), (v, windowInsets) -> {
+
+            int bottom = windowInsets.getInsets(WindowInsetsCompat.Type.systemBars()).bottom;
+
+            v.setPadding(
+                    v.getPaddingLeft(),
+                    v.getPaddingTop(),
+                    v.getPaddingRight(),
+                    bottom + 8
+            );
+
+            return windowInsets;
+        });
     }
     private void loadFragment(Fragment fragment) {
         getSupportFragmentManager()

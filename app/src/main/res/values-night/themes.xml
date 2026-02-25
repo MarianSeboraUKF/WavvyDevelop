@@ -17,4 +17,9 @@
         <item name="postSplashScreenTheme">@style/Theme.Wavvy</item>
     </style>
 
+    <style name="BottomNavTextBig">
+        <item name="android:textSize">14sp</item>
+        <item name="android:textStyle">bold</item>
+    </style>
+
 </resources>
