@@ -10,6 +10,9 @@ import android.widget.ImageView;
 import android.widget.TextView;
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.core.view.ViewCompat;
+import androidx.core.view.WindowCompat;
+import androidx.core.view.WindowInsetsCompat;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 import android.widget.ProgressBar;
@@ -42,6 +45,22 @@ public class PlaylistDetailActivity extends AppCompatActivity implements Playbac
     protected void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_playlist_detail);
+
+        WindowCompat.setDecorFitsSystemWindows(getWindow(), false);
+        getWindow().setStatusBarColor(android.graphics.Color.TRANSPARENT);
+        getWindow().setNavigationBarColor(android.graphics.Color.TRANSPARENT);
+
+        View top = findViewById(R.id.headerContainer);
+
+        ViewCompat.setOnApplyWindowInsetsListener(top, (v, insets) -> {
+
+            int topInset =
+                    insets.getInsets(WindowInsetsCompat.Type.statusBars()).top;
+
+            v.setPadding(0, topInset, 0, 0);
+
+            return insets;
+        });
 
         pm = PlaybackManager.get(this);
 
@@ -101,6 +120,12 @@ public class PlaylistDetailActivity extends AppCompatActivity implements Playbac
         super.onResume();
         loadSongs();
         updateMiniPlayerUi();
+    }
+
+    @Override
+    protected void onPause() {
+        super.onPause();
+        PlaybackManager.get(this).saveCurrentPositionNow();
     }
 
     @Override

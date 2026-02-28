@@ -5,6 +5,8 @@
     android:id="@+id/playerRoot"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
+    android:fitsSystemWindows="false"
+    android:clipToPadding="false"
     android:background="@drawable/bg_player_gradient"
     android:paddingStart="20dp"
     android:paddingEnd="20dp"

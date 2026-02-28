@@ -2,42 +2,46 @@ package sk.ukf.wavvy;
 
 import android.content.Intent;
 import android.os.Bundle;
+import android.view.MotionEvent;
 import android.view.View;
-import android.widget.ImageButton;
-import android.widget.ImageView;
-import android.widget.TextView;
+import android.widget.*;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.constraintlayout.widget.ConstraintLayout;
-import androidx.core.view.ViewCompat;
-import androidx.core.view.WindowInsetsCompat;
+import androidx.core.view.*;
 import androidx.fragment.app.Fragment;
 import com.google.android.material.bottomnavigation.BottomNavigationView;
-import android.widget.ProgressBar;
 import sk.ukf.wavvy.model.Song;
-import androidx.core.view.WindowCompat;
-import androidx.core.view.WindowInsetsControllerCompat;
 
 public class MainActivity extends AppCompatActivity implements PlaybackManager.Listener {
     private BottomNavigationView bottomNav;
     private ConstraintLayout miniPlayer;
     private ImageView ivMiniCover;
-    private TextView tvMiniTitle;
-    private TextView tvMiniArtist;
-    private ImageButton btnMiniPrev;
-    private ImageButton btnMiniPlay;
-    private ImageButton btnMiniNext;
+    private TextView tvMiniTitle, tvMiniArtist;
+    private ImageButton btnMiniPrev, btnMiniPlay, btnMiniNext;
     private ProgressBar miniProgress;
+    private float startY;
+    private static final int SWIPE_THRESHOLD = 140;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         androidx.core.splashscreen.SplashScreen.installSplashScreen(this);
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
-        WindowCompat.setDecorFitsSystemWindows(getWindow(), false);
 
-        WindowInsetsControllerCompat insets =
-                new WindowInsetsControllerCompat(getWindow(), getWindow().getDecorView());
-        insets.setAppearanceLightStatusBars(false);
+        WindowCompat.setDecorFitsSystemWindows(getWindow(), false);
+        getWindow().setStatusBarColor(android.graphics.Color.TRANSPARENT);
+        getWindow().setNavigationBarColor(android.graphics.Color.TRANSPARENT);
+
+        View root = findViewById(R.id.navHost);
+
+        ViewCompat.setOnApplyWindowInsetsListener(root, (v, insets) -> {
+            int bottom = insets.getInsets(
+                    WindowInsetsCompat.Type.systemBars()
+            ).bottom;
+
+            v.setPadding(0,0,0,bottom);
+            return insets;
+        });
 
         bottomNav = findViewById(R.id.bottomNav);
 
@@ -46,15 +50,18 @@ public class MainActivity extends AppCompatActivity implements PlaybackManager.L
         }
 
         bottomNav.setOnItemSelectedListener(item -> {
-            int id = item.getItemId();
-            if (id == R.id.nav_home) {
-                loadFragment(new HomeFragment());
-                return true;
-            } else if (id == R.id.nav_search) {
-                loadFragment(new SearchFragment());
-                return true;
-            } else if (id == R.id.nav_playlists) {
-                loadFragment(new PlaylistsFragment());
+
+            Fragment fragment = null;
+
+            if (item.getItemId()==R.id.nav_home)
+                fragment=new HomeFragment();
+            else if(item.getItemId()==R.id.nav_search)
+                fragment=new SearchFragment();
+            else if(item.getItemId()==R.id.nav_playlists)
+                fragment=new PlaylistsFragment();
+
+            if(fragment!=null){
+                loadFragment(fragment);
                 return true;
             }
             return false;
@@ -64,97 +71,92 @@ public class MainActivity extends AppCompatActivity implements PlaybackManager.L
         ivMiniCover = findViewById(R.id.ivMiniCover);
         tvMiniTitle = findViewById(R.id.tvMiniTitle);
         tvMiniArtist = findViewById(R.id.tvMiniArtist);
-
         btnMiniPrev = findViewById(R.id.btnMiniPrev);
         btnMiniPlay = findViewById(R.id.btnMiniPlay);
         btnMiniNext = findViewById(R.id.btnMiniNext);
         miniProgress = findViewById(R.id.miniProgress);
 
-        miniPlayer.setOnClickListener(v -> openPlayerFromNowPlaying());
-        btnMiniPlay.setOnClickListener(v -> PlaybackManager.get(this).togglePlayPause());
+        miniPlayer.setOnTouchListener((v,event)->{
+
+            if(event.getAction()==MotionEvent.ACTION_DOWN){
+                startY=event.getRawY();
+                return true;
+            }
+
+            if(event.getAction()==MotionEvent.ACTION_UP){
+                v.performClick();
+                float diff=startY-event.getRawY();
+
+                if(Math.abs(diff)<20||diff>SWIPE_THRESHOLD){
+                    openPlayerFromNowPlaying();
+                }
+                return true;
+            }
+            return false;
+        });
+
+        btnMiniPlay.setOnClickListener(v ->
+                PlaybackManager.get(this).togglePlayPause());
 
         btnMiniPrev.setOnClickListener(v -> {
             PlaybackManager pm = PlaybackManager.get(this);
-            if (pm.getPlayer() != null && pm.getPlayer().getCurrentPosition() > 3000) {
+
+            if (pm.getPlayer() != null &&
+                    pm.getPlayer().getCurrentPosition() > 3000) {
                 pm.getPlayer().seekTo(0);
                 return;
             }
+
             pm.playPrev(true);
         });
-        btnMiniNext.setOnClickListener(v -> PlaybackManager.get(this).playNext(true));
 
-        ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.bottomNav), (v, windowInsets) -> {
-
-            int bottom = windowInsets.getInsets(WindowInsetsCompat.Type.systemBars()).bottom;
-
-            v.setPadding(
-                    v.getPaddingLeft(),
-                    v.getPaddingTop(),
-                    v.getPaddingRight(),
-                    bottom + 8
-            );
-
-            return windowInsets;
-        });
+        btnMiniNext.setOnClickListener(v ->
+                PlaybackManager.get(this).playNext(true));
     }
-    private void loadFragment(Fragment fragment) {
+    private void loadFragment(Fragment f){
         getSupportFragmentManager()
                 .beginTransaction()
-                .replace(R.id.navHost, fragment)
+                .replace(R.id.navHost,f)
                 .commit();
     }
 
-    @Override
-    protected void onStart() {
+    @Override protected void onStart(){
         super.onStart();
         PlaybackManager.get(this).addListener(this);
     }
 
-    @Override
-    protected void onStop() {
+    @Override protected void onStop(){
         super.onStop();
         PlaybackManager.get(this).removeListener(this);
     }
 
-    @Override
-    protected void onResume() {
+    @Override protected void onResume(){
         super.onResume();
         updateMiniPlayer();
     }
-    @Override
-    public void onNowPlayingChanged(int audioResId, int[] queueIds, int queueIndex) {
+    @Override public void onNowPlayingChanged(int a,int[]b,int c){
         updateMiniPlayer();
     }
-    @Override
-    public void onIsPlayingChanged(boolean isPlaying) {
-        if (btnMiniPlay != null) {
-            btnMiniPlay.setImageResource(isPlaying ? R.drawable.ic_pause : R.drawable.ic_play);
+    @Override public void onIsPlayingChanged(boolean playing){
+        btnMiniPlay.setImageResource(
+                playing?R.drawable.ic_pause:R.drawable.ic_play);
+    }
+    @Override public void onProgress(long pos,long dur){
+        if(dur>0){
+            miniProgress.setMax((int)dur);
+            miniProgress.setProgress((int)pos);
         }
     }
-    @Override
-    public void onProgress(long positionMs, long durationMs) {
-        if (miniProgress == null) return;
-
-        if (durationMs > 0) {
-            miniProgress.setMax((int) durationMs);
-            miniProgress.setProgress((int) positionMs);
-        } else {
-            miniProgress.setProgress(0);
-        }
-    }
-    private void updateMiniPlayer() {
-        if (!NowPlayingRepository.hasNowPlaying(this)) {
+    private void updateMiniPlayer(){
+        if(!NowPlayingRepository.hasNowPlaying(this)){
             miniPlayer.setVisibility(View.GONE);
             return;
         }
 
-        int audioResId = NowPlayingRepository.getAudioResId(this);
-        Song s = SongRepository.findByAudioResId(audioResId);
+        Song s = SongRepository.findByAudioResId(
+                NowPlayingRepository.getAudioResId(this));
 
-        if (s == null) {
-            miniPlayer.setVisibility(View.GONE);
-            return;
-        }
+        if(s==null)return;
 
         miniPlayer.setVisibility(View.VISIBLE);
         ivMiniCover.setImageResource(s.getCoverResId());
@@ -162,34 +164,31 @@ public class MainActivity extends AppCompatActivity implements PlaybackManager.L
         tvMiniArtist.setText(s.getArtist());
 
         PlaybackManager pm = PlaybackManager.get(this);
-        btnMiniPlay.setImageResource(pm.isPlaying() ? R.drawable.ic_pause : R.drawable.ic_play);
 
-        int[] q = pm.getQueueIds();
-        int idx = pm.getQueueIndex();
-        boolean hasQueue = q != null && q.length > 1;
+        long savedPos = pm.getSavedPosition();
+        long savedDur = pm.getSavedDuration();
 
-        boolean prevEnabled = hasQueue && (idx > 0 || pm.getRepeatMode() == PlaybackManager.RepeatMode.ALL);
-        boolean nextEnabled = hasQueue && (idx < q.length - 1 || pm.getRepeatMode() == PlaybackManager.RepeatMode.ALL);
-
-        btnMiniPrev.setEnabled(prevEnabled);
-        btnMiniNext.setEnabled(nextEnabled);
-
-        float disabledAlpha = 0.35f;
-        btnMiniPrev.setAlpha(prevEnabled ? 1f : disabledAlpha);
-        btnMiniNext.setAlpha(nextEnabled ? 1f : disabledAlpha);
+        if (savedDur > 0) {
+            miniProgress.setMax((int) savedDur);
+            miniProgress.setProgress((int) savedPos);
+        }
     }
-    private void openPlayerFromNowPlaying() {
-        PlaybackManager pm = PlaybackManager.get(this);
-        int[] q = pm.getQueueIds();
-        int idx = pm.getQueueIndex();
+    @Override
+    protected void onPause() {
+        super.onPause();
+        PlaybackManager.get(this).saveCurrentPositionNow();
+    }
+    private void openPlayerFromNowPlaying(){
 
-        if (q == null || q.length == 0) return;
+        PlaybackManager pm=PlaybackManager.get(this);
+        int[] q=pm.getQueueIds();
 
-        Intent intent = new Intent(this, PlayerActivity.class);
-        intent.putExtra(PlayerActivity.EXTRA_QUEUE_AUDIO_IDS, q);
-        intent.putExtra(PlayerActivity.EXTRA_QUEUE_INDEX, idx);
-        intent.putExtra(PlayerActivity.EXTRA_OPEN_EXISTING, true);
-        intent.putExtra(PlayerActivity.EXTRA_AUTOPLAY, false);
-        startActivity(intent);
+        if(q==null||q.length==0)return;
+
+        Intent i=new Intent(this,PlayerActivity.class);
+        i.putExtra(PlayerActivity.EXTRA_QUEUE_AUDIO_IDS,q);
+        i.putExtra(PlayerActivity.EXTRA_QUEUE_INDEX,pm.getQueueIndex());
+        i.putExtra(PlayerActivity.EXTRA_OPEN_EXISTING,true);
+        startActivity(i);
     }
 }

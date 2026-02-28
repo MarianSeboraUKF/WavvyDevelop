@@ -1,6 +1,7 @@
 package sk.ukf.wavvy;
 
 import android.os.Bundle;
+import android.view.View;
 import android.widget.ImageButton;
 import android.widget.ImageView;
 import android.widget.SeekBar;
@@ -8,6 +9,8 @@ import android.widget.TextView;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.drawable.GradientDrawable;
+import androidx.core.view.ViewCompat;
+import androidx.core.view.WindowInsetsCompat;
 import androidx.palette.graphics.Palette;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.content.ContextCompat;
@@ -36,6 +39,27 @@ public class PlayerActivity extends AppCompatActivity implements PlaybackManager
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_player);
+
+        WindowCompat.setDecorFitsSystemWindows(getWindow(), false);
+        getWindow().setStatusBarColor(android.graphics.Color.TRANSPARENT);
+        getWindow().setNavigationBarColor(android.graphics.Color.TRANSPARENT);
+
+        View root = findViewById(R.id.playerRoot);
+
+        ViewCompat.setOnApplyWindowInsetsListener(root, (v, insets) -> {
+            int bottom = insets.getInsets(
+                    WindowInsetsCompat.Type.systemBars()
+            ).bottom;
+
+            v.setPadding(
+                    v.getPaddingLeft(),
+                    v.getPaddingTop(),
+                    v.getPaddingRight(),
+                    bottom
+            );
+
+            return insets;
+        });
 
         WindowCompat.setDecorFitsSystemWindows(getWindow(), false);
         WindowInsetsControllerCompat insets =
@@ -119,6 +143,12 @@ public class PlayerActivity extends AppCompatActivity implements PlaybackManager
     protected void onStop() {
         super.onStop();
         pm.removeListener(this);
+    }
+
+    @Override
+    protected void onPause() {
+        super.onPause();
+        PlaybackManager.get(this).saveCurrentPositionNow();
     }
     private void handleIntentPlayback() {
 

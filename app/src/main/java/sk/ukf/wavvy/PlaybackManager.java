@@ -53,9 +53,15 @@ public class PlaybackManager {
                     lastSave = now;
                 }
             }
-            progressHandler.postDelayed(this, 500);
+            progressHandler.postDelayed(this, 250);
         }
     };
+    public void saveCurrentPositionNow() {
+        if (player == null) return;
+
+        long pos = player.getCurrentPosition();
+        NowPlayingRepository.savePosition(appContext, pos);
+    }
     private PlaybackManager(Context appContext) {
         this.appContext = appContext;
         this.player = new ExoPlayer.Builder(appContext).build();
@@ -106,6 +112,9 @@ public class PlaybackManager {
         if (savedPos > 0) {
             player.seekTo(savedPos);
         }
+        notifyProgress(savedPos, player.getDuration());
+        notifyIsPlaying(player.isPlaying());
+        notifyNowPlaying();
     }
     private void savePlaybackSettings() {
         appContext.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
@@ -308,6 +317,12 @@ public class PlaybackManager {
 
         if (autoPlay) player.play();
         else notifyIsPlaying(player.isPlaying());
+    }
+    public long getSavedPosition() {
+        return NowPlayingRepository.getPosition(appContext);
+    }
+    public long getSavedDuration() {
+        return player != null ? player.getDuration() : 0;
     }
     private void onTrackEnded() {
         if (repeatMode == RepeatMode.ONE) {
