@@ -18,6 +18,8 @@ import androidx.core.view.WindowCompat;
 import androidx.core.view.WindowInsetsControllerCompat;
 import androidx.media3.exoplayer.ExoPlayer;
 import sk.ukf.wavvy.model.Song;
+import android.animation.ValueAnimator;
+import android.animation.ArgbEvaluator;
 
 public class PlayerActivity extends AppCompatActivity implements PlaybackManager.Listener {
     public static final String EXTRA_QUEUE_AUDIO_IDS = "queue_audio_ids";
@@ -262,20 +264,30 @@ public class PlayerActivity extends AppCompatActivity implements PlaybackManager
         ));
     }
     private void applyDynamicGradient(int coverResId) {
+        View root = findViewById(R.id.playerRoot);
+
         if (GradientPrefs.has(this, coverResId)) {
 
             int vibrant = GradientPrefs.getVibrant(this, coverResId);
             int dark = GradientPrefs.getDark(this, coverResId);
 
-            GradientDrawable gradient = new GradientDrawable(
-                    GradientDrawable.Orientation.TOP_BOTTOM,
-                    new int[]{
-                            vibrant,
-                            dark,
-                            ContextCompat.getColor(this, R.color.bg)
-                    }
-            );
-            findViewById(R.id.playerRoot).setBackground(gradient);
+            int[] newColors = new int[]{
+                    vibrant,
+                    dark,
+                    ContextCompat.getColor(this, R.color.bg)
+            };
+
+            GradientDrawable current =
+                    (GradientDrawable) root.getBackground();
+
+            int[] oldColors;
+
+            if (current != null && current.getColors() != null) {
+                oldColors = current.getColors();
+            } else {
+                oldColors = newColors;
+            }
+            animateGradient(root, oldColors, newColors);
             return;
         }
 
@@ -293,16 +305,50 @@ public class PlayerActivity extends AppCompatActivity implements PlaybackManager
 
             GradientPrefs.save(this, coverResId, vibrant, dark);
 
-            GradientDrawable gradient = new GradientDrawable(
-                    GradientDrawable.Orientation.TOP_BOTTOM,
-                    new int[]{
-                            vibrant,
-                            dark,
-                            ContextCompat.getColor(this, R.color.bg)
-                    }
-            );
-            findViewById(R.id.playerRoot).setBackground(gradient);
+            int[] newColors = new int[]{
+                    vibrant,
+                    dark,
+                    ContextCompat.getColor(this, R.color.bg)
+            };
+
+            GradientDrawable current =
+                    (GradientDrawable) root.getBackground();
+
+            int[] oldColors;
+
+            if (current != null && current.getColors() != null) {
+                oldColors = current.getColors();
+            } else {
+                oldColors = newColors;
+            }
+            animateGradient(root, oldColors, newColors);
         });
+    }
+    private void animateGradient(View root, int[] fromColors, int[] toColors) {
+        ValueAnimator animator = ValueAnimator.ofFloat(0f, 1f);
+        animator.setDuration(420);
+        ArgbEvaluator evaluator = new ArgbEvaluator();
+
+        animator.addUpdateListener(animation -> {
+
+            float fraction = animation.getAnimatedFraction();
+            int[] blended = new int[toColors.length];
+
+            for (int i = 0; i < toColors.length; i++) {
+                blended[i] = (int) evaluator.evaluate(
+                        fraction,
+                        fromColors[i],
+                        toColors[i]
+                );
+            }
+
+            GradientDrawable gd = new GradientDrawable(
+                    GradientDrawable.Orientation.TOP_BOTTOM,
+                    blended
+            );
+            root.setBackground(gd);
+        });
+        animator.start();
     }
     private void tintOn(ImageButton btn) {
         btn.setColorFilter(ContextCompat.getColor(this, R.color.accent));

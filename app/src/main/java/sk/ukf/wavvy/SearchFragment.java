@@ -17,7 +17,6 @@ import com.google.android.material.snackbar.Snackbar;
 import java.text.Normalizer;
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.Comparator;
 import java.util.Locale;
 import sk.ukf.wavvy.adapter.PickPlaylistAdapter;
 import sk.ukf.wavvy.adapter.SongAdapter;
@@ -32,9 +31,9 @@ public class SearchFragment extends Fragment {
     private TextView tvSectionTitle;
     private TextView tvEmpty;
     private SearchView searchView;
+    private RecyclerView recyclerView;
 
     public SearchFragment() {}
-
     @Nullable
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater,
@@ -46,10 +45,12 @@ public class SearchFragment extends Fragment {
         tvSectionTitle = view.findViewById(R.id.tvSectionTitle);
         tvEmpty = view.findViewById(R.id.tvEmpty);
 
-        RecyclerView rv = view.findViewById(R.id.rvSearchSongs);
-        rv.setLayoutManager(new LinearLayoutManager(requireContext()));
-
+        recyclerView = view.findViewById(R.id.rvSearchSongs);
+        recyclerView.setLayoutManager(new LinearLayoutManager(requireContext()));
+        recyclerView.setItemViewCacheSize(12);
+        recyclerView.setHasFixedSize(true);
         allSongs = SongRepository.getSongs();
+
         for (Song s : allSongs) {
             GradientPreloader.preload(requireContext(), s.getCoverResId());
         }
@@ -64,7 +65,10 @@ public class SearchFragment extends Fragment {
                 song -> PlayerLauncher.openQueue(requireContext(), filteredSongs, song),
                 this::showAddToPlaylistDialog
         );
-        rv.setAdapter(adapter);
+
+        recyclerView.setAdapter(adapter);
+
+        view.post(this::prewarmRecycler);
 
         searchView = view.findViewById(R.id.searchView);
         searchView.setQueryHint("Vyhľadajte skladbu, interpreta alebo album...");
@@ -88,10 +92,38 @@ public class SearchFragment extends Fragment {
         showTopState();
 
         searchView.setOnQueryTextListener(new SearchView.OnQueryTextListener() {
-            @Override public boolean onQueryTextSubmit(String query) { filter(query); return true; }
-            @Override public boolean onQueryTextChange(String newText) { filter(newText); return true; }
+            @Override public boolean onQueryTextSubmit(String query) {
+                filter(query);
+                return true;
+            }
+
+            @Override public boolean onQueryTextChange(String newText) {
+                filter(newText);
+                return true;
+            }
         });
+
         return view;
+    }
+    private void prewarmRecycler() {
+
+        if (recyclerView == null) return;
+        if (recyclerView.getAdapter() == null) return;
+
+        RecyclerView.Adapter adapter = recyclerView.getAdapter();
+
+        int warmCount = Math.min(4, adapter.getItemCount());
+
+        for (int i = 0; i < warmCount; i++) {
+
+            RecyclerView.ViewHolder vh =
+                    adapter.createViewHolder(
+                            recyclerView,
+                            adapter.getItemViewType(i)
+                    );
+
+            adapter.bindViewHolder(vh, i);
+        }
     }
 
     @Override
@@ -101,7 +133,9 @@ public class SearchFragment extends Fragment {
         recomputeTopSongs();
 
         if (searchView != null) {
-            filter(searchView.getQuery() != null ? searchView.getQuery().toString() : "");
+            filter(searchView.getQuery() != null
+                    ? searchView.getQuery().toString()
+                    : "");
         } else {
             filter("");
         }
@@ -113,18 +147,17 @@ public class SearchFragment extends Fragment {
         return n.toLowerCase(Locale.ROOT).trim();
     }
     private void recomputeTopSongs() {
+
         ArrayList<Song> copy = new ArrayList<>(allSongs);
 
-        Collections.sort(copy, new Comparator<Song>() {
-            @Override
-            public int compare(Song a, Song b) {
-                int ca = PlayCountRepository.getCount(requireContext(), a.getAudioResId());
-                int cb = PlayCountRepository.getCount(requireContext(), b.getAudioResId());
-                return Integer.compare(cb, ca);
-            }
+        Collections.sort(copy, (a, b) -> {
+            int ca = PlayCountRepository.getCount(requireContext(), a.getAudioResId());
+            int cb = PlayCountRepository.getCount(requireContext(), b.getAudioResId());
+            return Integer.compare(cb, ca);
         });
 
         topSongs.clear();
+
         for (int i = 0; i < copy.size() && i < 3; i++) {
             topSongs.add(copy.get(i));
         }
@@ -132,21 +165,28 @@ public class SearchFragment extends Fragment {
     private void filter(String text) {
         String q = norm(text);
         filteredSongs.clear();
+
         if (TextUtils.isEmpty(q)) {
             showTopState();
             filteredSongs.addAll(topSongs);
         } else {
+
             tvSectionTitle.setText("Výsledky");
             tvEmpty.setVisibility(View.GONE);
+
             for (Song s : allSongs) {
+
                 String title = norm(s.getTitle());
                 String artist = norm(s.getArtist());
                 String album = norm(s.getAlbum());
 
-                if (title.contains(q) || artist.contains(q) || album.contains(q)) {
+                if (title.contains(q) ||
+                        artist.contains(q) ||
+                        album.contains(q)) {
                     filteredSongs.add(s);
                 }
             }
+
             if (filteredSongs.isEmpty()) {
                 tvEmpty.setText("Nič sa nenašlo.");
                 tvEmpty.setVisibility(View.VISIBLE);
@@ -159,11 +199,16 @@ public class SearchFragment extends Fragment {
         tvEmpty.setVisibility(View.GONE);
     }
     private void showAddToPlaylistDialog(Song song) {
-        ArrayList<Playlist> playlists = PlaylistRepository.getPlaylists(requireContext());
+
+        ArrayList<Playlist> playlists =
+                PlaylistRepository.getPlaylists(requireContext());
 
         if (playlists.isEmpty()) {
-            android.widget.Toast.makeText(requireContext(),
-                    "Najprv si vytvor playlist", android.widget.Toast.LENGTH_SHORT).show();
+            android.widget.Toast.makeText(
+                    requireContext(),
+                    "Najprv si vytvor playlist",
+                    android.widget.Toast.LENGTH_SHORT
+            ).show();
             return;
         }
 
@@ -176,13 +221,26 @@ public class SearchFragment extends Fragment {
         rv.setLayoutManager(new LinearLayoutManager(requireContext()));
 
         android.app.Dialog dialog =
-                WavvyDialogs.showCenteredCardDialog(requireContext(), requireActivity(), card);
+                WavvyDialogs.showCenteredCardDialog(
+                        requireContext(),
+                        requireActivity(),
+                        card
+                );
 
-        PickPlaylistAdapter pickAdapter = new PickPlaylistAdapter(playlists, selected -> {
-            PlaylistRepository.addSongToPlaylist(requireContext(), selected.getId(), song.getAudioResId());
-            showSnack(requireView(), "Pridané do playlistu: " + selected.getName());
-            dialog.dismiss();
-        });
+        PickPlaylistAdapter pickAdapter =
+                new PickPlaylistAdapter(playlists, selected -> {
+
+                    PlaylistRepository.addSongToPlaylist(
+                            requireContext(),
+                            selected.getId(),
+                            song.getAudioResId()
+                    );
+
+                    showSnack(requireView(),
+                            "Pridané do playlistu: " + selected.getName());
+
+                    dialog.dismiss();
+                });
         rv.setAdapter(pickAdapter);
         btnCancel.setOnClickListener(x -> dialog.dismiss());
     }
@@ -194,13 +252,19 @@ public class SearchFragment extends Fragment {
         sb.setAnimationMode(Snackbar.ANIMATION_MODE_SLIDE);
 
         View snackView = sb.getView();
-        snackView.setBackground(ContextCompat.getDrawable(requireContext(), R.drawable.bg_snackbar));
+        snackView.setBackground(
+                ContextCompat.getDrawable(requireContext(), R.drawable.bg_snackbar)
+        );
 
-        TextView tv = snackView.findViewById(com.google.android.material.R.id.snackbar_text);
+        TextView tv =
+                snackView.findViewById(
+                        com.google.android.material.R.id.snackbar_text
+                );
+
         if (tv != null) {
-            tv.setTextColor(ContextCompat.getColor(requireContext(), R.color.textPrimary));
             tv.setMaxLines(2);
         }
+
         sb.show();
     }
 }

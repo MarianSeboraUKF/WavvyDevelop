@@ -14,6 +14,7 @@ public class SongRepository {
         cached.add(new Song("DO OČÍ", "RAYYY P, Majkyyy", "kto.som.?", R.drawable.kto_som_cover, R.raw.do_oci));
         cached.add(new Song("DIG ON(A)", "Frayer Flexking, Separ", "DIG ON(A)", R.drawable.dig_ona_cover, R.raw.dig_ona));
         cached.add(new Song("Streets", "guapanova, Luca Brassi10x", "Deluzia", R.drawable.deluzia_cover, R.raw.streets));
+        cached.add(new Song("Parabola", "Slatt Chawo, Erik Tresor", "Glitch ve systému", R.drawable.glitch_ve_systemu_cover, R.raw.parabola));
 
         return cached;
     }

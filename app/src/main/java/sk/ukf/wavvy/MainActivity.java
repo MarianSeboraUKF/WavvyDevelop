@@ -4,9 +4,13 @@ import android.content.Intent;
 import android.os.Bundle;
 import android.view.MotionEvent;
 import android.view.View;
+import android.view.ViewGroup;
 import android.widget.*;
+import android.os.Handler;
+import android.os.Looper;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.constraintlayout.widget.ConstraintLayout;
+import androidx.core.graphics.Insets;
 import androidx.core.view.*;
 import androidx.fragment.app.Fragment;
 import com.google.android.material.bottomnavigation.BottomNavigationView;
@@ -19,6 +23,11 @@ public class MainActivity extends AppCompatActivity implements PlaybackManager.L
     private TextView tvMiniTitle, tvMiniArtist;
     private ImageButton btnMiniPrev, btnMiniPlay, btnMiniNext;
     private ProgressBar miniProgress;
+    private View navIndicator;
+    private Fragment homeFragment;
+    private Fragment searchFragment;
+    private Fragment playlistsFragment;
+    private Fragment activeFragment;
     private float startY;
     private static final int SWIPE_THRESHOLD = 140;
 
@@ -31,42 +40,173 @@ public class MainActivity extends AppCompatActivity implements PlaybackManager.L
         WindowCompat.setDecorFitsSystemWindows(getWindow(), false);
         getWindow().setStatusBarColor(android.graphics.Color.TRANSPARENT);
         getWindow().setNavigationBarColor(android.graphics.Color.TRANSPARENT);
-
-        View root = findViewById(R.id.navHost);
-
-        ViewCompat.setOnApplyWindowInsetsListener(root, (v, insets) -> {
-            int bottom = insets.getInsets(
-                    WindowInsetsCompat.Type.systemBars()
-            ).bottom;
-
-            v.setPadding(0,0,0,bottom);
-            return insets;
-        });
+        applyEdgeToEdge();
 
         bottomNav = findViewById(R.id.bottomNav);
+        navIndicator = findViewById(R.id.navIndicator);
 
         if (savedInstanceState == null) {
-            loadFragment(new HomeFragment());
+
+            homeFragment = new HomeFragment();
+            searchFragment = new SearchFragment();
+            playlistsFragment = new PlaylistsFragment();
+
+            activeFragment = homeFragment;
+
+            getSupportFragmentManager()
+                    .beginTransaction()
+                    .add(R.id.navHost, playlistsFragment, "playlists").hide(playlistsFragment)
+                    .add(R.id.navHost, searchFragment, "search").hide(searchFragment)
+                    .add(R.id.navHost, homeFragment, "home")
+                    .commit();
+            getSupportFragmentManager().executePendingTransactions();
+            preloadFragments();
         }
 
+        setupBottomNavigation();
+        setupMiniPlayer();
+
+        bottomNav.post(() -> {
+            moveIndicator(0);
+            animateLabels(0);
+        });
+    }
+    private void applyEdgeToEdge() {
+
+        View bottomContainer = findViewById(R.id.bottomNavContainer);
+
+        ViewCompat.setOnApplyWindowInsetsListener(
+                bottomContainer,
+                (v, insets) -> {
+
+                    Insets bars = insets.getInsets(
+                            WindowInsetsCompat.Type.navigationBars()
+                    );
+                    ViewGroup.MarginLayoutParams lp =
+                            (ViewGroup.MarginLayoutParams) v.getLayoutParams();
+
+                    lp.bottomMargin = dp(18) + bars.bottom;
+                    v.setLayoutParams(lp);
+                    return insets;
+                }
+        );
+    }
+    private int dp(int value){
+        return (int)(value * getResources().getDisplayMetrics().density);
+    }
+    private void setupBottomNavigation() {
         bottomNav.setOnItemSelectedListener(item -> {
+            Fragment target = null;
+            int index = 0;
 
-            Fragment fragment = null;
+            if (item.getItemId() == R.id.nav_home) {
+                target = homeFragment;
+                index = 0;
+            }
+            else if (item.getItemId() == R.id.nav_search) {
+                target = searchFragment;
+                index = 1;
+            }
+            else if (item.getItemId() == R.id.nav_playlists) {
+                target = playlistsFragment;
+                index = 2;
+            }
 
-            if (item.getItemId()==R.id.nav_home)
-                fragment=new HomeFragment();
-            else if(item.getItemId()==R.id.nav_search)
-                fragment=new SearchFragment();
-            else if(item.getItemId()==R.id.nav_playlists)
-                fragment=new PlaylistsFragment();
-
-            if(fragment!=null){
-                loadFragment(fragment);
+            if (target != null) {
+                switchFragment(target);
+                moveIndicator(index);
+                animateLabels(index);
                 return true;
             }
+
             return false;
         });
+        bottomNav.setSelectedItemId(R.id.nav_home);
+    }
+    private void switchFragment(Fragment target) {
 
+        if (target == activeFragment) return;
+
+        getSupportFragmentManager()
+                .beginTransaction()
+                .hide(activeFragment)
+                .show(target)
+                .commit();
+
+        activeFragment = target;
+    }
+    private void preloadFragments() {
+
+        new Handler(Looper.getMainLooper()).postDelayed(() -> {
+
+            getSupportFragmentManager()
+                    .beginTransaction()
+                    .show(searchFragment)
+                    .commitNow();
+
+            getSupportFragmentManager()
+                    .beginTransaction()
+                    .hide(searchFragment)
+                    .commitNow();
+
+            getSupportFragmentManager()
+                    .beginTransaction()
+                    .show(playlistsFragment)
+                    .commitNow();
+
+            getSupportFragmentManager()
+                    .beginTransaction()
+                    .hide(playlistsFragment)
+                    .commitNow();
+
+        }, 120);
+    }
+    private void moveIndicator(int position) {
+
+        bottomNav.post(() -> {
+
+            ViewGroup menuView = (ViewGroup) bottomNav.getChildAt(0);
+            if (menuView == null) return;
+
+            View itemView = menuView.getChildAt(position);
+            if (itemView == null) return;
+
+            float targetX =
+                    itemView.getLeft()
+                            + itemView.getWidth()/2f
+                            - navIndicator.getWidth()/2f;
+
+            navIndicator.animate()
+                    .translationX(targetX)
+                    .setDuration(320)
+                    .setInterpolator(new android.view.animation.DecelerateInterpolator())
+                    .start();
+        });
+    }
+    private void animateLabels(int selectedIndex) {
+
+        ViewGroup menuView = (ViewGroup) bottomNav.getChildAt(0);
+        if (menuView == null) return;
+
+        for (int i = 0; i < menuView.getChildCount(); i++) {
+
+            View item = menuView.getChildAt(i);
+
+            TextView label =
+                    item.findViewById(
+                            com.google.android.material.R.id.navigation_bar_item_small_label_view
+                    );
+
+            if (label == null) continue;
+
+            if (i == selectedIndex) {
+                label.animate().alpha(1f).scaleX(1.1f).scaleY(1.1f).setDuration(220).start();
+            } else {
+                label.animate().alpha(0.7f).scaleX(1f).scaleY(1f).setDuration(220).start();
+            }
+        }
+    }
+    private void setupMiniPlayer() {
         miniPlayer = findViewById(R.id.miniPlayer);
         ivMiniCover = findViewById(R.id.ivMiniCover);
         tvMiniTitle = findViewById(R.id.tvMiniTitle);
@@ -98,26 +238,8 @@ public class MainActivity extends AppCompatActivity implements PlaybackManager.L
         btnMiniPlay.setOnClickListener(v ->
                 PlaybackManager.get(this).togglePlayPause());
 
-        btnMiniPrev.setOnClickListener(v -> {
-            PlaybackManager pm = PlaybackManager.get(this);
-
-            if (pm.getPlayer() != null &&
-                    pm.getPlayer().getCurrentPosition() > 3000) {
-                pm.getPlayer().seekTo(0);
-                return;
-            }
-
-            pm.playPrev(true);
-        });
-
         btnMiniNext.setOnClickListener(v ->
                 PlaybackManager.get(this).playNext(true));
-    }
-    private void loadFragment(Fragment f){
-        getSupportFragmentManager()
-                .beginTransaction()
-                .replace(R.id.navHost,f)
-                .commit();
     }
 
     @Override protected void onStart(){
@@ -129,17 +251,12 @@ public class MainActivity extends AppCompatActivity implements PlaybackManager.L
         super.onStop();
         PlaybackManager.get(this).removeListener(this);
     }
-
-    @Override protected void onResume(){
-        super.onResume();
-        updateMiniPlayer();
-    }
-    @Override public void onNowPlayingChanged(int a,int[]b,int c){
-        updateMiniPlayer();
-    }
     @Override public void onIsPlayingChanged(boolean playing){
         btnMiniPlay.setImageResource(
                 playing?R.drawable.ic_pause:R.drawable.ic_play);
+    }
+    @Override public void onNowPlayingChanged(int a,int[]b,int c){
+        updateMiniPlayer();
     }
     @Override public void onProgress(long pos,long dur){
         if(dur>0){
@@ -162,21 +279,6 @@ public class MainActivity extends AppCompatActivity implements PlaybackManager.L
         ivMiniCover.setImageResource(s.getCoverResId());
         tvMiniTitle.setText(s.getTitle());
         tvMiniArtist.setText(s.getArtist());
-
-        PlaybackManager pm = PlaybackManager.get(this);
-
-        long savedPos = pm.getSavedPosition();
-        long savedDur = pm.getSavedDuration();
-
-        if (savedDur > 0) {
-            miniProgress.setMax((int) savedDur);
-            miniProgress.setProgress((int) savedPos);
-        }
-    }
-    @Override
-    protected void onPause() {
-        super.onPause();
-        PlaybackManager.get(this).saveCurrentPositionNow();
     }
     private void openPlayerFromNowPlaying(){
 
