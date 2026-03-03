@@ -6,8 +6,10 @@ import android.view.ViewGroup;
 import android.widget.ImageView;
 import android.widget.TextView;
 import androidx.annotation.NonNull;
+import androidx.core.content.ContextCompat;
 import androidx.recyclerview.widget.RecyclerView;
 import java.util.List;
+import sk.ukf.wavvy.PlaybackManager;
 import sk.ukf.wavvy.R;
 import sk.ukf.wavvy.model.Song;
 
@@ -21,8 +23,9 @@ public class SongAdapter extends RecyclerView.Adapter<SongAdapter.SongViewHolder
     private final List<Song> songs;
     private final OnSongClickListener clickListener;
     private final OnSongLongClickListener longClickListener;
-
-    public SongAdapter(List<Song> songs, OnSongClickListener clickListener, OnSongLongClickListener longClickListener) {
+    public SongAdapter(List<Song> songs,
+                       OnSongClickListener clickListener,
+                       OnSongLongClickListener longClickListener) {
         this.songs = songs;
         this.clickListener = clickListener;
         this.longClickListener = longClickListener;
@@ -44,15 +47,41 @@ public class SongAdapter extends RecyclerView.Adapter<SongAdapter.SongViewHolder
         holder.tvArtist.setText(song.getArtist());
         holder.ivCover.setImageResource(song.getCoverResId());
 
-        if (holder.tvAlbum != null) {
-            String album = song.getAlbum();
-            if (album == null || album.trim().isEmpty()) {
-                holder.tvAlbum.setText("");
-                holder.tvAlbum.setVisibility(View.GONE);
-            } else {
-                holder.tvAlbum.setText(album);
-                holder.tvAlbum.setVisibility(View.VISIBLE);
-            }
+        String album = song.getAlbum();
+        if (album == null || album.trim().isEmpty()) {
+            holder.tvAlbum.setVisibility(View.GONE);
+        } else {
+            holder.tvAlbum.setText(album);
+            holder.tvAlbum.setVisibility(View.VISIBLE);
+        }
+
+        int currentId = PlaybackManager
+                .get(holder.itemView.getContext())
+                .getCurrentAudioResId();
+
+        holder.itemView.setBackground(
+                ContextCompat.getDrawable(holder.itemView.getContext(), R.drawable.bg_card_selector)
+        );
+
+        if (song.getAudioResId() == currentId) {
+            holder.tvTitle.setTextColor(
+                    ContextCompat.getColor(holder.itemView.getContext(), R.color.accent)
+            );
+
+            holder.itemView.setForeground(
+                    ContextCompat.getDrawable(holder.itemView.getContext(), R.drawable.bg_item_playing_overlay)
+            );
+
+            holder.viewNowPlayingDot.setVisibility(View.VISIBLE);
+            holder.viewNowPlayingStripe.setVisibility(View.VISIBLE);
+        } else {
+            holder.tvTitle.setTextColor(
+                    ContextCompat.getColor(holder.itemView.getContext(), R.color.textPrimary)
+            );
+
+            holder.itemView.setForeground(null);
+            holder.viewNowPlayingDot.setVisibility(View.GONE);
+            holder.viewNowPlayingStripe.setVisibility(View.GONE);
         }
 
         holder.itemView.setOnClickListener(v -> {
@@ -73,17 +102,22 @@ public class SongAdapter extends RecyclerView.Adapter<SongAdapter.SongViewHolder
         return songs.size();
     }
     static class SongViewHolder extends RecyclerView.ViewHolder {
+
         ImageView ivCover;
         TextView tvTitle;
         TextView tvArtist;
         TextView tvAlbum;
-        TextView tvPlays;
+        View viewNowPlayingDot;
+        View viewNowPlayingStripe;
         public SongViewHolder(@NonNull View itemView) {
             super(itemView);
+
             ivCover = itemView.findViewById(R.id.ivItemCover);
             tvTitle = itemView.findViewById(R.id.tvItemTitle);
             tvArtist = itemView.findViewById(R.id.tvItemArtist);
             tvAlbum = itemView.findViewById(R.id.tvItemAlbum);
+            viewNowPlayingDot = itemView.findViewById(R.id.viewNowPlayingDot);
+            viewNowPlayingStripe = itemView.findViewById(R.id.viewNowPlayingStripe);
         }
     }
 }

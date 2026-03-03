@@ -33,6 +33,7 @@ public class PlayerActivity extends AppCompatActivity implements PlaybackManager
     private SeekBar seekBar;
     private TextView tvCurrentTime, tvTotalTime;
     private TextView tvSongTitle, tvSongArtist;
+    private TextView tvSongAlbum;
     private ImageView ivCover;
     private TextView tvPlaybackStatus;
     private boolean isUserSeeking = false;
@@ -76,6 +77,7 @@ public class PlayerActivity extends AppCompatActivity implements PlaybackManager
 
         tvSongTitle = findViewById(R.id.tvSongTitle);
         tvSongArtist = findViewById(R.id.tvSongArtist);
+        tvSongAlbum = findViewById(R.id.tvSongAlbum);
         ivCover = findViewById(R.id.ivCover);
 
         btnShuffle = findViewById(R.id.btnShuffle);
@@ -200,6 +202,14 @@ public class PlayerActivity extends AppCompatActivity implements PlaybackManager
         if (s != null) {
             tvSongTitle.setText(s.getTitle());
             tvSongArtist.setText(s.getArtist());
+
+            String album = s.getAlbum();
+            if (album != null && !album.trim().isEmpty()) {
+                tvSongAlbum.setText(album);
+                tvSongAlbum.setVisibility(View.VISIBLE);
+            } else {
+                tvSongAlbum.setVisibility(View.GONE);
+            }
             ivCover.setImageResource(s.getCoverResId());
 
             applyDynamicGradient(s.getCoverResId());

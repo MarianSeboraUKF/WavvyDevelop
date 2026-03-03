@@ -19,7 +19,9 @@ import sk.ukf.wavvy.adapter.SongAdapter;
 import sk.ukf.wavvy.model.Playlist;
 import sk.ukf.wavvy.model.Song;
 
-public class HomeFragment extends Fragment {
+public class HomeFragment extends Fragment implements PlaybackManager.Listener {
+    private SongAdapter adapter;
+    private PlaybackManager pm;
 
     @Nullable
     @Override
@@ -29,6 +31,8 @@ public class HomeFragment extends Fragment {
 
         View view = inflater.inflate(R.layout.fragment_home, container, false);
 
+        pm = PlaybackManager.get(requireContext());
+
         RecyclerView rvSongs = view.findViewById(R.id.rvSongs);
         rvSongs.setLayoutManager(new LinearLayoutManager(requireContext()));
 
@@ -37,7 +41,7 @@ public class HomeFragment extends Fragment {
             GradientPreloader.preload(requireContext(), s.getCoverResId());
         }
 
-        SongAdapter adapter = new SongAdapter(
+        adapter = new SongAdapter(
                 songs,
                 song -> PlayerLauncher.openQueue(requireContext(), songs, song),
                 this::showAddToPlaylistDialog
@@ -90,4 +94,30 @@ public class HomeFragment extends Fragment {
         }
         sb.show();
     }
+    @Override
+    public void onStart() {
+        super.onStart();
+        if (pm != null) {
+            pm.addListener(this);
+        }
+    }
+
+    @Override
+    public void onStop() {
+        super.onStop();
+        if (pm != null) {
+            pm.removeListener(this);
+        }
+    }
+    @Override
+    public void onNowPlayingChanged(int audioResId, int[] queueIds, int queueIndex) {
+        if (adapter != null) {
+            adapter.notifyDataSetChanged();
+        }
+    }
+    @Override
+    public void onIsPlayingChanged(boolean isPlaying) {}
+
+    @Override
+    public void onProgress(long positionMs, long durationMs) {}
 }
