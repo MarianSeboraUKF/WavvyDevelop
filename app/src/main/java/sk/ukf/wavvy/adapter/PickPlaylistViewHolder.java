@@ -17,6 +17,6 @@ public class PickPlaylistViewHolder extends RecyclerView.ViewHolder {
     }
     public void bind(Playlist p) {
         tvName.setText(p.getName());
-        tvCount.setText(p.getSongAudioResIds().size() + " skladieb");
+        tvCount.setText(p.getSongAudioResIds().size() + " songs");
     }
 }

@@ -18,10 +18,18 @@ import sk.ukf.wavvy.adapter.PickPlaylistAdapter;
 import sk.ukf.wavvy.adapter.SongAdapter;
 import sk.ukf.wavvy.model.Playlist;
 import sk.ukf.wavvy.model.Song;
+import sk.ukf.wavvy.adapter.SmallSongAdapter;
 
 public class HomeFragment extends Fragment implements PlaybackManager.Listener {
     private SongAdapter adapter;
     private PlaybackManager pm;
+    private RecyclerView rvMostPlayed;
+    private ArrayList<Song> mostPlayed;
+    private RecyclerView rvRecent;
+    private ArrayList<Song> recentSongs;
+    private SmallSongAdapter mostPlayedAdapter;
+    private SmallSongAdapter recentAdapter;
+    private int lastPlayingAudioId = -1;
 
     @Nullable
     @Override
@@ -33,27 +41,56 @@ public class HomeFragment extends Fragment implements PlaybackManager.Listener {
 
         pm = PlaybackManager.get(requireContext());
 
+        rvMostPlayed = view.findViewById(R.id.rvMostPlayed);
         RecyclerView rvSongs = view.findViewById(R.id.rvSongs);
+
+        rvMostPlayed.setLayoutManager(new LinearLayoutManager(requireContext(), LinearLayoutManager.HORIZONTAL, false));
         rvSongs.setLayoutManager(new LinearLayoutManager(requireContext()));
 
-        ArrayList<Song> songs = SongRepository.getSongs();
-        for (Song s : songs) {
+        rvRecent = view.findViewById(R.id.rvRecent);
+
+        rvRecent.setLayoutManager(
+                new LinearLayoutManager(requireContext(), LinearLayoutManager.HORIZONTAL, false)
+        );
+
+        recentSongs = SongRepository.getRecentlyPlayedSongs(requireContext());
+
+        recentAdapter = new SmallSongAdapter(
+                recentSongs,
+                song -> PlayerLauncher.openQueue(requireContext(), recentSongs, song)
+        );
+
+        rvRecent.setAdapter(recentAdapter);
+
+        ArrayList<Song> allSongs = SongRepository.getSongs();
+        mostPlayed = SongRepository.getMostPlayedSongs(requireContext());
+
+        mostPlayedAdapter = new SmallSongAdapter(
+                mostPlayed,
+                song -> PlayerLauncher.openQueue(requireContext(), mostPlayed, song)
+        );
+
+        adapter = new SongAdapter(
+                allSongs,
+                song -> PlayerLauncher.openQueue(requireContext(), allSongs, song),
+                this::showAddToPlaylistDialog
+        );
+
+        rvMostPlayed.setAdapter(mostPlayedAdapter);
+        rvSongs.setAdapter(adapter);
+        rvSongs.setItemAnimator(new androidx.recyclerview.widget.DefaultItemAnimator());
+
+        for (Song s : allSongs) {
             GradientPreloader.preload(requireContext(), s.getCoverResId());
         }
 
-        adapter = new SongAdapter(
-                songs,
-                song -> PlayerLauncher.openQueue(requireContext(), songs, song),
-                this::showAddToPlaylistDialog
-        );
-        rvSongs.setAdapter(adapter);
         return view;
     }
     private void showAddToPlaylistDialog(Song song) {
         ArrayList<Playlist> playlists = PlaylistRepository.getPlaylists(requireContext());
 
         if (playlists.isEmpty()) {
-            Toast.makeText(requireContext(), "Najprv si vytvor playlist", Toast.LENGTH_SHORT).show();
+            Toast.makeText(requireContext(), "You have to create playlist first", Toast.LENGTH_SHORT).show();
             return;
         }
 
@@ -70,7 +107,7 @@ public class HomeFragment extends Fragment implements PlaybackManager.Listener {
 
         PickPlaylistAdapter pickAdapter = new PickPlaylistAdapter(playlists, selected -> {
             PlaylistRepository.addSongToPlaylist(requireContext(), selected.getId(), song.getAudioResId());
-            showSnack(requireView(), "Pridané do playlistu: " + selected.getName());
+            showSnack(requireView(), "Added to playlist: " + selected.getName());
             dialog.dismiss();
         });
 
@@ -95,6 +132,24 @@ public class HomeFragment extends Fragment implements PlaybackManager.Listener {
         sb.show();
     }
     @Override
+    public void onResume() {
+        super.onResume();
+
+        if (mostPlayedAdapter != null) {
+
+            mostPlayed.clear();
+            mostPlayed.addAll(
+                    SongRepository.getMostPlayedSongs(requireContext())
+            );
+            mostPlayedAdapter.notifyDataSetChanged();
+        }
+        recentSongs.clear();
+        recentSongs.addAll(
+                SongRepository.getRecentlyPlayedSongs(requireContext())
+        );
+        recentAdapter.notifyDataSetChanged();
+    }
+    @Override
     public void onStart() {
         super.onStart();
         if (pm != null) {
@@ -112,7 +167,38 @@ public class HomeFragment extends Fragment implements PlaybackManager.Listener {
     @Override
     public void onNowPlayingChanged(int audioResId, int[] queueIds, int queueIndex) {
         if (adapter != null) {
-            adapter.notifyDataSetChanged();
+            ArrayList<Song> songs = SongRepository.getSongs();
+
+            int newIndex = -1;
+            int oldIndex = -1;
+
+            for (int i = 0; i < songs.size(); i++) {
+
+                if (songs.get(i).getAudioResId() == audioResId) {
+                    newIndex = i;
+                }
+
+                if (songs.get(i).getAudioResId() == lastPlayingAudioId) {
+                    oldIndex = i;
+                }
+            }
+
+            if (oldIndex >= 0) {
+                adapter.notifyItemChanged(oldIndex);
+            }
+
+            if (newIndex >= 0) {
+                adapter.notifyItemChanged(newIndex);
+            }
+            lastPlayingAudioId = audioResId;
+        }
+
+        if (mostPlayedAdapter != null) {
+            mostPlayedAdapter.notifyDataSetChanged();
+        }
+
+        if (recentAdapter != null) {
+            recentAdapter.notifyDataSetChanged();
         }
     }
     @Override

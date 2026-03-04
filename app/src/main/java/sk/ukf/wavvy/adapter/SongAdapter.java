@@ -72,7 +72,6 @@ public class SongAdapter extends RecyclerView.Adapter<SongAdapter.SongViewHolder
                     ContextCompat.getDrawable(holder.itemView.getContext(), R.drawable.bg_item_playing_overlay)
             );
 
-            holder.viewNowPlayingDot.setVisibility(View.VISIBLE);
             holder.viewNowPlayingStripe.setVisibility(View.VISIBLE);
         } else {
             holder.tvTitle.setTextColor(
@@ -80,7 +79,6 @@ public class SongAdapter extends RecyclerView.Adapter<SongAdapter.SongViewHolder
             );
 
             holder.itemView.setForeground(null);
-            holder.viewNowPlayingDot.setVisibility(View.GONE);
             holder.viewNowPlayingStripe.setVisibility(View.GONE);
         }
 
@@ -102,12 +100,10 @@ public class SongAdapter extends RecyclerView.Adapter<SongAdapter.SongViewHolder
         return songs.size();
     }
     static class SongViewHolder extends RecyclerView.ViewHolder {
-
         ImageView ivCover;
         TextView tvTitle;
         TextView tvArtist;
         TextView tvAlbum;
-        View viewNowPlayingDot;
         View viewNowPlayingStripe;
         public SongViewHolder(@NonNull View itemView) {
             super(itemView);
@@ -116,7 +112,6 @@ public class SongAdapter extends RecyclerView.Adapter<SongAdapter.SongViewHolder
             tvTitle = itemView.findViewById(R.id.tvItemTitle);
             tvArtist = itemView.findViewById(R.id.tvItemArtist);
             tvAlbum = itemView.findViewById(R.id.tvItemAlbum);
-            viewNowPlayingDot = itemView.findViewById(R.id.viewNowPlayingDot);
             viewNowPlayingStripe = itemView.findViewById(R.id.viewNowPlayingStripe);
         }
     }

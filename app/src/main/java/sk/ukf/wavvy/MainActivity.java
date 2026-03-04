@@ -235,6 +235,17 @@ public class MainActivity extends AppCompatActivity implements PlaybackManager.L
             return false;
         });
 
+        btnMiniPrev.setOnClickListener(v -> {
+            PlaybackManager pm = PlaybackManager.get(this);
+            long pos = pm.getPlayer().getCurrentPosition();
+
+            if (pos > 3000) {
+                pm.getPlayer().seekTo(0);
+            } else {
+                pm.playPrev(true);
+            }
+        });
+
         btnMiniPlay.setOnClickListener(v ->
                 PlaybackManager.get(this).togglePlayPause());
 

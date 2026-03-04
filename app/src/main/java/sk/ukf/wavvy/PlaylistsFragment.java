@@ -100,7 +100,7 @@ public class PlaylistsFragment extends Fragment {
                 .inflate(R.layout.dialog_delete_playlist, null);
 
         TextView tvMsg = card.findViewById(R.id.tvMsg);
-        tvMsg.setText("Naozaj chcete odstrániť playlist „" + playlist.getName() + "“?");
+        tvMsg.setText("Do you really want to delete „" + playlist.getName() + "“?");
 
         View btnDelete = card.findViewById(R.id.btnDelete);
         View btnCancel = card.findViewById(R.id.btnCancel);

@@ -39,7 +39,7 @@
             style="@style/SmallSecondary"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="0 skladieb • 0:00"
+            android:text="0 songs • 0:00"
             android:layout_marginTop="4dp"/>
 
     </LinearLayout>

@@ -304,25 +304,30 @@ public class PlaybackManager {
     }
     private void loadCurrent(boolean autoPlay) {
         if (activeQueue == null || activeQueue.length == 0) return;
-
         currentAudioResId = activeQueue[queueIndex];
 
-        MediaItem item = MediaItem.fromUri("android.resource://" + appContext.getPackageName() + "/" + currentAudioResId);
+        MediaItem item = MediaItem.fromUri(
+                "android.resource://" + appContext.getPackageName() + "/" + currentAudioResId
+        );
+
         player.setMediaItem(item);
         player.prepare();
 
-        NowPlayingRepository.saveNowPlaying(appContext, currentAudioResId, activeQueue, queueIndex);
-
+        NowPlayingRepository.saveNowPlaying(
+                appContext,
+                currentAudioResId,
+                activeQueue,
+                queueIndex
+        );
         notifyNowPlaying();
 
-        if (autoPlay) player.play();
-        else notifyIsPlaying(player.isPlaying());
-    }
-    public long getSavedPosition() {
-        return NowPlayingRepository.getPosition(appContext);
-    }
-    public long getSavedDuration() {
-        return player != null ? player.getDuration() : 0;
+        if (autoPlay) {
+            PlayCountRepository.increment(appContext, currentAudioResId);
+            RecentlyPlayedRepository.add(appContext, currentAudioResId);
+            player.play();
+        } else {
+            notifyIsPlaying(player.isPlaying());
+        }
     }
     private void onTrackEnded() {
         if (repeatMode == RepeatMode.ONE) {

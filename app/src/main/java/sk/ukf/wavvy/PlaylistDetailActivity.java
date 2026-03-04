@@ -218,7 +218,7 @@ public class PlaylistDetailActivity extends AppCompatActivity implements Playbac
         View btnRemove = card.findViewById(R.id.btnRemove);
         View btnCancel = card.findViewById(R.id.btnCancel);
 
-        tvMessage.setText("Odstrániť „" + song.getTitle() + "“ z playlistu?");
+        tvMessage.setText("Delete „" + song.getTitle() + "“ from playlist?");
 
         android.app.Dialog dialog =
                 WavvyDialogs.showCenteredCardDialog(this, this, card);
@@ -236,14 +236,14 @@ public class PlaylistDetailActivity extends AppCompatActivity implements Playbac
         songsInPlaylist.clear();
 
         if (playlistId == null) {
-            tvPlaylistMeta.setText("0 skladieb • 0:00");
+            tvPlaylistMeta.setText("0 songs • 0:00");
             adapter.notifyDataSetChanged();
             return;
         }
 
         Playlist p = PlaylistRepository.findById(this, playlistId);
         if (p == null) {
-            tvPlaylistMeta.setText("0 skladieb • 0:00");
+            tvPlaylistMeta.setText("0 songs • 0:00");
             adapter.notifyDataSetChanged();
             return;
         }
@@ -258,8 +258,13 @@ public class PlaylistDetailActivity extends AppCompatActivity implements Playbac
             totalMs += getDurationMsFromRaw(s.getAudioResId());
         }
 
-        tvPlaylistMeta.setText(songsInPlaylist.size() + " skladieb • " + formatDuration(totalMs));
-        adapter.notifyDataSetChanged();
+        if (songsInPlaylist.size() == 1) {
+            tvPlaylistMeta.setText(songsInPlaylist.size() + " song • " + formatDuration(totalMs));
+            adapter.notifyDataSetChanged();
+        } else {
+            tvPlaylistMeta.setText(songsInPlaylist.size() + " songs • " + formatDuration(totalMs));
+            adapter.notifyDataSetChanged();
+        }
     }
     private long getDurationMsFromRaw(int rawResId) {
         MediaMetadataRetriever mmr = new MediaMetadataRetriever();

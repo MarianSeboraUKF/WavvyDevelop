@@ -1,5 +1,6 @@
 package sk.ukf.wavvy;
 
+import android.content.Context;
 import java.util.ArrayList;
 import sk.ukf.wavvy.model.Song;
 
@@ -16,6 +17,7 @@ public class SongRepository {
         cached.add(new Song("Streets", "guapanova, Luca Brassi10x", "Deluzia", R.drawable.deluzia_cover, R.raw.streets));
         cached.add(new Song("Parabola", "Slatt Chawo, Erik Tresor", "Glitch ve systému", R.drawable.glitch_ve_systemu_cover, R.raw.parabola));
         cached.add(new Song("E85", "Don Toliver", "OCTANE", R.drawable.octane_cover, R.raw.e85));
+        cached.add(new Song("23", "Raphael", "23", R.drawable.raphael_23_cover, R.raw.raphael_23));
 
         return cached;
     }
@@ -25,5 +27,33 @@ public class SongRepository {
             if (s.getAudioResId() == audioResId) return s;
         }
         return null;
+    }
+    public static ArrayList<Song> getMostPlayedSongs(Context ctx) {
+        ArrayList<Song> allSongs = getSongs();
+
+        allSongs.sort((a, b) -> {
+            int countA = PlayCountRepository.getCount(ctx, a.getAudioResId());
+            int countB = PlayCountRepository.getCount(ctx, b.getAudioResId());
+
+            return Integer.compare(countB, countA);
+        });
+
+        if (allSongs.size() > 5) {
+            return new ArrayList<>(allSongs.subList(0, 5));
+        }
+        return allSongs;
+    }
+    public static ArrayList<Song> getRecentlyPlayedSongs(Context ctx) {
+        ArrayList<Integer> ids = RecentlyPlayedRepository.get(ctx);
+
+        ArrayList<Song> songs = new ArrayList<>();
+        for (Integer id : ids) {
+            Song s = findByAudioResId(id);
+
+            if (s != null) {
+                songs.add(s);
+            }
+        }
+        return songs;
     }
 }

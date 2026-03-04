@@ -40,7 +40,7 @@ public class PlaylistAdapter extends RecyclerView.Adapter<PlaylistAdapter.Playli
         Playlist p = playlists.get(position);
 
         holder.tvName.setText(p.getName());
-        holder.tvCount.setText(p.getSongAudioResIds().size() + " skladieb");
+        holder.tvCount.setText(p.getSongAudioResIds().size() + " songs");
         holder.itemView.setOnClickListener(v -> {
             if (clickListener != null) clickListener.onPlaylistClick(p);
         });

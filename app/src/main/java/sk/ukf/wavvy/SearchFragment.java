@@ -71,7 +71,7 @@ public class SearchFragment extends Fragment {
         view.post(this::prewarmRecycler);
 
         searchView = view.findViewById(R.id.searchView);
-        searchView.setQueryHint("Vyhľadajte skladbu, interpreta alebo album...");
+        searchView.setQueryHint("Search songs, artists or albums...");
 
         android.widget.EditText searchText =
                 searchView.findViewById(androidx.appcompat.R.id.search_src_text);
@@ -171,7 +171,7 @@ public class SearchFragment extends Fragment {
             filteredSongs.addAll(topSongs);
         } else {
 
-            tvSectionTitle.setText("Výsledky");
+            tvSectionTitle.setText("Results");
             tvEmpty.setVisibility(View.GONE);
 
             for (Song s : allSongs) {
@@ -188,14 +188,14 @@ public class SearchFragment extends Fragment {
             }
 
             if (filteredSongs.isEmpty()) {
-                tvEmpty.setText("Nič sa nenašlo.");
+                tvEmpty.setText("Nothing found.");
                 tvEmpty.setVisibility(View.VISIBLE);
             }
         }
         adapter.notifyDataSetChanged();
     }
     private void showTopState() {
-        tvSectionTitle.setText("Top skladby");
+        tvSectionTitle.setText("Top songs");
         tvEmpty.setVisibility(View.GONE);
     }
     private void showAddToPlaylistDialog(Song song) {
@@ -206,7 +206,7 @@ public class SearchFragment extends Fragment {
         if (playlists.isEmpty()) {
             android.widget.Toast.makeText(
                     requireContext(),
-                    "Najprv si vytvor playlist",
+                    "You have to create playlist first",
                     android.widget.Toast.LENGTH_SHORT
             ).show();
             return;
@@ -237,7 +237,7 @@ public class SearchFragment extends Fragment {
                     );
 
                     showSnack(requireView(),
-                            "Pridané do playlistu: " + selected.getName());
+                            "Added to playlist: " + selected.getName());
 
                     dialog.dismiss();
                 });
