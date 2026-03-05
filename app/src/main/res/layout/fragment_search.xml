@@ -42,25 +42,71 @@
         app:layout_constraintEnd_toEndOf="parent"/>
 
     <TextView
+        android:id="@+id/tvRecentSearchTitle"
+        style="@style/SectionTitle"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Recent search"
+        android:layout_marginTop="14dp"
+        android:visibility="gone"
+        app:layout_constraintTop_toBottomOf="@id/searchView"
+        app:layout_constraintStart_toStartOf="parent"/>
+
+    <TextView
+        android:id="@+id/tvRecentSearches"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="🔍 dig"
+        android:textSize="12sp"
+        android:textColor="@color/textPrimary"
+        android:paddingStart="14dp"
+        android:paddingEnd="14dp"
+        android:paddingTop="8dp"
+        android:paddingBottom="8dp"
+        android:background="@drawable/bg_search_recent"
+        android:layout_marginTop="8dp"
+        android:visibility="gone"
+        app:layout_constraintTop_toBottomOf="@id/tvRecentSearchTitle"
+        app:layout_constraintStart_toStartOf="parent"/>
+
+    <TextView
         android:id="@+id/tvSectionTitle"
         style="@style/SectionTitle"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
         android:text="Top songs"
         android:layout_marginTop="14dp"
-        app:layout_constraintTop_toBottomOf="@id/searchView"
+        app:layout_constraintTop_toBottomOf="@id/tvRecentSearches"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"/>
+
+    <TextView
+        android:id="@+id/tvSectionSubtitle"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:text="Your most listened tracks"
+        android:textSize="11sp"
+        android:textColor="@color/textSecondary"
+        android:alpha="0.75"
+        android:layout_marginTop="2dp"
+        app:layout_constraintTop_toBottomOf="@id/tvSectionTitle"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent"/>
 
     <TextView
         android:id="@+id/tvEmpty"
-        style="@style/SmallSecondary"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
-        android:text="Nothing found."
-        android:layout_marginTop="10dp"
+        android:text="No songs found\nTry another title, artist or album"
+        android:textSize="13sp"
+        android:textColor="@color/textSecondary"
+        android:gravity="center"
+        android:padding="16dp"
+        android:textStyle="bold"
+        android:background="@drawable/bg_card"
+        android:layout_marginTop="12dp"
         android:visibility="gone"
-        app:layout_constraintTop_toBottomOf="@id/tvSectionTitle"
+        app:layout_constraintTop_toBottomOf="@id/tvSectionSubtitle"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent"/>
 
@@ -69,7 +115,7 @@
         android:layout_width="0dp"
         android:layout_height="0dp"
         android:layout_marginTop="10dp"
-        app:layout_constraintTop_toBottomOf="@id/tvEmpty"
+        app:layout_constraintTop_toBottomOf="@id/tvSectionSubtitle"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent"/>

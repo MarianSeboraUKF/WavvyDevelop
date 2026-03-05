@@ -2,6 +2,7 @@ package sk.ukf.wavvy;
 
 import android.os.Bundle;
 import android.view.View;
+import android.view.MotionEvent;
 import android.widget.ImageButton;
 import android.widget.ImageView;
 import android.widget.SeekBar;
@@ -18,8 +19,6 @@ import androidx.core.view.WindowCompat;
 import androidx.core.view.WindowInsetsControllerCompat;
 import androidx.media3.exoplayer.ExoPlayer;
 import sk.ukf.wavvy.model.Song;
-import android.animation.ValueAnimator;
-import android.animation.ArgbEvaluator;
 
 public class PlayerActivity extends AppCompatActivity implements PlaybackManager.Listener {
     public static final String EXTRA_QUEUE_AUDIO_IDS = "queue_audio_ids";
@@ -34,9 +33,11 @@ public class PlayerActivity extends AppCompatActivity implements PlaybackManager
     private TextView tvCurrentTime, tvTotalTime;
     private TextView tvSongTitle, tvSongArtist;
     private TextView tvSongAlbum;
-    private ImageView ivCover;
     private TextView tvPlaybackStatus;
+    private ImageView ivCover;
     private boolean isUserSeeking = false;
+    private float startY;
+    private static final int SWIPE_THRESHOLD = 180;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -49,6 +50,29 @@ public class PlayerActivity extends AppCompatActivity implements PlaybackManager
 
         View root = findViewById(R.id.playerRoot);
 
+        root.setOnTouchListener((v, event) -> {
+
+            switch (event.getAction()) {
+
+                case MotionEvent.ACTION_DOWN:
+                    startY = event.getY();
+                    return true;
+
+                case MotionEvent.ACTION_UP:
+
+                    float endY = event.getY();
+                    float deltaY = endY - startY;
+
+                    if (deltaY > SWIPE_THRESHOLD) {
+                        finish();
+                    }
+
+                    return true;
+            }
+
+            return false;
+        });
+
         ViewCompat.setOnApplyWindowInsetsListener(root, (v, insets) -> {
             int bottom = insets.getInsets(
                     WindowInsetsCompat.Type.systemBars()
@@ -60,11 +84,9 @@ public class PlayerActivity extends AppCompatActivity implements PlaybackManager
                     v.getPaddingRight(),
                     bottom
             );
-
             return insets;
         });
 
-        WindowCompat.setDecorFitsSystemWindows(getWindow(), false);
         WindowInsetsControllerCompat insets =
                 new WindowInsetsControllerCompat(getWindow(), getWindow().getDecorView());
         insets.setAppearanceLightStatusBars(false);
@@ -79,23 +101,25 @@ public class PlayerActivity extends AppCompatActivity implements PlaybackManager
         tvSongArtist = findViewById(R.id.tvSongArtist);
         tvSongAlbum = findViewById(R.id.tvSongAlbum);
         ivCover = findViewById(R.id.ivCover);
-
         btnShuffle = findViewById(R.id.btnShuffle);
         btnPrev = findViewById(R.id.btnPrev);
         btnPlayPause = findViewById(R.id.btnPlayPause);
         btnNext = findViewById(R.id.btnNext);
         btnRepeat = findViewById(R.id.btnRepeat);
         tvPlaybackStatus = findViewById(R.id.tvPlaybackStatus);
-
         seekBar = findViewById(R.id.seekBar);
         tvCurrentTime = findViewById(R.id.tvCurrentTime);
         tvTotalTime = findViewById(R.id.tvTotalTime);
 
         btnBack.setOnClickListener(v -> finish());
-        btnMore.setOnClickListener(v -> android.widget.Toast.makeText(this, "More Soon", android.widget.Toast.LENGTH_SHORT).show());
+
+        btnMore.setOnClickListener(v ->
+                android.widget.Toast.makeText(this, "More Soon", android.widget.Toast.LENGTH_SHORT).show()
+        );
 
         btnPlayPause.setOnClickListener(v -> pm.togglePlayPause());
         btnNext.setOnClickListener(v -> pm.playNext(true));
+
         btnPrev.setOnClickListener(v -> {
             if (player != null && player.getCurrentPosition() > 3000) {
                 player.seekTo(0);
@@ -119,15 +143,21 @@ public class PlayerActivity extends AppCompatActivity implements PlaybackManager
         });
 
         seekBar.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
-            @Override public void onProgressChanged(SeekBar sb, int progress, boolean fromUser) {
+            @Override
+            public void onProgressChanged(SeekBar sb, int progress, boolean fromUser) {
                 if (fromUser) tvCurrentTime.setText(formatTime(progress));
             }
-            @Override public void onStartTrackingTouch(SeekBar sb) { isUserSeeking = true; }
-            @Override public void onStopTrackingTouch(SeekBar sb) {
+            @Override
+            public void onStartTrackingTouch(SeekBar sb) {
+                isUserSeeking = true;
+            }
+            @Override
+            public void onStopTrackingTouch(SeekBar sb) {
                 isUserSeeking = false;
                 if (player != null) player.seekTo(sb.getProgress());
             }
         });
+
         handleIntentPlayback();
         updateShuffleUi();
         updateRepeatUi();
@@ -155,17 +185,13 @@ public class PlayerActivity extends AppCompatActivity implements PlaybackManager
         PlaybackManager.get(this).saveCurrentPositionNow();
     }
     private void handleIntentPlayback() {
-
         boolean openExisting = getIntent().getBooleanExtra(EXTRA_OPEN_EXISTING, false);
         boolean autoPlay = getIntent().getBooleanExtra(EXTRA_AUTOPLAY, true);
 
         int[] ids = getIntent().getIntArrayExtra(EXTRA_QUEUE_AUDIO_IDS);
         int idx = getIntent().getIntExtra(EXTRA_QUEUE_INDEX, 0);
 
-        if (openExisting
-                && ids == null
-                && pm.getCurrentAudioResId() != 0
-                && pm.getQueueIds() != null) {
+        if (openExisting && ids == null && pm.getCurrentAudioResId() != 0 && pm.getQueueIds() != null) {
             return;
         }
 
@@ -188,10 +214,12 @@ public class PlayerActivity extends AppCompatActivity implements PlaybackManager
     @Override
     public void onProgress(long positionMs, long durationMs) {
         if (isUserSeeking) return;
+
         if (durationMs > 0) {
             seekBar.setMax((int) durationMs);
             tvTotalTime.setText(formatTime(durationMs));
         }
+
         seekBar.setProgress((int) positionMs);
         tvCurrentTime.setText(formatTime(positionMs));
     }
@@ -204,14 +232,15 @@ public class PlayerActivity extends AppCompatActivity implements PlaybackManager
             tvSongArtist.setText(s.getArtist());
 
             String album = s.getAlbum();
+
             if (album != null && !album.trim().isEmpty()) {
                 tvSongAlbum.setText(album);
                 tvSongAlbum.setVisibility(View.VISIBLE);
             } else {
                 tvSongAlbum.setVisibility(View.GONE);
             }
-            ivCover.setImageResource(s.getCoverResId());
 
+            ivCover.setImageResource(s.getCoverResId());
             applyDynamicGradient(s.getCoverResId());
         }
     }
@@ -222,8 +251,8 @@ public class PlayerActivity extends AppCompatActivity implements PlaybackManager
     private void updateNavButtons() {
         int[] q = pm.getQueueIds();
         int idx = pm.getQueueIndex();
-        boolean hasQueue = q != null && q.length > 1;
 
+        boolean hasQueue = q != null && q.length > 1;
         boolean prevEnabled = hasQueue && (idx > 0 || pm.getRepeatMode() == PlaybackManager.RepeatMode.ALL);
         boolean nextEnabled = hasQueue && (idx < q.length - 1 || pm.getRepeatMode() == PlaybackManager.RepeatMode.ALL);
 
@@ -231,6 +260,7 @@ public class PlayerActivity extends AppCompatActivity implements PlaybackManager
         btnNext.setEnabled(nextEnabled);
 
         float disabledAlpha = 0.35f;
+
         btnPrev.setAlpha(prevEnabled ? 1f : disabledAlpha);
         btnNext.setAlpha(nextEnabled ? 1f : disabledAlpha);
     }
@@ -252,6 +282,7 @@ public class PlayerActivity extends AppCompatActivity implements PlaybackManager
         } else {
             btnRepeat.setImageResource(R.drawable.ic_repeat);
         }
+
         tintOn(btnRepeat);
     }
     private void updatePlaybackStatusText() {
@@ -260,7 +291,9 @@ public class PlayerActivity extends AppCompatActivity implements PlaybackManager
         String shuffle = pm.isShuffleEnabled() ? "Shuffle ON" : "Shuffle OFF";
 
         String repeat;
+
         PlaybackManager.RepeatMode rm = pm.getRepeatMode();
+
         if (rm == PlaybackManager.RepeatMode.OFF) repeat = "Repeat OFF";
         else if (rm == PlaybackManager.RepeatMode.ONE) repeat = "Repeat ONE";
         else repeat = "Repeat ALL";
@@ -268,44 +301,19 @@ public class PlayerActivity extends AppCompatActivity implements PlaybackManager
         tvPlaybackStatus.setText(shuffle + " • " + repeat);
 
         boolean anyOn = pm.isShuffleEnabled() || rm != PlaybackManager.RepeatMode.OFF;
-        tvPlaybackStatus.setTextColor(ContextCompat.getColor(
-                this,
-                anyOn ? R.color.accent : R.color.textSecondary
-        ));
+
+        tvPlaybackStatus.setTextColor(
+                ContextCompat.getColor(this, anyOn ? R.color.accent : R.color.textSecondary)
+        );
     }
     private void applyDynamicGradient(int coverResId) {
         View root = findViewById(R.id.playerRoot);
 
-        if (GradientPrefs.has(this, coverResId)) {
-
-            int vibrant = GradientPrefs.getVibrant(this, coverResId);
-            int dark = GradientPrefs.getDark(this, coverResId);
-
-            int[] newColors = new int[]{
-                    vibrant,
-                    dark,
-                    ContextCompat.getColor(this, R.color.bg)
-            };
-
-            GradientDrawable current =
-                    (GradientDrawable) root.getBackground();
-
-            int[] oldColors;
-
-            if (current != null && current.getColors() != null) {
-                oldColors = current.getColors();
-            } else {
-                oldColors = newColors;
-            }
-            animateGradient(root, oldColors, newColors);
-            return;
-        }
-
         Bitmap bitmap = BitmapFactory.decodeResource(getResources(), coverResId);
+
         if (bitmap == null) return;
 
         Palette.from(bitmap).generate(palette -> {
-
             int dominant = palette.getDominantColor(
                     ContextCompat.getColor(this, R.color.bg)
             );
@@ -313,56 +321,20 @@ public class PlayerActivity extends AppCompatActivity implements PlaybackManager
             int dark = palette.getDarkMutedColor(dominant);
             int vibrant = palette.getVibrantColor(dominant);
 
-            GradientPrefs.save(this, coverResId, vibrant, dark);
-
-            int[] newColors = new int[]{
-                    vibrant,
-                    dark,
-                    ContextCompat.getColor(this, R.color.bg)
-            };
-
-            GradientDrawable current =
-                    (GradientDrawable) root.getBackground();
-
-            int[] oldColors;
-
-            if (current != null && current.getColors() != null) {
-                oldColors = current.getColors();
-            } else {
-                oldColors = newColors;
-            }
-            animateGradient(root, oldColors, newColors);
-        });
-    }
-    private void animateGradient(View root, int[] fromColors, int[] toColors) {
-        ValueAnimator animator = ValueAnimator.ofFloat(0f, 1f);
-        animator.setDuration(420);
-        ArgbEvaluator evaluator = new ArgbEvaluator();
-
-        animator.addUpdateListener(animation -> {
-
-            float fraction = animation.getAnimatedFraction();
-            int[] blended = new int[toColors.length];
-
-            for (int i = 0; i < toColors.length; i++) {
-                blended[i] = (int) evaluator.evaluate(
-                        fraction,
-                        fromColors[i],
-                        toColors[i]
-                );
-            }
-
             GradientDrawable gd = new GradientDrawable(
                     GradientDrawable.Orientation.TOP_BOTTOM,
-                    blended
+                    new int[]{
+                            vibrant,
+                            dark,
+                            ContextCompat.getColor(this, R.color.bg)
+                    }
             );
             root.setBackground(gd);
         });
-        animator.start();
     }
     private void tintOn(ImageButton btn) {
         btn.setColorFilter(ContextCompat.getColor(this, R.color.accent));
-        btn.setAlpha(1.0f);
+        btn.setAlpha(1f);
     }
     private void tintOff(ImageButton btn) {
         btn.setColorFilter(ContextCompat.getColor(this, R.color.textSecondary));
@@ -372,6 +344,7 @@ public class PlayerActivity extends AppCompatActivity implements PlaybackManager
         long totalSeconds = ms / 1000;
         long minutes = totalSeconds / 60;
         long seconds = totalSeconds % 60;
+
         return String.format("%02d:%02d", minutes, seconds);
     }
 }

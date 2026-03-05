@@ -32,6 +32,16 @@
             android:text="Home"
             android:layout_marginTop="6dp"/>
 
+        <TextView
+            android:id="@+id/tvGreeting"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Good evening"
+            android:textSize="20sp"
+            android:textStyle="bold|italic"
+            android:textColor="@color/textPrimary"
+            android:layout_marginTop="6dp"/>
+
     </LinearLayout>
 
     <androidx.core.widget.NestedScrollView
@@ -51,12 +61,83 @@
             android:padding="16dp"
             android:paddingBottom="120dp">
 
+            <LinearLayout
+                android:id="@+id/cardContinue"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:background="@drawable/bg_card"
+                android:padding="14dp"
+                android:layout_marginBottom="16dp"
+                android:gravity="center_vertical">
+
+                <com.google.android.material.imageview.ShapeableImageView
+                    android:id="@+id/ivContinueCover"
+                    android:layout_width="54dp"
+                    android:layout_height="54dp"
+                    android:scaleType="centerCrop"
+                    android:src="@drawable/ic_launcher_foreground"
+                    app:shapeAppearanceOverlay="@style/RoundedContinueCover"/>
+
+                <LinearLayout
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:orientation="vertical"
+                    android:layout_marginStart="12dp"
+                    android:layout_marginEnd="30dp">
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Continue listening"
+                        android:textSize="12sp"
+                        android:textColor="@color/textSecondary"/>
+
+                    <TextView
+                        android:id="@+id/tvContinueTitle"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Song title"
+                        android:textStyle="bold"
+                        android:textSize="15sp"
+                        android:textColor="@color/textPrimary"/>
+
+                    <TextView
+                        android:id="@+id/tvContinueArtist"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Artist"
+                        android:textSize="13sp"
+                        android:textColor="@color/textSecondary"/>
+                </LinearLayout>
+
+                <ImageView
+                    android:layout_width="24dp"
+                    android:layout_height="24dp"
+                    android:layout_marginStart="8dp"
+                    android:layout_marginEnd="6dp"
+                    android:src="@drawable/ic_play"
+                    app:tint="@color/textPrimary"/>
+
+            </LinearLayout>
+
             <TextView
                 android:id="@+id/tvRecentTitle"
                 style="@style/SectionTitle"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:text="Recently played"/>
+
+            <TextView
+                android:id="@+id/tvRecentSubtitle"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Your latest tracks"
+                android:textSize="11sp"
+                android:textColor="@color/textSecondary"
+                android:layout_marginTop="1dp"
+                android:alpha="0.75"/>
 
             <androidx.recyclerview.widget.RecyclerView
                 android:id="@+id/rvRecent"
@@ -71,6 +152,16 @@
                 android:layout_height="wrap_content"
                 android:text="Most played"
                 android:layout_marginTop="16dp"/>
+
+            <TextView
+                android:id="@+id/tvMostPlayedSubtitle"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Based on your listening activity"
+                android:textSize="11sp"
+                android:textColor="@color/textSecondary"
+                android:layout_marginTop="1dp"
+                android:alpha="0.75"/>
 
             <androidx.recyclerview.widget.RecyclerView
                 android:id="@+id/rvMostPlayed"

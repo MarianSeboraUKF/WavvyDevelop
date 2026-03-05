@@ -29,9 +29,13 @@ public class SearchFragment extends Fragment {
     private ArrayList<Song> filteredSongs;
     private SongAdapter adapter;
     private TextView tvSectionTitle;
+    private TextView tvSectionSubtitle;
     private TextView tvEmpty;
+    private TextView tvRecentSearches;
+    private TextView tvRecentSearchTitle;
     private SearchView searchView;
     private RecyclerView recyclerView;
+    private String lastSearch = "";
 
     public SearchFragment() {}
     @Nullable
@@ -43,12 +47,16 @@ public class SearchFragment extends Fragment {
         View view = inflater.inflate(R.layout.fragment_search, container, false);
 
         tvSectionTitle = view.findViewById(R.id.tvSectionTitle);
+        tvSectionSubtitle = view.findViewById(R.id.tvSectionSubtitle);
         tvEmpty = view.findViewById(R.id.tvEmpty);
-
+        tvRecentSearches = view.findViewById(R.id.tvRecentSearches);
+        tvRecentSearchTitle = view.findViewById(R.id.tvRecentSearchTitle);
         recyclerView = view.findViewById(R.id.rvSearchSongs);
+
         recyclerView.setLayoutManager(new LinearLayoutManager(requireContext()));
         recyclerView.setItemViewCacheSize(12);
         recyclerView.setHasFixedSize(true);
+
         allSongs = SongRepository.getSongs();
 
         for (Song s : allSongs) {
@@ -91,22 +99,27 @@ public class SearchFragment extends Fragment {
 
         showTopState();
 
+        tvRecentSearches.setOnClickListener(v -> {
+            if (!lastSearch.isEmpty()) {
+                searchView.setQuery(lastSearch, true);
+            }
+        });
+
         searchView.setOnQueryTextListener(new SearchView.OnQueryTextListener() {
-            @Override public boolean onQueryTextSubmit(String query) {
+            @Override
+            public boolean onQueryTextSubmit(String query) {
                 filter(query);
                 return true;
             }
-
-            @Override public boolean onQueryTextChange(String newText) {
+            @Override
+            public boolean onQueryTextChange(String newText) {
                 filter(newText);
                 return true;
             }
         });
-
         return view;
     }
     private void prewarmRecycler() {
-
         if (recyclerView == null) return;
         if (recyclerView.getAdapter() == null) return;
 
@@ -115,7 +128,6 @@ public class SearchFragment extends Fragment {
         int warmCount = Math.min(4, adapter.getItemCount());
 
         for (int i = 0; i < warmCount; i++) {
-
             RecyclerView.ViewHolder vh =
                     adapter.createViewHolder(
                             recyclerView,
@@ -131,23 +143,31 @@ public class SearchFragment extends Fragment {
         super.onResume();
 
         recomputeTopSongs();
+        String currentQuery = "";
 
-        if (searchView != null) {
-            filter(searchView.getQuery() != null
-                    ? searchView.getQuery().toString()
-                    : "");
+        if (searchView != null && searchView.getQuery() != null) {
+            currentQuery = searchView.getQuery().toString();
+        }
+
+        if (!currentQuery.isEmpty()) {
+            lastSearch = currentQuery;
+            filter(currentQuery);
         } else {
-            filter("");
+            showTopState();
+            filteredSongs.clear();
+            filteredSongs.addAll(topSongs);
+            adapter.notifyDataSetChanged();
         }
     }
     private String norm(String s) {
         if (s == null) return "";
+
         String n = Normalizer.normalize(s, Normalizer.Form.NFD);
         n = n.replaceAll("\\p{InCombiningDiacriticalMarks}+", "");
+
         return n.toLowerCase(Locale.ROOT).trim();
     }
     private void recomputeTopSongs() {
-
         ArrayList<Song> copy = new ArrayList<>(allSongs);
 
         Collections.sort(copy, (a, b) -> {
@@ -163,16 +183,27 @@ public class SearchFragment extends Fragment {
         }
     }
     private void filter(String text) {
+
+        if (!text.isEmpty()) {
+            lastSearch = text;
+        }
+
         String q = norm(text);
+
         filteredSongs.clear();
 
         if (TextUtils.isEmpty(q)) {
             showTopState();
             filteredSongs.addAll(topSongs);
-        } else {
+            recyclerView.setVisibility(View.VISIBLE);
 
-            tvSectionTitle.setText("Results");
+        } else {
+            tvSectionSubtitle.setText("Matching songs, artists or albums");
+            tvSectionSubtitle.setVisibility(View.VISIBLE);
+            tvRecentSearchTitle.setVisibility(View.GONE);
+            tvRecentSearches.setVisibility(View.GONE);
             tvEmpty.setVisibility(View.GONE);
+            recyclerView.setVisibility(View.VISIBLE);
 
             for (Song s : allSongs) {
 
@@ -187,16 +218,35 @@ public class SearchFragment extends Fragment {
                 }
             }
 
+            tvSectionTitle.setText("Results (" + filteredSongs.size() + ")");
+
             if (filteredSongs.isEmpty()) {
-                tvEmpty.setText("Nothing found.");
+                tvEmpty.setText("No songs found\n\nTry another title, artist or album");
                 tvEmpty.setVisibility(View.VISIBLE);
+                tvSectionSubtitle.setVisibility(View.GONE);
+                recyclerView.setVisibility(View.GONE);
             }
         }
+        adapter.setHighlightQuery(q);
         adapter.notifyDataSetChanged();
+        recyclerView.setAlpha(0f);
+        recyclerView.animate().alpha(1f).setDuration(180).start();
     }
     private void showTopState() {
         tvSectionTitle.setText("Top songs");
         tvEmpty.setVisibility(View.GONE);
+        recyclerView.setVisibility(View.VISIBLE);
+        tvSectionSubtitle.setText("Your most listened tracks");
+        tvSectionSubtitle.setVisibility(View.VISIBLE);
+
+        if (!lastSearch.isEmpty()) {
+            tvRecentSearchTitle.setVisibility(View.VISIBLE);
+            tvRecentSearches.setText("🔍 " + lastSearch);
+            tvRecentSearches.setVisibility(View.VISIBLE);
+        } else {
+            tvRecentSearchTitle.setVisibility(View.GONE);
+            tvRecentSearches.setVisibility(View.GONE);
+        }
     }
     private void showAddToPlaylistDialog(Song song) {
 
@@ -238,7 +288,6 @@ public class SearchFragment extends Fragment {
 
                     showSnack(requireView(),
                             "Added to playlist: " + selected.getName());
-
                     dialog.dismiss();
                 });
         rv.setAdapter(pickAdapter);
@@ -252,6 +301,7 @@ public class SearchFragment extends Fragment {
         sb.setAnimationMode(Snackbar.ANIMATION_MODE_SLIDE);
 
         View snackView = sb.getView();
+
         snackView.setBackground(
                 ContextCompat.getDrawable(requireContext(), R.drawable.bg_snackbar)
         );

@@ -1,5 +1,8 @@
 package sk.ukf.wavvy.adapter;
 
+import android.text.SpannableString;
+import android.text.Spanned;
+import android.text.style.ForegroundColorSpan;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -23,6 +26,7 @@ public class SongAdapter extends RecyclerView.Adapter<SongAdapter.SongViewHolder
     private final List<Song> songs;
     private final OnSongClickListener clickListener;
     private final OnSongLongClickListener longClickListener;
+    private String highlightQuery = "";
     public SongAdapter(List<Song> songs,
                        OnSongClickListener clickListener,
                        OnSongLongClickListener longClickListener) {
@@ -30,28 +34,99 @@ public class SongAdapter extends RecyclerView.Adapter<SongAdapter.SongViewHolder
         this.clickListener = clickListener;
         this.longClickListener = longClickListener;
     }
+    public void setHighlightQuery(String query) {
+        this.highlightQuery = query != null ? query.toLowerCase() : "";
+    }
 
     @NonNull
     @Override
     public SongViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
         View view = LayoutInflater.from(parent.getContext())
                 .inflate(R.layout.item_song, parent, false);
+
         return new SongViewHolder(view);
     }
 
     @Override
     public void onBindViewHolder(@NonNull SongViewHolder holder, int position) {
         Song song = songs.get(position);
+        String title = song.getTitle();
 
-        holder.tvTitle.setText(song.getTitle());
-        holder.tvArtist.setText(song.getArtist());
+        if (!highlightQuery.isEmpty()) {
+            String lowerTitle = title.toLowerCase();
+            int start = lowerTitle.indexOf(highlightQuery);
+
+            if (start >= 0) {
+                SpannableString spannable = new SpannableString(title);
+
+                spannable.setSpan(
+                        new ForegroundColorSpan(
+                                ContextCompat.getColor(holder.itemView.getContext(), R.color.accent)
+                        ),
+                        start,
+                        start + highlightQuery.length(),
+                        Spanned.SPAN_EXCLUSIVE_EXCLUSIVE
+                );
+                holder.tvTitle.setText(spannable);
+            } else {
+                holder.tvTitle.setText(title);
+            }
+        } else {
+            holder.tvTitle.setText(title);
+        }
+        String artist = song.getArtist();
+
+        if (!highlightQuery.isEmpty()) {
+            String lowerArtist = artist.toLowerCase();
+            int start = lowerArtist.indexOf(highlightQuery);
+
+            if (start >= 0) {
+                SpannableString spannable = new SpannableString(artist);
+
+                spannable.setSpan(
+                        new ForegroundColorSpan(
+                                ContextCompat.getColor(holder.itemView.getContext(), R.color.accent)
+                        ),
+                        start,
+                        start + highlightQuery.length(),
+                        Spanned.SPAN_EXCLUSIVE_EXCLUSIVE
+                );
+                holder.tvArtist.setText(spannable);
+            } else {
+                holder.tvArtist.setText(artist);
+            }
+        } else {
+            holder.tvArtist.setText(artist);
+        }
         holder.ivCover.setImageResource(song.getCoverResId());
 
         String album = song.getAlbum();
+
         if (album == null || album.trim().isEmpty()) {
             holder.tvAlbum.setVisibility(View.GONE);
         } else {
-            holder.tvAlbum.setText(album);
+            if (!highlightQuery.isEmpty()) {
+                String lowerAlbum = album.toLowerCase();
+                int start = lowerAlbum.indexOf(highlightQuery);
+
+                if (start >= 0) {
+                    SpannableString spannable = new SpannableString(album);
+
+                    spannable.setSpan(
+                            new ForegroundColorSpan(
+                                    ContextCompat.getColor(holder.itemView.getContext(), R.color.accent)
+                            ),
+                            start,
+                            start + highlightQuery.length(),
+                            Spanned.SPAN_EXCLUSIVE_EXCLUSIVE
+                    );
+                    holder.tvAlbum.setText(spannable);
+                } else {
+                    holder.tvAlbum.setText(album);
+                }
+            } else {
+                holder.tvAlbum.setText(album);
+            }
             holder.tvAlbum.setVisibility(View.VISIBLE);
         }
 
@@ -60,30 +135,45 @@ public class SongAdapter extends RecyclerView.Adapter<SongAdapter.SongViewHolder
                 .getCurrentAudioResId();
 
         holder.itemView.setBackground(
-                ContextCompat.getDrawable(holder.itemView.getContext(), R.drawable.bg_card_selector)
+                ContextCompat.getDrawable(
+                        holder.itemView.getContext(),
+                        R.drawable.bg_card_selector
+                )
         );
 
         if (song.getAudioResId() == currentId) {
+
             holder.tvTitle.setTextColor(
-                    ContextCompat.getColor(holder.itemView.getContext(), R.color.accent)
+                    ContextCompat.getColor(
+                            holder.itemView.getContext(),
+                            R.color.accent
+                    )
             );
 
             holder.itemView.setForeground(
-                    ContextCompat.getDrawable(holder.itemView.getContext(), R.drawable.bg_item_playing_overlay)
+                    ContextCompat.getDrawable(
+                            holder.itemView.getContext(),
+                            R.drawable.bg_item_playing_overlay
+                    )
             );
-
             holder.viewNowPlayingStripe.setVisibility(View.VISIBLE);
-        } else {
-            holder.tvTitle.setTextColor(
-                    ContextCompat.getColor(holder.itemView.getContext(), R.color.textPrimary)
-            );
 
+        } else {
+
+            holder.tvTitle.setTextColor(
+                    ContextCompat.getColor(
+                            holder.itemView.getContext(),
+                            R.color.textPrimary
+                    )
+            );
             holder.itemView.setForeground(null);
             holder.viewNowPlayingStripe.setVisibility(View.GONE);
         }
 
         holder.itemView.setOnClickListener(v -> {
-            if (clickListener != null) clickListener.onSongClick(song);
+            if (clickListener != null) {
+                clickListener.onSongClick(song);
+            }
         });
 
         holder.itemView.setOnLongClickListener(v -> {
