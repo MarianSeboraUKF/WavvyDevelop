@@ -15,12 +15,13 @@ public class SongRepository {
         cached.add(new Song("DO OČÍ", "RAYYY P, Majkyyy", "kto.som.?", R.drawable.kto_som_cover, R.raw.do_oci));
         cached.add(new Song("DIG ON(A)", "Frayer Flexking, Separ", "DIG ON(A)", R.drawable.dig_ona_cover, R.raw.dig_ona));
         cached.add(new Song("Streets", "guapanova, Luca Brassi10x", "Deluzia", R.drawable.deluzia_cover, R.raw.streets));
-        cached.add(new Song("Parabola", "Slatt Chawo, Erik Tresor", "Glitch ve systému", R.drawable.glitch_ve_systemu_cover, R.raw.parabola));
+        cached.add(new Song("Parabola", "Chawo, Erik Tresor", "Glitch ve systému", R.drawable.glitch_ve_systemu_cover, R.raw.parabola));
         cached.add(new Song("E85", "Don Toliver", "OCTANE", R.drawable.octane_cover, R.raw.e85));
         cached.add(new Song("23", "Raphael", "23", R.drawable.raphael_23_cover, R.raw.raphael_23));
         cached.add(new Song("BODY ON BODY", "Danisen", "ANJELI A DEMONI", R.drawable.anjeli_a_demoni_cover, R.raw.body_on_body));
         cached.add(new Song("BBL", "P T K", "KARAKORAM", R.drawable.karakoram_cover, R.raw.bbl));
         cached.add(new Song("Tempo za 2", "Sara Rikas, Raphael", "Ja, Sára", R.drawable.ja_sara_cover, R.raw.tempo_za_2));
+        cached.add(new Song("Nebylo souzený", "Robin Zoot, Chawo", "Majitel", R.drawable.majitel_cover, R.raw.nebylo_souzeny));
 
         return cached;
     }

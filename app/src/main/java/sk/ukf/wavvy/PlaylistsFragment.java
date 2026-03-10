@@ -43,11 +43,9 @@ public class PlaylistsFragment extends Fragment {
                     intent.putExtra(PlaylistDetailActivity.EXTRA_PLAYLIST_NAME, playlist.getName());
                     startActivity(intent);
                 },
-                this::showDeletePlaylistDialog
+                (playlist, anchor) -> showPopupMenu(playlist, anchor)
         );
-
         rv.setAdapter(adapter);
-
         View btnCreate = view.findViewById(R.id.btnCreatePlaylist);
         btnCreate.setOnClickListener(v -> showCreateDialog());
 
@@ -114,5 +112,72 @@ public class PlaylistsFragment extends Fragment {
             reload();
         });
         btnCancel.setOnClickListener(x -> dialog.dismiss());
+    }
+    private void showRenameDialog(Playlist playlist) {
+        View card = LayoutInflater.from(requireContext())
+                .inflate(R.layout.dialog_rename_playlist, null);
+
+        EditText etName = card.findViewById(R.id.etName);
+        View btnRename = card.findViewById(R.id.btnRename);
+        View btnCancel = card.findViewById(R.id.btnCancel);
+
+        etName.setText(playlist.getName());
+
+        android.app.Dialog dialog =
+                WavvyDialogs.showCenteredCardDialog(requireContext(), requireActivity(), card);
+
+        btnRename.setOnClickListener(x -> {
+            String newName = etName.getText().toString().trim();
+
+            if (!newName.isEmpty()) {
+                PlaylistRepository.renamePlaylist(requireContext(), playlist.getId(), newName);
+                dialog.dismiss();
+                reload();
+            }
+        });
+        btnCancel.setOnClickListener(x -> dialog.dismiss());
+    }
+    private void showPopupMenu(Playlist playlist, View anchor) {
+        View card = LayoutInflater.from(requireContext())
+                .inflate(R.layout.dialog_playlist_menu, null);
+
+        View btnRename = card.findViewById(R.id.btnRename);
+        View btnDelete = card.findViewById(R.id.btnDelete);
+        View btnInfo = card.findViewById(R.id.btnInfo);
+
+        android.app.Dialog dialog =
+                WavvyDialogs.showCenteredCardDialog(requireContext(), requireActivity(), card);
+
+        btnRename.setOnClickListener(v -> {
+            dialog.dismiss();
+            showRenameDialog(playlist);
+        });
+
+        btnDelete.setOnClickListener(v -> {
+            dialog.dismiss();
+            showDeletePlaylistDialog(playlist);
+        });
+
+        btnInfo.setOnClickListener(v -> {
+            dialog.dismiss();
+            showPlaylistInfoDialog(playlist);
+        });
+    }
+    private void showPlaylistInfoDialog(Playlist playlist) {
+        View card = LayoutInflater.from(requireContext())
+                .inflate(R.layout.dialog_playlist_info, null);
+
+        TextView tvInfo = card.findViewById(R.id.tvInfoContent);
+
+        int count = playlist.getSongAudioResIds().size();
+
+        String info =
+                "Name: " + playlist.getName() +
+                        "\n\nTracks: " + count +
+                        "\n\nCreated: available locally" +
+                        "\n\nUpdated: last saved locally";
+
+        tvInfo.setText(info);
+        WavvyDialogs.showCenteredCardDialog(requireContext(), requireActivity(), card);
     }
 }

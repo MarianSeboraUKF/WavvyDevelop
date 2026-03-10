@@ -76,4 +76,23 @@ public class PlaylistRepository {
         }
         savePlaylists(ctx, playlists);
     }
+    public static void renamePlaylist(Context ctx, String playlistId, String newName) {
+        ArrayList<Playlist> playlists = getPlaylists(ctx);
+
+        for (Playlist p : playlists) {
+            if (p.getId().equals(playlistId)) {
+                playlists.remove(p);
+                Playlist updated = new Playlist(playlistId, newName);
+
+                for (Integer id : p.getSongAudioResIds()) {
+                    updated.addSong(id);
+                }
+
+                playlists.add(updated);
+                break;
+            }
+        }
+
+        savePlaylists(ctx, playlists);
+    }
 }

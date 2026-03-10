@@ -31,12 +31,19 @@ public class WavvyDialogs {
                 FrameLayout.LayoutParams.WRAP_CONTENT
         );
         lp.gravity = Gravity.CENTER;
+
         host.addView(cardView, lp);
 
         Dialog dialog = new Dialog(ctx, R.style.WavvyFullscreenDialog);
+
+        host.setOnClickListener(v -> dialog.dismiss());
+
+        cardView.setOnClickListener(v -> {
+        });
+
         dialog.setContentView(host);
         dialog.setCancelable(true);
-
+        dialog.setCanceledOnTouchOutside(true);
         dialog.show();
 
         Window w = dialog.getWindow();
