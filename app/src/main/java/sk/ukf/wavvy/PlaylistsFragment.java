@@ -10,7 +10,7 @@ import android.widget.TextView;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.fragment.app.Fragment;
-import androidx.recyclerview.widget.LinearLayoutManager;
+import androidx.recyclerview.widget.GridLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 import java.util.ArrayList;
 import sk.ukf.wavvy.adapter.PlaylistAdapter;
@@ -31,7 +31,11 @@ public class PlaylistsFragment extends Fragment {
         View view = inflater.inflate(R.layout.fragment_playlists, container, false);
 
         RecyclerView rv = view.findViewById(R.id.rvPlaylists);
-        rv.setLayoutManager(new LinearLayoutManager(requireContext()));
+
+        GridLayoutManager gridLayoutManager = new GridLayoutManager(requireContext(), 2);
+        rv.setLayoutManager(gridLayoutManager);
+        rv.setNestedScrollingEnabled(false);
+        rv.setHasFixedSize(false);
 
         playlists = PlaylistRepository.getPlaylists(requireContext());
 
@@ -83,15 +87,6 @@ public class PlaylistsFragment extends Fragment {
         });
 
         btnCancel.setOnClickListener(x -> dialog.dismiss());
-
-        etName.requestFocus();
-        etName.postDelayed(() -> {
-            android.view.inputmethod.InputMethodManager imm =
-                    (android.view.inputmethod.InputMethodManager) requireContext()
-                            .getSystemService(android.content.Context.INPUT_METHOD_SERVICE);
-            if (imm != null) imm.showSoftInput(etName,
-                    android.view.inputmethod.InputMethodManager.SHOW_IMPLICIT);
-        }, 120);
     }
     private void showDeletePlaylistDialog(Playlist playlist) {
         View card = LayoutInflater.from(requireContext())

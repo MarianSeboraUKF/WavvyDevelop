@@ -4,12 +4,15 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ImageButton;
+import android.widget.ImageView;
 import android.widget.TextView;
 import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
 import java.util.List;
 import sk.ukf.wavvy.R;
+import sk.ukf.wavvy.SongRepository;
 import sk.ukf.wavvy.model.Playlist;
+import sk.ukf.wavvy.model.Song;
 
 public class PlaylistAdapter extends RecyclerView.Adapter<PlaylistAdapter.PlaylistVH> {
     public interface OnPlaylistClickListener {
@@ -44,6 +47,19 @@ public class PlaylistAdapter extends RecyclerView.Adapter<PlaylistAdapter.Playli
         holder.tvName.setText(p.getName());
         holder.tvCount.setText(p.getSongAudioResIds().size() + " songs");
 
+        if (!p.getSongAudioResIds().isEmpty()) {
+            Song firstSong = SongRepository.findByAudioResId(
+                    p.getSongAudioResIds().get(0)
+            );
+            if (firstSong != null) {
+                holder.ivCover.setImageResource(firstSong.getCoverResId());
+            } else {
+                holder.ivCover.setImageResource(R.drawable.default_cover);
+            }
+        } else {
+            holder.ivCover.setImageResource(R.drawable.default_cover);
+        }
+
         holder.itemView.setOnClickListener(v -> {
             if (clickListener != null) clickListener.onPlaylistClick(p);
         });
@@ -60,12 +76,14 @@ public class PlaylistAdapter extends RecyclerView.Adapter<PlaylistAdapter.Playli
     static class PlaylistVH extends RecyclerView.ViewHolder {
         TextView tvName, tvCount;
         ImageButton btnMore;
+        ImageView ivCover;
         public PlaylistVH(@NonNull View itemView) {
             super(itemView);
 
             tvName = itemView.findViewById(R.id.tvPlaylistName);
             tvCount = itemView.findViewById(R.id.tvPlaylistCount);
             btnMore = itemView.findViewById(R.id.btnMore);
+            ivCover = itemView.findViewById(R.id.ivPlaylistCover);
         }
     }
 }

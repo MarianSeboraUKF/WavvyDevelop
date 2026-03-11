@@ -15,19 +15,14 @@ public class PlayerLauncher {
 
         for (int i = 0; i < songs.size(); i++) {
             ids[i] = songs.get(i).getAudioResId();
+
             if (songs.get(i).getAudioResId() == clicked.getAudioResId()) {
                 index = i;
             }
         }
 
-        Intent intent = new Intent(ctx, PlayerActivity.class);
-
-        intent.putExtra(PlayerActivity.EXTRA_QUEUE_AUDIO_IDS, ids);
-        intent.putExtra(PlayerActivity.EXTRA_QUEUE_INDEX, index);
-        intent.putExtra(PlayerActivity.EXTRA_AUTOPLAY, true);
-        intent.putExtra(PlayerActivity.EXTRA_OPEN_EXISTING, false);
-
-        ctx.startActivity(intent);
+        PlaybackManager pm = PlaybackManager.get(ctx);
+        pm.playQueue(ids, index, true);
     }
     public static void openExisting(Context ctx) {
         Intent intent = new Intent(ctx, PlayerActivity.class);
