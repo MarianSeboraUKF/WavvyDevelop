@@ -1,0 +1,113 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:id="@+id/albumRoot"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:background="@color/bg">
+
+    <ImageButton
+        android:id="@+id/btnBack"
+        android:layout_width="48dp"
+        android:layout_height="48dp"
+        android:background="@android:color/transparent"
+        android:src="@drawable/ic_back"
+        android:layout_margin="12dp"/>
+
+    <TextView
+        android:id="@+id/tvAlbumHeader"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Album"
+        android:textColor="@color/textPrimary"
+        android:textSize="30sp"
+        android:textStyle="bold"
+        android:gravity="center"
+        android:layout_marginTop="-48dp"/>
+
+    <androidx.core.widget.NestedScrollView
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1"
+        android:fillViewport="true">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:paddingBottom="0dp">
+
+            <com.google.android.material.imageview.ShapeableImageView
+                android:id="@+id/ivAlbumCover"
+                android:layout_width="300dp"
+                android:layout_height="300dp"
+                android:layout_marginTop="20dp"
+                android:layout_gravity="center_horizontal"
+                android:scaleType="centerCrop"
+                app:shapeAppearanceOverlay="@style/RoundedAlbumDetailCover"/>
+
+            <TextView
+                android:id="@+id/tvAlbumTitle"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:textColor="@color/textPrimary"
+                android:textAlignment="center"
+                android:gravity="center"
+                android:textSize="26sp"
+                android:textStyle="bold"
+                android:layout_marginTop="16dp"/>
+
+            <TextView
+                android:id="@+id/tvAlbumArtist"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:textColor="@color/textSecondary"
+                android:gravity="center"
+                android:textAlignment="center"
+                android:textSize="16sp"
+                android:layout_marginTop="4dp"/>
+
+            <TextView
+                android:id="@+id/tvAlbumMeta"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:textColor="@color/textSecondary"
+                android:textStyle="bold"
+                android:layout_marginTop="20dp"
+                android:layout_marginStart="20dp"/>
+
+            <TextView
+                android:id="@+id/btnPlayAlbum"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="▶ Play album"
+                android:textColor="@color/accent"
+                android:textStyle="bold"
+                android:textSize="17sp"
+                android:layout_marginTop="20dp"
+                android:layout_marginBottom="20dp"
+                android:layout_marginStart="20dp"/>
+
+            <TextView
+                android:id="@+id/btnShuffleAlbum"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Shuffle album"
+                android:textColor="@color/accent"
+                android:textStyle="bold"
+                android:textSize="17sp"
+                android:layout_marginTop="-46dp"
+                android:layout_marginBottom="20dp"
+                android:layout_marginStart="285dp"/>
+
+            <androidx.recyclerview.widget.RecyclerView
+                android:id="@+id/rvAlbumSongs"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:nestedScrollingEnabled="false"/>
+
+        </LinearLayout>
+    </androidx.core.widget.NestedScrollView>
+    <include layout="@layout/view_mini_player"/>
+</LinearLayout>

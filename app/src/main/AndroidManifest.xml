@@ -11,6 +11,7 @@
         android:supportsRtl="true"
         android:theme="@style/Theme.Wavvy">
         <activity android:name=".PlaylistDetailActivity" />
+        <activity android:name=".AlbumDetailActivity" />
         <activity
             android:name=".PlayerActivity"
             android:exported="false"

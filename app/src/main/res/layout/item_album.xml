@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="120dp"
+    android:layout_height="wrap_content"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:orientation="vertical"
+    android:layout_marginEnd="12dp">
+
+    <com.google.android.material.imageview.ShapeableImageView
+        android:id="@+id/ivAlbumCover"
+        android:layout_width="120dp"
+        android:layout_height="120dp"
+        android:scaleType="centerCrop"
+        app:shapeAppearanceOverlay="@style/RoundedAlbumCover"/>
+
+    <TextView
+        android:id="@+id/tvAlbumTitle"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:textColor="@color/textPrimary"
+        android:textStyle="bold"
+        android:layout_marginTop="6dp"/>
+
+    <TextView
+        android:id="@+id/tvAlbumArtist"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:textColor="@color/textSecondary"
+        android:textSize="12sp"/>
+</LinearLayout>

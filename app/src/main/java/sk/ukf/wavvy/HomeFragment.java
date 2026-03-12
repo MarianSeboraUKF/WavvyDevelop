@@ -21,6 +21,9 @@ import sk.ukf.wavvy.adapter.SongAdapter;
 import sk.ukf.wavvy.adapter.SmallSongAdapter;
 import sk.ukf.wavvy.model.Playlist;
 import sk.ukf.wavvy.model.Song;
+import android.content.Intent;
+import sk.ukf.wavvy.adapter.AlbumAdapter;
+import sk.ukf.wavvy.model.Album;
 
 public class HomeFragment extends Fragment implements PlaybackManager.Listener {
     private SongAdapter adapter;
@@ -122,6 +125,22 @@ public class HomeFragment extends Fragment implements PlaybackManager.Listener {
         rvSongs.setItemAnimator(
                 new androidx.recyclerview.widget.DefaultItemAnimator()
         );
+
+        RecyclerView rvAlbums = view.findViewById(R.id.rvAlbums);
+
+        rvAlbums.setLayoutManager(
+                new LinearLayoutManager(requireContext(), LinearLayoutManager.HORIZONTAL, false)
+        );
+
+        ArrayList<Album> albums = AlbumRepository.getAlbums();
+
+        AlbumAdapter albumAdapter = new AlbumAdapter(albums, album -> {
+            Intent i = new Intent(requireContext(), AlbumDetailActivity.class);
+            i.putExtra("album_title", album.getTitle());
+            startActivity(i);
+        });
+
+        rvAlbums.setAdapter(albumAdapter);
 
         for (Song s : allSongs) {
             GradientPreloader.preload(requireContext(), s.getCoverResId());

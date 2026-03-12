@@ -27,6 +27,7 @@ public class SongAdapter extends RecyclerView.Adapter<SongAdapter.SongViewHolder
     private final OnSongClickListener clickListener;
     private final OnSongLongClickListener longClickListener;
     private String highlightQuery = "";
+    private boolean showTrackNumbers = false;
     public SongAdapter(List<Song> songs,
                        OnSongClickListener clickListener,
                        OnSongLongClickListener longClickListener) {
@@ -50,7 +51,13 @@ public class SongAdapter extends RecyclerView.Adapter<SongAdapter.SongViewHolder
     @Override
     public void onBindViewHolder(@NonNull SongViewHolder holder, int position) {
         Song song = songs.get(position);
-        String title = song.getTitle();
+        String title;
+
+        if (showTrackNumbers) {
+            title = song.getTrackNumber() + "  " + song.getTitle();
+        } else {
+            title = song.getTitle();
+        }
 
         if (!highlightQuery.isEmpty()) {
             String lowerTitle = title.toLowerCase();
