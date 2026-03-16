@@ -50,4 +50,8 @@
         <item name="cornerFamily">rounded</item>
         <item name="cornerSize">22dp</item>
     </style>
+
+    <style name="PopupMenuStyle" parent="Widget.AppCompat.PopupMenu">
+        <item name="android:popupBackground">@drawable/bg_popup_menu</item>
+    </style>
 </resources>

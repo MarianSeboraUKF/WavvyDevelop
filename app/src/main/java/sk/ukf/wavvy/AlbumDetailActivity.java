@@ -4,7 +4,6 @@ import java.util.Collections;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.drawable.GradientDrawable;
-import android.media.MediaMetadataRetriever;
 import android.os.Bundle;
 import android.view.View;
 import android.widget.ImageButton;
@@ -116,7 +115,7 @@ public class AlbumDetailActivity extends AppCompatActivity implements PlaybackMa
 
         long totalMs = 0;
         for (Song s : songsInAlbum) {
-            totalMs += getDurationMsFromRaw(s.getAudioResId());
+            totalMs += s.getDurationMs();
         }
 
         String songLabel;
@@ -221,40 +220,8 @@ public class AlbumDetailActivity extends AppCompatActivity implements PlaybackMa
                             ContextCompat.getColor(this, R.color.bg)
                     }
             );
-
             root.setBackground(gd);
         });
-    }
-    private long getDurationMsFromRaw(int rawResId) {
-        MediaMetadataRetriever mmr = new MediaMetadataRetriever();
-
-        try {
-            android.content.res.AssetFileDescriptor afd =
-                    getResources().openRawResourceFd(rawResId);
-
-            if (afd == null) return 0;
-
-            mmr.setDataSource(
-                    afd.getFileDescriptor(),
-                    afd.getStartOffset(),
-                    afd.getLength()
-            );
-
-            String dur =
-                    mmr.extractMetadata(MediaMetadataRetriever.METADATA_KEY_DURATION);
-
-            afd.close();
-
-            if (dur == null) return 0;
-            return Long.parseLong(dur);
-
-        } catch (Exception e) {
-            return 0;
-        } finally {
-            try {
-                mmr.release();
-            } catch (Exception ignored) {}
-        }
     }
     private String formatDuration(long ms) {
         long totalSeconds = ms / 1000;

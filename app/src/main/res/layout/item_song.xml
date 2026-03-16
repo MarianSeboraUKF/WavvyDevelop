@@ -56,7 +56,7 @@
         android:ellipsize="end"
         app:layout_constraintStart_toEndOf="@id/cardItemCover"
         app:layout_constraintTop_toTopOf="@id/cardItemCover"
-        app:layout_constraintEnd_toEndOf="parent"/>
+        app:layout_constraintEnd_toStartOf="@id/btnSongMenu"/>
 
     <TextView
         android:id="@+id/tvItemArtist"
@@ -70,7 +70,7 @@
         android:ellipsize="end"
         app:layout_constraintStart_toEndOf="@id/cardItemCover"
         app:layout_constraintTop_toBottomOf="@id/tvItemTitle"
-        app:layout_constraintEnd_toEndOf="parent"/>
+        app:layout_constraintEnd_toStartOf="@id/btnSongMenu"/>
 
     <TextView
         android:id="@+id/tvItemAlbum"
@@ -85,6 +85,18 @@
         android:ellipsize="end"
         app:layout_constraintStart_toEndOf="@id/cardItemCover"
         app:layout_constraintTop_toBottomOf="@id/tvItemArtist"
-        app:layout_constraintEnd_toEndOf="parent"/>
+        app:layout_constraintEnd_toStartOf="@id/btnSongMenu"/>
 
+    <ImageButton
+        android:id="@+id/btnSongMenu"
+        android:layout_width="44dp"
+        android:layout_height="44dp"
+        android:layout_marginEnd="4dp"
+        android:background="@android:color/transparent"
+        android:src="@drawable/ic_more"
+        android:tint="@color/accent"
+        android:padding="10dp"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintBottom_toBottomOf="parent"/>
 </androidx.constraintlayout.widget.ConstraintLayout>

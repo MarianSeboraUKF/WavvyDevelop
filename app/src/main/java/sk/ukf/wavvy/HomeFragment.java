@@ -6,20 +6,15 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ImageView;
 import android.widget.TextView;
-import android.widget.Toast;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
-import androidx.core.content.ContextCompat;
 import androidx.fragment.app.Fragment;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
-import com.google.android.material.snackbar.Snackbar;
 import java.util.ArrayList;
 import java.util.Calendar;
-import sk.ukf.wavvy.adapter.PickPlaylistAdapter;
 import sk.ukf.wavvy.adapter.SongAdapter;
 import sk.ukf.wavvy.adapter.SmallSongAdapter;
-import sk.ukf.wavvy.model.Playlist;
 import sk.ukf.wavvy.model.Song;
 import android.content.Intent;
 import sk.ukf.wavvy.adapter.AlbumAdapter;
@@ -105,6 +100,7 @@ public class HomeFragment extends Fragment implements PlaybackManager.Listener {
         rvRecent.setAdapter(recentAdapter);
 
         ArrayList<Song> allSongs = SongRepository.getSongs();
+        SongRepository.preloadDurations(requireContext());
 
         mostPlayed = SongRepository.getMostPlayedSongs(requireContext());
 
@@ -116,7 +112,7 @@ public class HomeFragment extends Fragment implements PlaybackManager.Listener {
         adapter = new SongAdapter(
                 allSongs,
                 song -> PlayerLauncher.openQueue(requireContext(), allSongs, song),
-                this::showAddToPlaylistDialog
+                null
         );
 
         rvMostPlayed.setAdapter(mostPlayedAdapter);
@@ -166,50 +162,6 @@ public class HomeFragment extends Fragment implements PlaybackManager.Listener {
         ivContinueCover.setImageResource(s.getCoverResId());
         tvContinueTitle.setText(s.getTitle());
         tvContinueArtist.setText(s.getArtist());
-    }
-    private void showAddToPlaylistDialog(Song song) {
-        ArrayList<Playlist> playlists = PlaylistRepository.getPlaylists(requireContext());
-
-        if (playlists.isEmpty()) {
-            Toast.makeText(requireContext(), "You have to create playlist first", Toast.LENGTH_SHORT).show();
-            return;
-        }
-
-        View card = LayoutInflater.from(requireContext())
-                .inflate(R.layout.dialog_pick_playlist, null);
-
-        RecyclerView rv = card.findViewById(R.id.rvPickPlaylists);
-        View btnCancel = card.findViewById(R.id.btnCancel);
-
-        rv.setLayoutManager(new LinearLayoutManager(requireContext()));
-
-        android.app.Dialog dialog =
-                WavvyDialogs.showCenteredCardDialog(requireContext(), requireActivity(), card);
-
-        PickPlaylistAdapter pickAdapter = new PickPlaylistAdapter(playlists, selected -> {
-            PlaylistRepository.addSongToPlaylist(requireContext(), selected.getId(), song.getAudioResId());
-            showSnack(requireView(), "Added to playlist: " + selected.getName());
-            dialog.dismiss();
-        });
-        rv.setAdapter(pickAdapter);
-        btnCancel.setOnClickListener(x -> dialog.dismiss());
-    }
-    private void showSnack(View anchorView, String text) {
-        Snackbar sb = Snackbar.make(anchorView, text, Snackbar.LENGTH_SHORT);
-
-        sb.setBackgroundTint(ContextCompat.getColor(requireContext(), R.color.surface));
-        sb.setTextColor(ContextCompat.getColor(requireContext(), R.color.textPrimary));
-        sb.setAnimationMode(Snackbar.ANIMATION_MODE_SLIDE);
-
-        View snackView = sb.getView();
-        snackView.setBackground(ContextCompat.getDrawable(requireContext(), R.drawable.bg_snackbar));
-
-        TextView tv = snackView.findViewById(com.google.android.material.R.id.snackbar_text);
-        if (tv != null) {
-            tv.setTextColor(ContextCompat.getColor(requireContext(), R.color.textPrimary));
-            tv.setMaxLines(2);
-        }
-        sb.show();
     }
 
     @Override

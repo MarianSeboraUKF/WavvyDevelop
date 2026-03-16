@@ -38,6 +38,7 @@ public class PlayerActivity extends AppCompatActivity implements PlaybackManager
     private boolean isUserSeeking = false;
     private float startY;
     private static final int SWIPE_THRESHOLD = 180;
+    private TextView tvBottomLabel, tvBottomTrack;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -110,6 +111,8 @@ public class PlayerActivity extends AppCompatActivity implements PlaybackManager
         seekBar = findViewById(R.id.seekBar);
         tvCurrentTime = findViewById(R.id.tvCurrentTime);
         tvTotalTime = findViewById(R.id.tvTotalTime);
+        tvBottomLabel = findViewById(R.id.tvBottomLabel);
+        tvBottomTrack = findViewById(R.id.tvBottomTrack);
 
         btnBack.setOnClickListener(v -> finish());
 
@@ -222,6 +225,27 @@ public class PlayerActivity extends AppCompatActivity implements PlaybackManager
 
         seekBar.setProgress((int) positionMs);
         tvCurrentTime.setText(formatTime(positionMs));
+
+        long remaining = durationMs - positionMs;
+
+        if (remaining <= 10000) {
+            int[] q = pm.getQueueIds();
+            int idx = pm.getQueueIndex();
+
+            if (q != null && idx < q.length - 1) {
+                Song nextSong = SongRepository.findByAudioResId(q[idx + 1]);
+
+                if (nextSong != null) {
+                    animateBottomText("Next up", nextSong.getTitle());
+                }
+            }
+        } else {
+            Song current = SongRepository.findByAudioResId(pm.getCurrentAudioResId());
+
+            if (current != null) {
+                animateBottomText("Now playing", current.getTitle());
+            }
+        }
     }
     private void updateNowPlayingUiFromRepo() {
         int audioResId = NowPlayingRepository.getAudioResId(this);
@@ -230,6 +254,8 @@ public class PlayerActivity extends AppCompatActivity implements PlaybackManager
         if (s != null) {
             tvSongTitle.setText(s.getTitle());
             tvSongArtist.setText(s.getArtist());
+            tvBottomLabel.setText("Now playing");
+            tvBottomTrack.setText(s.getTitle());
 
             String album = s.getAlbum();
 
@@ -239,7 +265,6 @@ public class PlayerActivity extends AppCompatActivity implements PlaybackManager
             } else {
                 tvSongAlbum.setVisibility(View.GONE);
             }
-
             ivCover.setImageResource(s.getCoverResId());
             applyDynamicGradient(s.getCoverResId());
         }
@@ -346,5 +371,31 @@ public class PlayerActivity extends AppCompatActivity implements PlaybackManager
         long seconds = totalSeconds % 60;
 
         return String.format("%02d:%02d", minutes, seconds);
+    }
+    private void animateBottomText(String label, String track) {
+        String currentLabel = tvBottomLabel.getText().toString();
+        String currentTrack = tvBottomTrack.getText().toString();
+
+        if (currentLabel.equals(label) && currentTrack.equals(track)) {
+            return;
+        }
+
+        tvBottomLabel.animate()
+                .alpha(0f)
+                .setDuration(180)
+                .withEndAction(() -> {
+                    tvBottomLabel.setText(label);
+                    tvBottomLabel.animate().alpha(1f).setDuration(180).start();
+                })
+                .start();
+
+        tvBottomTrack.animate()
+                .alpha(0f)
+                .setDuration(180)
+                .withEndAction(() -> {
+                    tvBottomTrack.setText(track);
+                    tvBottomTrack.animate().alpha(1f).setDuration(180).start();
+                })
+                .start();
     }
 }

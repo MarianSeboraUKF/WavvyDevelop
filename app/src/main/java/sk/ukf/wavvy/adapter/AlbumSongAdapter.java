@@ -1,6 +1,5 @@
 package sk.ukf.wavvy.adapter;
 
-import android.media.MediaMetadataRetriever;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -35,6 +34,7 @@ public class AlbumSongAdapter extends RecyclerView.Adapter<AlbumSongAdapter.View
     @Override
     public void onBindViewHolder(@NonNull ViewHolder holder, int position) {
         Song song = songs.get(position);
+
         int currentId = PlaybackManager
                 .get(holder.itemView.getContext())
                 .getCurrentAudioResId();
@@ -42,7 +42,7 @@ public class AlbumSongAdapter extends RecyclerView.Adapter<AlbumSongAdapter.View
         holder.tvTrackNumber.setText(String.valueOf(song.getTrackNumber()));
         holder.tvSongTitle.setText(song.getTitle());
         holder.tvSongArtist.setText(song.getArtist());
-        holder.tvSongDuration.setText(formatDuration(getDurationMs(holder, song)));
+        holder.tvSongDuration.setText(formatDuration(song.getDurationMs()));
 
         if (song.getAudioResId() == currentId) {
             holder.tvSongTitle.setTextColor(
@@ -53,6 +53,7 @@ public class AlbumSongAdapter extends RecyclerView.Adapter<AlbumSongAdapter.View
                     holder.itemView.getContext().getColor(R.color.textPrimary)
             );
         }
+
         holder.itemView.setOnClickListener(v -> {
             if (listener != null) listener.onSongClick(song);
         });
@@ -61,35 +62,6 @@ public class AlbumSongAdapter extends RecyclerView.Adapter<AlbumSongAdapter.View
     @Override
     public int getItemCount() {
         return songs.size();
-    }
-    private long getDurationMs(ViewHolder holder, Song song) {
-        MediaMetadataRetriever mmr = new MediaMetadataRetriever();
-
-        try {
-            android.content.res.AssetFileDescriptor afd =
-                    holder.itemView.getContext().getResources().openRawResourceFd(song.getAudioResId());
-
-            if (afd == null) return 0;
-
-            mmr.setDataSource(
-                    afd.getFileDescriptor(),
-                    afd.getStartOffset(),
-                    afd.getLength()
-            );
-
-            String dur = mmr.extractMetadata(MediaMetadataRetriever.METADATA_KEY_DURATION);
-            afd.close();
-
-            if (dur == null) return 0;
-            return Long.parseLong(dur);
-
-        } catch (Exception e) {
-            return 0;
-        } finally {
-            try {
-                mmr.release();
-            } catch (Exception ignored) {}
-        }
     }
     private String formatDuration(long ms) {
         long totalSeconds = ms / 1000;

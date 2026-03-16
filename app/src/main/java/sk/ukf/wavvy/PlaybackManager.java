@@ -381,4 +381,36 @@ public class PlaybackManager {
         }
         return 0;
     }
+    public void insertNext(int audioResId) {
+        ensureQueueLoadedIfPossible();
+
+        if (activeQueue == null || activeQueue.length == 0) {
+            playQueue(new int[]{audioResId}, 0, false);
+            return;
+        }
+
+        ArrayList<Integer> queue = new ArrayList<>();
+
+        for (int id : activeQueue) {
+            if (id != audioResId) {
+                queue.add(id);
+            }
+        }
+
+        int insertPos = queueIndex + 1;
+        queue.add(insertPos, audioResId);
+        activeQueue = new int[queue.size()];
+
+        for (int i = 0; i < queue.size(); i++) {
+            activeQueue[i] = queue.get(i);
+        }
+
+        NowPlayingRepository.saveNowPlaying(
+                appContext,
+                currentAudioResId,
+                activeQueue,
+                queueIndex
+        );
+        notifyNowPlaying();
+    }
 }

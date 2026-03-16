@@ -83,7 +83,7 @@ public class PlaylistDetailActivity extends AppCompatActivity implements Playbac
         adapter = new SongAdapter(
                 songsInPlaylist,
                 song -> PlayerLauncher.openQueue(PlaylistDetailActivity.this, songsInPlaylist, song),
-                this::showRemoveFromPlaylistDialog
+                null
         );
         rvPlaylistSongs.setAdapter(adapter);
 
