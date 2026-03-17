@@ -15,6 +15,17 @@
         android:src="@drawable/ic_back"
         android:layout_margin="12dp"/>
 
+    <ImageButton
+        android:id="@+id/btnAlbumMore"
+        android:layout_width="48dp"
+        android:layout_height="48dp"
+        android:layout_gravity="end"
+        android:layout_marginTop="-60dp"
+        android:layout_marginEnd="12dp"
+        android:background="@android:color/transparent"
+        android:src="@drawable/ic_more"
+        android:tint="@color/textPrimary"/>
+
     <TextView
         android:id="@+id/tvAlbumHeader"
         android:layout_width="match_parent"

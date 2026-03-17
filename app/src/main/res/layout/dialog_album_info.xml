@@ -1,0 +1,85 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="vertical"
+    android:padding="24dp"
+    android:background="@drawable/bg_dialog_card">
+
+    <ImageView
+        android:id="@+id/ivAlbumInfoCover"
+        android:layout_width="150dp"
+        android:layout_height="150dp"
+        android:layout_gravity="center"
+        android:scaleType="centerCrop"
+        android:background="@drawable/bg_cover_rounded"
+        android:clipToOutline="true" />
+
+    <TextView
+        android:id="@+id/tvAlbumInfoTitle"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:textColor="@color/textPrimary"
+        android:textSize="26sp"
+        android:textStyle="bold"
+        android:layout_gravity="center"
+        android:layout_marginTop="18dp"/>
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Artist"
+        android:textStyle="bold|italic"
+        android:textColor="@color/textSecondary"
+        android:textSize="17sp"
+        android:layout_marginTop="28dp"/>
+
+    <TextView
+        android:id="@+id/tvAlbumInfoArtist"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:textColor="@color/textPrimary"
+        android:textSize="15sp"/>
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Tracks"
+        android:textStyle="bold|italic"
+        android:textColor="@color/textSecondary"
+        android:textSize="17sp"
+        android:layout_marginTop="20dp"/>
+
+    <TextView
+        android:id="@+id/tvAlbumInfoSongs"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:textColor="@color/textPrimary"
+        android:textSize="15sp"/>
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Length"
+        android:textStyle="bold|italic"
+        android:textColor="@color/textSecondary"
+        android:textSize="17sp"
+        android:layout_marginTop="20dp"/>
+
+    <TextView
+        android:id="@+id/tvAlbumInfoLength"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:textColor="@color/textPrimary"
+        android:textSize="15sp"/>
+
+    <Button
+        android:id="@+id/btnCloseAlbumInfo"
+        android:layout_width="120dp"
+        android:layout_height="48dp"
+        android:layout_gravity="center"
+        android:text="Close"
+        android:textStyle="bold"
+        android:textColor="@color/textPrimary"
+        android:backgroundTint="@color/accent"/>
+</LinearLayout>

@@ -18,6 +18,8 @@ import androidx.core.content.ContextCompat;
 import androidx.core.view.WindowCompat;
 import androidx.core.view.WindowInsetsControllerCompat;
 import androidx.media3.exoplayer.ExoPlayer;
+import sk.ukf.wavvy.adapter.PickPlaylistAdapter;
+import sk.ukf.wavvy.model.Playlist;
 import sk.ukf.wavvy.model.Song;
 
 public class PlayerActivity extends AppCompatActivity implements PlaybackManager.Listener {
@@ -37,6 +39,7 @@ public class PlayerActivity extends AppCompatActivity implements PlaybackManager
     private ImageView ivCover;
     private boolean isUserSeeking = false;
     private float startY;
+    private long lastTrackChangeTime = 0;
     private static final int SWIPE_THRESHOLD = 180;
     private TextView tvBottomLabel, tvBottomTrack;
 
@@ -50,9 +53,13 @@ public class PlayerActivity extends AppCompatActivity implements PlaybackManager
         getWindow().setNavigationBarColor(android.graphics.Color.TRANSPARENT);
 
         View root = findViewById(R.id.playerRoot);
+        root.setAlpha(0f);
+        root.animate()
+                .alpha(1f)
+                .setDuration(350)
+                .start();
 
         root.setOnTouchListener((v, event) -> {
-
             switch (event.getAction()) {
 
                 case MotionEvent.ACTION_DOWN:
@@ -116,9 +123,115 @@ public class PlayerActivity extends AppCompatActivity implements PlaybackManager
 
         btnBack.setOnClickListener(v -> finish());
 
-        btnMore.setOnClickListener(v ->
-                android.widget.Toast.makeText(this, "More Soon", android.widget.Toast.LENGTH_SHORT).show()
-        );
+        btnMore.setOnClickListener(v -> {
+            Song song = SongRepository.findByAudioResId(pm.getCurrentAudioResId());
+
+            if (song == null) return;
+            View popupView = getLayoutInflater()
+                    .inflate(R.layout.dialog_player_menu, null);
+
+            android.widget.PopupWindow popupWindow = new android.widget.PopupWindow(
+                    popupView,
+                    android.view.ViewGroup.LayoutParams.WRAP_CONTENT,
+                    android.view.ViewGroup.LayoutParams.WRAP_CONTENT,
+                    true
+            );
+
+            popupWindow.setBackgroundDrawable(
+                    new android.graphics.drawable.ColorDrawable(
+                            android.graphics.Color.TRANSPARENT
+                    )
+            );
+
+            popupWindow.setElevation(16f);
+
+            popupView.findViewById(R.id.actionAddToFavourites).setOnClickListener(v1 -> {
+                android.widget.Toast.makeText(
+                        this,
+                        "Add to favourites soon",
+                        android.widget.Toast.LENGTH_SHORT
+                ).show();
+                popupWindow.dismiss();
+            });
+
+            popupView.findViewById(R.id.actionAddPlaylist).setOnClickListener(v1 -> {
+                popupWindow.dismiss();
+
+                java.util.ArrayList<Playlist> playlists =
+                        PlaylistRepository.getPlaylists(this);
+
+                if (playlists.isEmpty()) {
+                    android.widget.Toast.makeText(
+                            this,
+                            "No playlists yet",
+                            android.widget.Toast.LENGTH_SHORT
+                    ).show();
+                    return;
+                }
+
+                View dialogView = getLayoutInflater()
+                        .inflate(R.layout.dialog_pick_playlist, null);
+
+                androidx.recyclerview.widget.RecyclerView rv =
+                        dialogView.findViewById(R.id.rvPickPlaylists);
+
+                android.widget.Button btnCancel =
+                        dialogView.findViewById(R.id.btnCancel);
+
+                androidx.appcompat.app.AlertDialog dialog =
+                        new androidx.appcompat.app.AlertDialog.Builder(this)
+                                .setView(dialogView)
+                                .create();
+
+                if (dialog.getWindow() != null) {
+                    dialog.getWindow().setBackgroundDrawableResource(
+                            android.R.color.transparent
+                    );
+                }
+
+                rv.setLayoutManager(
+                        new androidx.recyclerview.widget.LinearLayoutManager(this)
+                );
+
+                PickPlaylistAdapter pickAdapter = new PickPlaylistAdapter(
+                        playlists,
+                        playlist -> {
+                            PlaylistRepository.addSongToPlaylist(
+                                    this,
+                                    playlist.getId(),
+                                    song.getAudioResId()
+                            );
+
+                            android.widget.Toast.makeText(
+                                    this,
+                                    "Added to " + playlist.getName(),
+                                    android.widget.Toast.LENGTH_SHORT
+                            ).show();
+
+                            dialog.dismiss();
+                        }
+                );
+                rv.setAdapter(pickAdapter);
+                btnCancel.setOnClickListener(v2 -> dialog.dismiss());
+                dialog.show();
+            });
+
+            popupView.findViewById(R.id.actionGoAlbum).setOnClickListener(v1 -> {
+                android.content.Intent intent =
+                        new android.content.Intent(this, AlbumDetailActivity.class);
+
+                intent.putExtra("album_title", song.getAlbum());
+                startActivity(intent);
+
+                popupWindow.dismiss();
+            });
+
+            popupView.findViewById(R.id.actionInfo).setOnClickListener(v1 -> {
+                popupWindow.dismiss();
+                showSongInfo();
+            });
+            popupWindow.showAsDropDown(btnMore, -245, 0);
+        });
 
         btnPlayPause.setOnClickListener(v -> pm.togglePlayPause());
         btnNext.setOnClickListener(v -> pm.playNext(true));
@@ -160,7 +273,6 @@ public class PlayerActivity extends AppCompatActivity implements PlaybackManager
                 if (player != null) player.seekTo(sb.getProgress());
             }
         });
-
         handleIntentPlayback();
         updateShuffleUi();
         updateRepeatUi();
@@ -207,6 +319,7 @@ public class PlayerActivity extends AppCompatActivity implements PlaybackManager
     }
     @Override
     public void onNowPlayingChanged(int audioResId, int[] queueIds, int queueIndex) {
+        lastTrackChangeTime = System.currentTimeMillis();
         updateNowPlayingUiFromRepo();
         updateNavButtons();
     }
@@ -227,6 +340,16 @@ public class PlayerActivity extends AppCompatActivity implements PlaybackManager
         tvCurrentTime.setText(formatTime(positionMs));
 
         long remaining = durationMs - positionMs;
+        long elapsedSinceTrackChange = System.currentTimeMillis() - lastTrackChangeTime;
+
+        if (elapsedSinceTrackChange < 1200) {
+            Song current = SongRepository.findByAudioResId(pm.getCurrentAudioResId());
+
+            if (current != null) {
+                animateBottomText("Now playing", current.getTitle());
+            }
+            return;
+        }
 
         if (remaining <= 10000) {
             int[] q = pm.getQueueIds();
@@ -247,6 +370,43 @@ public class PlayerActivity extends AppCompatActivity implements PlaybackManager
             }
         }
     }
+    private void showSongInfo() {
+        Song song = SongRepository.findByAudioResId(pm.getCurrentAudioResId());
+
+        if (song == null) return;
+
+        View dialogView = getLayoutInflater()
+                .inflate(R.layout.dialog_song_info, null);
+
+        ImageView ivCover = dialogView.findViewById(R.id.ivSongInfoCover);
+        TextView tvTitle = dialogView.findViewById(R.id.tvSongInfoTitle);
+        TextView tvArtist = dialogView.findViewById(R.id.tvSongInfoArtist);
+        TextView tvAlbum = dialogView.findViewById(R.id.tvSongInfoAlbum);
+        TextView tvProducer = dialogView.findViewById(R.id.tvSongInfoProducer);
+        TextView tvLength = dialogView.findViewById(R.id.tvSongInfoLength);
+        android.widget.Button btnClose =
+                dialogView.findViewById(R.id.btnCloseSongInfo);
+
+        ivCover.setImageResource(song.getCoverResId());
+        tvTitle.setText(song.getTitle());
+        tvArtist.setText(song.getArtist());
+        tvAlbum.setText(song.getAlbum());
+        tvProducer.setText(song.getProducedBy());
+        tvLength.setText(formatTime(song.getDurationMs()));
+
+        androidx.appcompat.app.AlertDialog dialog =
+                new androidx.appcompat.app.AlertDialog.Builder(this)
+                        .setView(dialogView)
+                        .create();
+
+        if (dialog.getWindow() != null) {
+            dialog.getWindow().setBackgroundDrawableResource(
+                    android.R.color.transparent
+            );
+        }
+        btnClose.setOnClickListener(v -> dialog.dismiss());
+        dialog.show();
+    }
     private void updateNowPlayingUiFromRepo() {
         int audioResId = NowPlayingRepository.getAudioResId(this);
         Song s = SongRepository.findByAudioResId(audioResId);
@@ -254,8 +414,7 @@ public class PlayerActivity extends AppCompatActivity implements PlaybackManager
         if (s != null) {
             tvSongTitle.setText(s.getTitle());
             tvSongArtist.setText(s.getArtist());
-            tvBottomLabel.setText("Now playing");
-            tvBottomTrack.setText(s.getTitle());
+            animateBottomText("Now playing", s.getTitle());
 
             String album = s.getAlbum();
 
@@ -314,22 +473,43 @@ public class PlayerActivity extends AppCompatActivity implements PlaybackManager
         if (tvPlaybackStatus == null) return;
 
         String shuffle = pm.isShuffleEnabled() ? "Shuffle ON" : "Shuffle OFF";
-
+        PlaybackManager.RepeatMode rm = pm.getRepeatMode();
         String repeat;
 
-        PlaybackManager.RepeatMode rm = pm.getRepeatMode();
+        if (rm == PlaybackManager.RepeatMode.OFF) {
+            repeat = "Repeat OFF";
+        } else if (rm == PlaybackManager.RepeatMode.ONE) {
+            repeat = "Repeat ONE";
+        } else {
+            repeat = "Repeat ALL";
+        }
 
-        if (rm == PlaybackManager.RepeatMode.OFF) repeat = "Repeat OFF";
-        else if (rm == PlaybackManager.RepeatMode.ONE) repeat = "Repeat ONE";
-        else repeat = "Repeat ALL";
+        String fullText = shuffle + " • " + repeat;
 
-        tvPlaybackStatus.setText(shuffle + " • " + repeat);
+        android.text.SpannableString spannable =
+                new android.text.SpannableString(fullText);
 
-        boolean anyOn = pm.isShuffleEnabled() || rm != PlaybackManager.RepeatMode.OFF;
+        int gray = ContextCompat.getColor(this, R.color.textSecondary);
+        int white = ContextCompat.getColor(this, R.color.textPrimary);
 
-        tvPlaybackStatus.setTextColor(
-                ContextCompat.getColor(this, anyOn ? R.color.accent : R.color.textSecondary)
+        spannable.setSpan(
+                new android.text.style.ForegroundColorSpan(
+                        pm.isShuffleEnabled() ? white : gray
+                ),
+                0,
+                shuffle.length(),
+                android.text.Spannable.SPAN_EXCLUSIVE_EXCLUSIVE
         );
+
+        spannable.setSpan(
+                new android.text.style.ForegroundColorSpan(
+                        rm == PlaybackManager.RepeatMode.OFF ? gray : white
+                ),
+                shuffle.length() + 3,
+                fullText.length(),
+                android.text.Spannable.SPAN_EXCLUSIVE_EXCLUSIVE
+        );
+        tvPlaybackStatus.setText(spannable);
     }
     private void applyDynamicGradient(int coverResId) {
         View root = findViewById(R.id.playerRoot);
@@ -339,19 +519,47 @@ public class PlayerActivity extends AppCompatActivity implements PlaybackManager
         if (bitmap == null) return;
 
         Palette.from(bitmap).generate(palette -> {
-            int dominant = palette.getDominantColor(
-                    ContextCompat.getColor(this, R.color.bg)
+
+            int base = palette.getDarkMutedColor(
+                    palette.getMutedColor(
+                            ContextCompat.getColor(this, R.color.bg)
+                    )
             );
 
-            int dark = palette.getDarkMutedColor(dominant);
-            int vibrant = palette.getVibrantColor(dominant);
+            int red = android.graphics.Color.red(base);
+            int green = android.graphics.Color.green(base);
+            int blue = android.graphics.Color.blue(base);
+
+            boolean tooGray =
+                    Math.abs(red - green) < 18 &&
+                            Math.abs(green - blue) < 18;
+
+            if (tooGray) {
+                base = palette.getVibrantColor(
+                        palette.getMutedColor(base)
+                );
+            }
+
+            int vivid = android.graphics.Color.argb(
+                    255,
+                    (int)(android.graphics.Color.red(base) * 0.88),
+                    (int)(android.graphics.Color.green(base) * 0.88),
+                    (int)(android.graphics.Color.blue(base) * 0.88)
+            );
+
+            int almostBlack = android.graphics.Color.argb(
+                    255,
+                    20,
+                    22,
+                    28
+            );
 
             GradientDrawable gd = new GradientDrawable(
                     GradientDrawable.Orientation.TOP_BOTTOM,
                     new int[]{
-                            vibrant,
-                            dark,
-                            ContextCompat.getColor(this, R.color.bg)
+                            vivid,
+                            almostBlack,
+                            android.graphics.Color.BLACK
                     }
             );
             root.setBackground(gd);
@@ -376,26 +584,37 @@ public class PlayerActivity extends AppCompatActivity implements PlaybackManager
         String currentLabel = tvBottomLabel.getText().toString();
         String currentTrack = tvBottomTrack.getText().toString();
 
-        if (currentLabel.equals(label) && currentTrack.equals(track)) {
+        boolean labelChanged = !currentLabel.equals(label);
+        boolean trackChanged = !currentTrack.equals(track);
+
+        if (!labelChanged && !trackChanged) {
             return;
         }
-
-        tvBottomLabel.animate()
-                .alpha(0f)
-                .setDuration(180)
-                .withEndAction(() -> {
-                    tvBottomLabel.setText(label);
-                    tvBottomLabel.animate().alpha(1f).setDuration(180).start();
-                })
-                .start();
-
-        tvBottomTrack.animate()
-                .alpha(0f)
-                .setDuration(180)
-                .withEndAction(() -> {
-                    tvBottomTrack.setText(track);
-                    tvBottomTrack.animate().alpha(1f).setDuration(180).start();
-                })
-                .start();
+        if (labelChanged) {
+            tvBottomLabel.animate()
+                    .alpha(0f)
+                    .setDuration(180)
+                    .withEndAction(() -> {
+                        tvBottomLabel.setText(label);
+                        tvBottomLabel.animate()
+                                .alpha(1f)
+                                .setDuration(180)
+                                .start();
+                    })
+                    .start();
+        }
+        if (trackChanged) {
+            tvBottomTrack.animate()
+                    .alpha(0f)
+                    .setDuration(180)
+                    .withEndAction(() -> {
+                        tvBottomTrack.setText(track);
+                        tvBottomTrack.animate()
+                                .alpha(1f)
+                                .setDuration(180)
+                                .start();
+                    })
+                    .start();
+        }
     }
 }

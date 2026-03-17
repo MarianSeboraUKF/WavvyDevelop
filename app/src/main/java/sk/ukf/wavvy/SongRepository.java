@@ -37,6 +37,7 @@ public class SongRepository {
         cached.add(new Song("ALLRIGHT", "RAYYY P", "ICOиO, Patez", "kto.som.?", "RAYYY P", "-",15, R.drawable.kto_som_cover, R.raw.allright));
         cached.add(new Song("OUTRO", "RAYYY P", "", "kto.som.?", "RAYYY P", "-",16, R.drawable.kto_som_cover, R.raw.outro));
         cached.add(new Song("Nebylo souzený", "Robin Zoot", "Chawo", "Majitel", "Robin Zoot", "Spack DS",4, R.drawable.majitel_cover, R.raw.nebylo_souzeny));
+        cached.add(new Song("Good Energy", "Beachcrimes", "", "Good Energy", "Beachcrimes", "Ryan McMahon", 1, R.drawable.good_energy_cover, R.raw.good_energy));
 
         return cached;
     }

@@ -6,8 +6,9 @@ import android.view.ViewGroup;
 import android.widget.Button;
 import android.widget.ImageButton;
 import android.widget.ImageView;
-import android.widget.PopupMenu;
 import android.widget.TextView;
+import android.widget.PopupWindow;
+import android.graphics.drawable.ColorDrawable;
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AlertDialog;
 import androidx.core.content.ContextCompat;
@@ -95,150 +96,132 @@ public class SongAdapter extends RecyclerView.Adapter<SongAdapter.SongViewHolder
         });
 
         holder.btnSongMenu.setOnClickListener(v -> {
-            PopupMenu popup = new PopupMenu(
-                    holder.itemView.getContext(),
-                    holder.btnSongMenu,
-                    0,
-                    0,
-                    R.style.PopupMenuStyle
+            android.content.Context ctx = holder.itemView.getContext();
+
+            View popupView = LayoutInflater.from(ctx)
+                    .inflate(R.layout.dialog_song_menu, null);
+
+            PopupWindow popupWindow = new PopupWindow(
+                    popupView,
+                    ViewGroup.LayoutParams.WRAP_CONTENT,
+                    ViewGroup.LayoutParams.WRAP_CONTENT,
+                    true
             );
-            popup.inflate(R.menu.song_item_menu);
+            popupWindow.setBackgroundDrawable(new ColorDrawable(android.graphics.Color.TRANSPARENT));
+            popupWindow.setElevation(16f);
 
-            try {
-                java.lang.reflect.Field[] fields = popup.getClass().getDeclaredFields();
-                for (java.lang.reflect.Field field : fields) {
-                    if ("mPopup".equals(field.getName())) {
-                        field.setAccessible(true);
-                        Object menuPopupHelper = field.get(popup);
-                        Class<?> classPopupHelper = Class.forName(menuPopupHelper.getClass().getName());
-                        java.lang.reflect.Method setForceIcons =
-                                classPopupHelper.getMethod("setForceShowIcon", boolean.class);
-                        setForceIcons.invoke(menuPopupHelper, true);
-                        break;
-                    }
-                }
-            } catch (Exception ignored) {}
+            popupView.findViewById(R.id.actionPlayNext).setOnClickListener(v1 -> {
+                PlaybackManager.get(ctx).insertNext(song.getAudioResId());
 
-            popup.setOnMenuItemClickListener(item -> {
-                int id = item.getItemId();
+                android.widget.Toast.makeText(
+                        ctx,
+                        "Added to queue",
+                        android.widget.Toast.LENGTH_SHORT
+                ).show();
+                popupWindow.dismiss();
+            });
 
-                if (id == R.id.action_play_next) {
-                    PlaybackManager.get(holder.itemView.getContext())
-                            .insertNext(song.getAudioResId());
+            popupView.findViewById(R.id.actionGoAlbum).setOnClickListener(v1 -> {
+                android.content.Intent intent =
+                        new android.content.Intent(
+                                ctx,
+                                AlbumDetailActivity.class
+                        );
+                intent.putExtra("album_title", song.getAlbum());
+                ctx.startActivity(intent);
+                popupWindow.dismiss();
+            });
 
+            popupView.findViewById(R.id.actionAddPlaylist).setOnClickListener(v1 -> {
+                popupWindow.dismiss();
+
+                java.util.ArrayList<Playlist> playlists =
+                        PlaylistRepository.getPlaylists(ctx);
+
+                if (playlists.isEmpty()) {
                     android.widget.Toast.makeText(
-                            holder.itemView.getContext(),
-                            "Added next",
+                            ctx,
+                            "No playlists yet",
                             android.widget.Toast.LENGTH_SHORT
                     ).show();
-                    return true;
+                    return;
                 }
 
-                if (id == R.id.action_go_to_album) {
-                    android.content.Intent intent =
-                            new android.content.Intent(
-                                    holder.itemView.getContext(),
-                                    AlbumDetailActivity.class
+                android.view.View dialogView = LayoutInflater.from(ctx)
+                        .inflate(R.layout.dialog_pick_playlist, null);
+
+                androidx.recyclerview.widget.RecyclerView rv =
+                        dialogView.findViewById(R.id.rvPickPlaylists);
+
+                Button btnCancel =
+                        dialogView.findViewById(R.id.btnCancel);
+
+                AlertDialog dialog = new AlertDialog.Builder(ctx)
+                        .setView(dialogView)
+                        .create();
+
+                dialog.getWindow().setBackgroundDrawableResource(android.R.color.transparent);
+
+                rv.setLayoutManager(
+                        new androidx.recyclerview.widget.LinearLayoutManager(ctx)
+                );
+
+                PickPlaylistAdapter pickAdapter = new PickPlaylistAdapter(
+                        playlists,
+                        playlist -> {
+                            PlaylistRepository.addSongToPlaylist(
+                                    ctx,
+                                    playlist.getId(),
+                                    song.getAudioResId()
                             );
-                    intent.putExtra("album_title", song.getAlbum());
-                    holder.itemView.getContext().startActivity(intent);
 
-                    return true;
-                }
-
-                if (id == R.id.action_add_to_playlist) {
-                    android.content.Context ctx = holder.itemView.getContext();
-
-                    java.util.ArrayList<Playlist> playlists =
-                            PlaylistRepository.getPlaylists(ctx);
-
-                    if (playlists.isEmpty()) {
-                        android.widget.Toast.makeText(
-                                ctx,
-                                "No playlists yet",
-                                android.widget.Toast.LENGTH_SHORT
-                        ).show();
-                        return true;
-                    }
-
-                    android.view.View dialogView = LayoutInflater.from(ctx)
-                            .inflate(R.layout.dialog_pick_playlist, null);
-
-                    androidx.recyclerview.widget.RecyclerView rv =
-                            dialogView.findViewById(R.id.rvPickPlaylists);
-
-                    Button btnCancel =
-                            dialogView.findViewById(R.id.btnCancel);
-
-                    AlertDialog dialog = new AlertDialog.Builder(ctx)
-                            .setView(dialogView)
-                            .create();
-
-                    dialog.getWindow().setBackgroundDrawableResource(android.R.color.transparent);
-
-                    rv.setLayoutManager(
-                            new androidx.recyclerview.widget.LinearLayoutManager(ctx)
-                    );
-
-                    PickPlaylistAdapter pickAdapter = new PickPlaylistAdapter(
-                            playlists,
-                            playlist -> {
-                                PlaylistRepository.addSongToPlaylist(
-                                        ctx,
-                                        playlist.getId(),
-                                        song.getAudioResId()
-                                );
-                                android.widget.Toast.makeText(
-                                        ctx,
-                                        "Added to " + playlist.getName(),
-                                        android.widget.Toast.LENGTH_SHORT
-                                ).show();
-                                dialog.dismiss();
-                            }
-                    );
-
-                    rv.setAdapter(pickAdapter);
-                    btnCancel.setOnClickListener(v2 -> dialog.dismiss());
-                    dialog.show();
-
-                    return true;
-                }
-                if (id == R.id.action_info) {
-                    android.content.Context ctx = holder.itemView.getContext();
-
-                    View dialogView = LayoutInflater.from(ctx)
-                            .inflate(R.layout.dialog_song_info, null);
-
-                    ImageView ivCover = dialogView.findViewById(R.id.ivSongInfoCover);
-                    TextView tvTitle = dialogView.findViewById(R.id.tvSongInfoTitle);
-                    TextView tvArtist = dialogView.findViewById(R.id.tvSongInfoArtist);
-                    TextView tvAlbum = dialogView.findViewById(R.id.tvSongInfoAlbum);
-                    TextView tvProducer = dialogView.findViewById(R.id.tvSongInfoProducer);
-                    TextView tvLength = dialogView.findViewById(R.id.tvSongInfoLength);
-                    Button btnClose = dialogView.findViewById(R.id.btnCloseSongInfo);
-
-                    ivCover.setImageResource(song.getCoverResId());
-                    tvTitle.setText(song.getTitle());
-                    tvArtist.setText("Artist: " + song.getArtist());
-                    tvAlbum.setText("Album: " + song.getAlbum());
-                    tvProducer.setText("Produced by: " + song.getProducedBy());
-                    tvLength.setText("Length: " + formatDuration(song.getDurationMs()));
-
-                    AlertDialog dialog = new AlertDialog.Builder(ctx)
-                            .setView(dialogView)
-                            .create();
-
-                    if (dialog.getWindow() != null) {
-                        dialog.getWindow().setBackgroundDrawableResource(android.R.color.transparent);
-                    }
-                    btnClose.setOnClickListener(v2 -> dialog.dismiss());
-                    dialog.show();
-
-                    return true;
-                }
-                return false;
+                            android.widget.Toast.makeText(
+                                    ctx,
+                                    "Added to " + playlist.getName(),
+                                    android.widget.Toast.LENGTH_SHORT
+                            ).show();
+                            dialog.dismiss();
+                        }
+                );
+                rv.setAdapter(pickAdapter);
+                btnCancel.setOnClickListener(v2 -> dialog.dismiss());
+                dialog.show();
             });
-            popup.show();
+
+            popupView.findViewById(R.id.actionInfo).setOnClickListener(v1 -> {
+                popupWindow.dismiss();
+
+                android.content.Context context = holder.itemView.getContext();
+
+                View dialogView = LayoutInflater.from(context)
+                        .inflate(R.layout.dialog_song_info, null);
+
+                ImageView ivCover = dialogView.findViewById(R.id.ivSongInfoCover);
+                TextView tvTitle = dialogView.findViewById(R.id.tvSongInfoTitle);
+                TextView tvArtist = dialogView.findViewById(R.id.tvSongInfoArtist);
+                TextView tvAlbum = dialogView.findViewById(R.id.tvSongInfoAlbum);
+                TextView tvProducer = dialogView.findViewById(R.id.tvSongInfoProducer);
+                TextView tvLength = dialogView.findViewById(R.id.tvSongInfoLength);
+                Button btnClose = dialogView.findViewById(R.id.btnCloseSongInfo);
+
+                ivCover.setImageResource(song.getCoverResId());
+                tvTitle.setText(song.getTitle());
+                tvArtist.setText(song.getArtist());
+                tvAlbum.setText(song.getAlbum());
+                tvProducer.setText(song.getProducedBy());
+                tvLength.setText(formatDuration(song.getDurationMs()));
+
+                AlertDialog dialog = new AlertDialog.Builder(context)
+                        .setView(dialogView)
+                        .create();
+
+                if (dialog.getWindow() != null) {
+                    dialog.getWindow().setBackgroundDrawableResource(android.R.color.transparent);
+                }
+                btnClose.setOnClickListener(v2 -> dialog.dismiss());
+                dialog.show();
+            });
+            popupWindow.showAsDropDown(holder.btnSongMenu, -245, 0);
         });
     }
     private String formatDuration(long ms) {

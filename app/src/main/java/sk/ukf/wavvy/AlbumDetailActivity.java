@@ -43,6 +43,7 @@ public class AlbumDetailActivity extends AppCompatActivity implements PlaybackMa
     private TextView btnPlayAlbum;
     private PlaybackManager pm;
     private AlbumSongAdapter adapter;
+    private ImageButton btnAlbumMore;
 
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
@@ -76,6 +77,7 @@ public class AlbumDetailActivity extends AppCompatActivity implements PlaybackMa
         btnMiniPlay = findViewById(R.id.btnMiniPlay);
         btnMiniNext = findViewById(R.id.btnMiniNext);
         miniProgress = findViewById(R.id.miniProgress);
+        btnAlbumMore = findViewById(R.id.btnAlbumMore);
 
         findViewById(R.id.btnBack).setOnClickListener(v -> finish());
 
@@ -97,6 +99,41 @@ public class AlbumDetailActivity extends AppCompatActivity implements PlaybackMa
         tvAlbumArtist.setText(album.getArtist());
         ivAlbumCover.setImageResource(album.getCoverResId());
         songsInAlbum = album.getSongs();
+
+        btnAlbumMore.setOnClickListener(v -> {
+            View popupView = getLayoutInflater()
+                    .inflate(R.layout.dialog_album_menu, null);
+
+            android.widget.PopupWindow popupWindow = new android.widget.PopupWindow(
+                    popupView,
+                    android.view.ViewGroup.LayoutParams.WRAP_CONTENT,
+                    android.view.ViewGroup.LayoutParams.WRAP_CONTENT,
+                    true
+            );
+
+            popupWindow.setBackgroundDrawable(
+                    new android.graphics.drawable.ColorDrawable(
+                            android.graphics.Color.TRANSPARENT
+                    )
+            );
+
+            popupWindow.setElevation(16f);
+
+            popupView.findViewById(R.id.actionAddLibrary).setOnClickListener(v1 -> {
+                android.widget.Toast.makeText(
+                        this,
+                        "Added to library",
+                        android.widget.Toast.LENGTH_SHORT
+                ).show();
+                popupWindow.dismiss();
+            });
+
+            popupView.findViewById(R.id.actionAlbumInfo).setOnClickListener(v1 -> {
+                popupWindow.dismiss();
+                showAlbumInfo(album);
+            });
+            popupWindow.showAsDropDown(btnAlbumMore, -220, 0);
+        });
 
         btnPlayAlbum.setOnClickListener(v -> {
             if (!songsInAlbum.isEmpty()) {
@@ -197,29 +234,94 @@ public class AlbumDetailActivity extends AppCompatActivity implements PlaybackMa
                 pm.isPlaying() ? R.drawable.ic_pause : R.drawable.ic_play
         );
     }
+    private void showAlbumInfo(Album album) {
+        View dialogView = getLayoutInflater()
+                .inflate(R.layout.dialog_album_info, null);
+
+        ImageView ivCover = dialogView.findViewById(R.id.ivAlbumInfoCover);
+        TextView tvTitle = dialogView.findViewById(R.id.tvAlbumInfoTitle);
+        TextView tvArtist = dialogView.findViewById(R.id.tvAlbumInfoArtist);
+        TextView tvSongs = dialogView.findViewById(R.id.tvAlbumInfoSongs);
+        TextView tvLength = dialogView.findViewById(R.id.tvAlbumInfoLength);
+        android.widget.Button btnClose =
+                dialogView.findViewById(R.id.btnCloseAlbumInfo);
+
+        ivCover.setImageResource(album.getCoverResId());
+        tvTitle.setText(album.getTitle());
+        tvArtist.setText(album.getArtist());
+        tvSongs.setText(album.getSongs().size() + " songs");
+
+        long totalMs = 0;
+
+        for (Song s : album.getSongs()) {
+            totalMs += s.getDurationMs();
+        }
+
+        tvLength.setText(formatDuration(totalMs));
+
+        androidx.appcompat.app.AlertDialog dialog =
+                new androidx.appcompat.app.AlertDialog.Builder(this)
+                        .setView(dialogView)
+                        .create();
+
+        if (dialog.getWindow() != null) {
+            dialog.getWindow().setBackgroundDrawableResource(
+                    android.R.color.transparent
+            );
+        }
+        btnClose.setOnClickListener(v -> dialog.dismiss());
+        dialog.show();
+    }
     private void applyGradient(int coverResId) {
         View root = findViewById(R.id.albumRoot);
-
         Bitmap bitmap = BitmapFactory.decodeResource(getResources(), coverResId);
 
         if (bitmap == null) return;
-
         Palette.from(bitmap).generate(palette -> {
-            int dominant = palette.getDominantColor(
-                    ContextCompat.getColor(this, R.color.bg)
+
+            int base = palette.getDarkMutedColor(
+                    palette.getMutedColor(
+                            ContextCompat.getColor(this, R.color.bg)
+                    )
             );
 
-            int dark = palette.getDarkMutedColor(dominant);
-            int vibrant = palette.getVibrantColor(dominant);
+            int red = android.graphics.Color.red(base);
+            int green = android.graphics.Color.green(base);
+            int blue = android.graphics.Color.blue(base);
+
+            boolean tooGray =
+                    Math.abs(red - green) < 18 &&
+                            Math.abs(green - blue) < 18;
+
+            if (tooGray) {
+                base = palette.getVibrantColor(
+                        palette.getMutedColor(base)
+                );
+            }
+
+            int softened = android.graphics.Color.argb(
+                    255,
+                    (int)(android.graphics.Color.red(base) * 0.78),
+                    (int)(android.graphics.Color.green(base) * 0.78),
+                    (int)(android.graphics.Color.blue(base) * 0.78)
+            );
+
+            int almostBlack = android.graphics.Color.argb(
+                    255,
+                    20,
+                    22,
+                    28
+            );
 
             GradientDrawable gd = new GradientDrawable(
                     GradientDrawable.Orientation.TOP_BOTTOM,
                     new int[]{
-                            vibrant,
-                            dark,
-                            ContextCompat.getColor(this, R.color.bg)
+                            softened,
+                            almostBlack,
+                            android.graphics.Color.BLACK
                     }
             );
+
             root.setBackground(gd);
         });
     }

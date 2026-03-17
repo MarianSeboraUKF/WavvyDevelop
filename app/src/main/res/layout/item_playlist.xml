@@ -6,7 +6,7 @@
     android:layout_height="wrap_content"
     android:layout_margin="6dp"
     android:padding="10dp"
-    android:background="@drawable/bg_card_selector">
+    android:background="@drawable/bg_playlist_pick_ripple">
 
     <com.google.android.material.imageview.ShapeableImageView
         android:id="@+id/ivPlaylistCover"
@@ -51,7 +51,7 @@
         android:background="@android:color/transparent"
         android:src="@drawable/ic_more"
         android:scaleType="center"
-        app:tint="@color/textSecondary"
+        app:tint="@color/accent"
         app:layout_constraintTop_toTopOf="@id/tvPlaylistName"
         app:layout_constraintBottom_toBottomOf="@id/tvPlaylistCount"
         app:layout_constraintEnd_toEndOf="parent"/>
