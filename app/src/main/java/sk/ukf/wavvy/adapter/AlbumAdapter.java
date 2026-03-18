@@ -17,11 +17,14 @@ public class AlbumAdapter extends RecyclerView.Adapter<AlbumAdapter.ViewHolder> 
     }
     private final List<Album> albums;
     private final OnAlbumClickListener listener;
+    private String highlightQuery = "";
     public AlbumAdapter(List<Album> albums, OnAlbumClickListener listener) {
         this.albums = albums;
         this.listener = listener;
     }
-
+    public void setHighlightQuery(String query) {
+        this.highlightQuery = query == null ? "" : query.toLowerCase();
+    }
     @NonNull
     @Override
     public ViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
@@ -35,9 +38,33 @@ public class AlbumAdapter extends RecyclerView.Adapter<AlbumAdapter.ViewHolder> 
         Album album = albums.get(position);
 
         holder.ivCover.setImageResource(album.getCoverResId());
-        holder.tvTitle.setText(album.getTitle());
-        holder.tvArtist.setText(album.getArtist());
+        String title = album.getTitle();
 
+        if (!highlightQuery.isEmpty()) {
+            String lower = title.toLowerCase();
+            int start = lower.indexOf(highlightQuery);
+
+            if (start >= 0) {
+                android.text.SpannableString spannable =
+                        new android.text.SpannableString(title);
+
+                spannable.setSpan(
+                        new android.text.style.ForegroundColorSpan(
+                                holder.itemView.getContext().getColor(sk.ukf.wavvy.R.color.accent)
+                        ),
+                        start,
+                        start + highlightQuery.length(),
+                        android.text.Spanned.SPAN_EXCLUSIVE_EXCLUSIVE
+                );
+                holder.tvTitle.setText(spannable);
+
+            } else {
+                holder.tvTitle.setText(title);
+            }
+        } else {
+            holder.tvTitle.setText(title);
+        }
+        holder.tvArtist.setText(album.getArtist());
         holder.itemView.setOnClickListener(v -> listener.onAlbumClick(album));
     }
 

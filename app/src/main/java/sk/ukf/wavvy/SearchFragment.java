@@ -13,14 +13,11 @@ import androidx.core.content.ContextCompat;
 import androidx.fragment.app.Fragment;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
-import com.google.android.material.snackbar.Snackbar;
 import java.text.Normalizer;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Locale;
-import sk.ukf.wavvy.adapter.PickPlaylistAdapter;
 import sk.ukf.wavvy.adapter.SongAdapter;
-import sk.ukf.wavvy.model.Playlist;
 import sk.ukf.wavvy.model.Song;
 
 public class SearchFragment extends Fragment {
@@ -36,6 +33,11 @@ public class SearchFragment extends Fragment {
     private SearchView searchView;
     private RecyclerView recyclerView;
     private String lastSearch = "";
+    private TextView tvAlbumsLabel;
+    private TextView tvSongsLabel;
+    private RecyclerView rvAlbums;
+    private ArrayList<sk.ukf.wavvy.model.Album> filteredAlbums;
+    private sk.ukf.wavvy.adapter.AlbumAdapter albumAdapter;
 
     public SearchFragment() {}
     @Nullable
@@ -52,11 +54,36 @@ public class SearchFragment extends Fragment {
         tvRecentSearches = view.findViewById(R.id.tvRecentSearches);
         tvRecentSearchTitle = view.findViewById(R.id.tvRecentSearchTitle);
         recyclerView = view.findViewById(R.id.rvSearchSongs);
+        tvAlbumsLabel = view.findViewById(R.id.tvAlbumsLabel);
+        tvSongsLabel = view.findViewById(R.id.tvSongsLabel);
 
         recyclerView.setLayoutManager(new LinearLayoutManager(requireContext()));
         recyclerView.setItemViewCacheSize(12);
         recyclerView.setHasFixedSize(true);
 
+        rvAlbums = view.findViewById(R.id.rvAlbums);
+        rvAlbums.setLayoutManager(
+                new LinearLayoutManager(
+                        requireContext(),
+                        LinearLayoutManager.HORIZONTAL,
+                        false
+                )
+        );
+        filteredAlbums = new ArrayList<>();
+
+        albumAdapter = new sk.ukf.wavvy.adapter.AlbumAdapter(
+                filteredAlbums,
+                album -> {
+                    android.content.Intent intent =
+                            new android.content.Intent(requireContext(), AlbumDetailActivity.class);
+
+                    intent.putExtra("album_title", album.getTitle());
+
+                    startActivity(intent);
+                }
+        );
+        rvAlbums.setAdapter(albumAdapter);
+        rvAlbums.setNestedScrollingEnabled(false);
         allSongs = SongRepository.getSongs();
 
         for (Song s : allSongs) {
@@ -191,19 +218,20 @@ public class SearchFragment extends Fragment {
         String q = norm(text);
 
         filteredSongs.clear();
+        filteredAlbums.clear();
 
         if (TextUtils.isEmpty(q)) {
             showTopState();
             filteredSongs.addAll(topSongs);
+            rvAlbums.setVisibility(View.GONE);
             recyclerView.setVisibility(View.VISIBLE);
-
         } else {
-            tvSectionSubtitle.setText("Matching songs, artists or albums");
             tvSectionSubtitle.setVisibility(View.VISIBLE);
             tvRecentSearchTitle.setVisibility(View.GONE);
             tvRecentSearches.setVisibility(View.GONE);
             tvEmpty.setVisibility(View.GONE);
-            recyclerView.setVisibility(View.VISIBLE);
+
+            ArrayList<String> addedAlbums = new ArrayList<>();
 
             for (Song s : allSongs) {
 
@@ -211,33 +239,72 @@ public class SearchFragment extends Fragment {
                 String artist = norm(s.getArtist());
                 String album = norm(s.getAlbum());
 
-                if (title.contains(q) ||
-                        artist.contains(q) ||
-                        album.contains(q)) {
+                if (title.contains(q) || artist.contains(q) || album.contains(q)) {
                     filteredSongs.add(s);
+                }
+                if (album.contains(q) && !addedAlbums.contains(s.getAlbum())) {
+                    addedAlbums.add(s.getAlbum());
+                    ArrayList<Song> albumSongs = new ArrayList<>();
+
+                    for (Song song : allSongs) {
+                        if (song.getAlbum().equals(s.getAlbum())) {
+                            albumSongs.add(song);
+                        }
+                    }
+
+                    filteredAlbums.add(
+                            new sk.ukf.wavvy.model.Album(
+                                    s.getAlbum(),
+                                    s.getArtist(),
+                                    s.getCoverResId(),
+                                    albumSongs
+                            )
+                    );
                 }
             }
 
-            tvSectionTitle.setText("Results (" + filteredSongs.size() + ")");
+            if (!filteredAlbums.isEmpty()) {
+                tvAlbumsLabel.setVisibility(View.VISIBLE);
+                rvAlbums.setVisibility(View.VISIBLE);
+                tvSongsLabel.setVisibility(View.VISIBLE);
+            } else {
+                tvAlbumsLabel.setVisibility(View.GONE);
+                rvAlbums.setVisibility(View.GONE);
+                tvSongsLabel.setVisibility(View.GONE);
+            }
 
-            if (filteredSongs.isEmpty()) {
-                tvEmpty.setText("No songs found\n\nTry another title, artist or album");
+            tvSectionTitle.setText("Results (" + filteredSongs.size() + ")");
+            tvSectionSubtitle.setVisibility(View.GONE);
+            tvRecentSearchTitle.setVisibility(View.GONE);
+            tvRecentSearches.setVisibility(View.GONE);
+
+            if (filteredSongs.isEmpty() && filteredAlbums.isEmpty()) {
                 tvEmpty.setVisibility(View.VISIBLE);
                 tvSectionSubtitle.setVisibility(View.GONE);
                 recyclerView.setVisibility(View.GONE);
+                rvAlbums.setVisibility(View.GONE);
+                tvAlbumsLabel.setVisibility(View.GONE);
+                tvSongsLabel.setVisibility(View.GONE);
+            } else {
+                recyclerView.setVisibility(View.VISIBLE);
             }
         }
+        albumAdapter.setHighlightQuery(q);
+        albumAdapter.notifyDataSetChanged();
         adapter.setHighlightQuery(q);
         adapter.notifyDataSetChanged();
-        recyclerView.setAlpha(0f);
-        recyclerView.animate().alpha(1f).setDuration(180).start();
     }
     private void showTopState() {
         tvSectionTitle.setText("Top songs");
+        tvSectionSubtitle.setText("Your most listened tracks");
+
         tvEmpty.setVisibility(View.GONE);
         recyclerView.setVisibility(View.VISIBLE);
-        tvSectionSubtitle.setText("Your most listened tracks");
+
         tvSectionSubtitle.setVisibility(View.VISIBLE);
+        tvAlbumsLabel.setVisibility(View.GONE);
+        tvSongsLabel.setVisibility(View.GONE);
+        rvAlbums.setVisibility(View.GONE);
 
         if (!lastSearch.isEmpty()) {
             tvRecentSearchTitle.setVisibility(View.VISIBLE);
@@ -247,74 +314,5 @@ public class SearchFragment extends Fragment {
             tvRecentSearchTitle.setVisibility(View.GONE);
             tvRecentSearches.setVisibility(View.GONE);
         }
-    }
-    private void showAddToPlaylistDialog(Song song) {
-
-        ArrayList<Playlist> playlists =
-                PlaylistRepository.getPlaylists(requireContext());
-
-        if (playlists.isEmpty()) {
-            android.widget.Toast.makeText(
-                    requireContext(),
-                    "You have to create playlist first",
-                    android.widget.Toast.LENGTH_SHORT
-            ).show();
-            return;
-        }
-
-        View card = LayoutInflater.from(requireContext())
-                .inflate(R.layout.dialog_pick_playlist, null);
-
-        RecyclerView rv = card.findViewById(R.id.rvPickPlaylists);
-        View btnCancel = card.findViewById(R.id.btnCancel);
-
-        rv.setLayoutManager(new LinearLayoutManager(requireContext()));
-
-        android.app.Dialog dialog =
-                WavvyDialogs.showCenteredCardDialog(
-                        requireContext(),
-                        requireActivity(),
-                        card
-                );
-
-        PickPlaylistAdapter pickAdapter =
-                new PickPlaylistAdapter(playlists, selected -> {
-
-                    PlaylistRepository.addSongToPlaylist(
-                            requireContext(),
-                            selected.getId(),
-                            song.getAudioResId()
-                    );
-
-                    showSnack(requireView(),
-                            "Added to playlist: " + selected.getName());
-                    dialog.dismiss();
-                });
-        rv.setAdapter(pickAdapter);
-        btnCancel.setOnClickListener(x -> dialog.dismiss());
-    }
-    private void showSnack(View anchorView, String text) {
-        Snackbar sb = Snackbar.make(anchorView, text, Snackbar.LENGTH_SHORT);
-
-        sb.setBackgroundTint(ContextCompat.getColor(requireContext(), R.color.surface));
-        sb.setTextColor(ContextCompat.getColor(requireContext(), R.color.textPrimary));
-        sb.setAnimationMode(Snackbar.ANIMATION_MODE_SLIDE);
-
-        View snackView = sb.getView();
-
-        snackView.setBackground(
-                ContextCompat.getDrawable(requireContext(), R.drawable.bg_snackbar)
-        );
-
-        TextView tv =
-                snackView.findViewById(
-                        com.google.android.material.R.id.snackbar_text
-                );
-
-        if (tv != null) {
-            tv.setMaxLines(2);
-        }
-
-        sb.show();
     }
 }

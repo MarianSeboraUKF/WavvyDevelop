@@ -1,5 +1,8 @@
 package sk.ukf.wavvy.adapter;
 
+import android.text.SpannableString;
+import android.text.Spanned;
+import android.text.style.ForegroundColorSpan;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -53,9 +56,36 @@ public class SongAdapter extends RecyclerView.Adapter<SongAdapter.SongViewHolder
     public void onBindViewHolder(@NonNull SongViewHolder holder, int position) {
         Song song = songs.get(position);
 
-        holder.tvTitle.setText(song.getTitle());
-        holder.tvArtist.setText(song.getArtist());
-        holder.tvAlbum.setText(song.getAlbum());
+        holder.tvTitle.setText(
+                applyHighlight(
+                        song.getTitle(),
+                        highlightQuery,
+                        holder
+                )
+        );
+
+        holder.tvArtist.setText(
+                applyHighlight(
+                        song.getArtist(),
+                        highlightQuery,
+                        holder
+                )
+        );
+
+        String album = song.getAlbum();
+
+        if (album == null || album.trim().isEmpty()) {
+            holder.tvAlbum.setVisibility(View.GONE);
+        } else {
+            holder.tvAlbum.setText(
+                    applyHighlight(
+                            album,
+                            highlightQuery,
+                            holder
+                    )
+            );
+            holder.tvAlbum.setVisibility(View.VISIBLE);
+        }
         holder.ivCover.setImageResource(song.getCoverResId());
 
         int currentId = PlaybackManager
@@ -63,30 +93,15 @@ public class SongAdapter extends RecyclerView.Adapter<SongAdapter.SongViewHolder
                 .getCurrentAudioResId();
 
         if (song.getAudioResId() == currentId) {
-
-            holder.tvTitle.setTextColor(
-                    ContextCompat.getColor(
-                            holder.itemView.getContext(),
-                            R.color.accent
-                    )
-            );
-
             holder.itemView.setForeground(
                     ContextCompat.getDrawable(
                             holder.itemView.getContext(),
                             R.drawable.bg_item_playing_overlay
                     )
             );
-
             holder.viewNowPlayingStripe.setVisibility(View.VISIBLE);
-        } else {
 
-            holder.tvTitle.setTextColor(
-                    ContextCompat.getColor(
-                            holder.itemView.getContext(),
-                            R.color.textPrimary
-                    )
-            );
+        } else {
             holder.itemView.setForeground(null);
             holder.viewNowPlayingStripe.setVisibility(View.GONE);
         }
@@ -269,6 +284,36 @@ public class SongAdapter extends RecyclerView.Adapter<SongAdapter.SongViewHolder
         long minutes = totalSeconds / 60;
         long seconds = totalSeconds % 60;
         return minutes + ":" + String.format("%02d", seconds);
+    }
+    private CharSequence applyHighlight(String text, String query, SongViewHolder holder) {
+        if (text == null) return "";
+
+        if (query == null || query.isEmpty()) {
+            return text;
+        }
+
+        String lowerText = text.toLowerCase();
+        String lowerQuery = query.toLowerCase();
+
+        int start = lowerText.indexOf(lowerQuery);
+
+        if (start < 0) {
+            return text;
+        }
+        SpannableString spannable = new SpannableString(text);
+
+        spannable.setSpan(
+                new ForegroundColorSpan(
+                        ContextCompat.getColor(
+                                holder.itemView.getContext(),
+                                R.color.accent
+                        )
+                ),
+                start,
+                start + query.length(),
+                Spanned.SPAN_EXCLUSIVE_EXCLUSIVE
+        );
+        return spannable;
     }
 
     @Override
