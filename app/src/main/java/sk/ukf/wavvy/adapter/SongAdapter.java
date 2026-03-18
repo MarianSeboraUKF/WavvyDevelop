@@ -20,6 +20,8 @@ import sk.ukf.wavvy.PlaylistRepository;
 import sk.ukf.wavvy.R;
 import sk.ukf.wavvy.model.Playlist;
 import sk.ukf.wavvy.model.Song;
+import android.widget.LinearLayout;
+import sk.ukf.wavvy.LikedSongsRepository;
 
 public class SongAdapter extends RecyclerView.Adapter<SongAdapter.SongViewHolder> {
     public interface OnSongClickListener {
@@ -129,6 +131,44 @@ public class SongAdapter extends RecyclerView.Adapter<SongAdapter.SongViewHolder
                         );
                 intent.putExtra("album_title", song.getAlbum());
                 ctx.startActivity(intent);
+                popupWindow.dismiss();
+            });
+
+            LinearLayout favAction = popupView.findViewById(R.id.actionAddFavorite);
+            ImageView favIcon = (ImageView) favAction.getChildAt(0);
+            TextView favText = (TextView) favAction.getChildAt(1);
+
+            String songId = String.valueOf(song.getAudioResId());
+            boolean liked = LikedSongsRepository.isLiked(ctx, songId);
+
+            if (liked) {
+                favIcon.setImageResource(R.drawable.ic_liked);
+                favIcon.setColorFilter(ContextCompat.getColor(ctx, R.color.accent));
+                favText.setText("Remove from favorites");
+            } else {
+                favIcon.setImageResource(R.drawable.ic_like);
+                favIcon.setColorFilter(ContextCompat.getColor(ctx, R.color.textPrimary));
+                favText.setText("Add to favorites");
+            }
+
+            favAction.setOnClickListener(v1 -> {
+                LikedSongsRepository.toggleLike(ctx, songId);
+
+                boolean newLiked = LikedSongsRepository.isLiked(ctx, songId);
+
+                if (newLiked) {
+                    android.widget.Toast.makeText(
+                            ctx,
+                            "Added to favorites",
+                            android.widget.Toast.LENGTH_SHORT
+                    ).show();
+                } else {
+                    android.widget.Toast.makeText(
+                            ctx,
+                            "Removed from favorites",
+                            android.widget.Toast.LENGTH_SHORT
+                    ).show();
+                }
                 popupWindow.dismiss();
             });
 

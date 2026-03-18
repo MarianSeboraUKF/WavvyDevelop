@@ -8,7 +8,7 @@
     android:padding="10dp">
 
     <LinearLayout
-        android:id="@+id/actionAddToFavourites"
+        android:id="@+id/actionAddToFavorites"
         android:layout_width="match_parent"
         android:layout_height="48dp"
         android:gravity="center_vertical"
@@ -24,7 +24,7 @@
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="Add to favourites"
+            android:text="Add to favorites"
             android:textSize="16sp"
             android:textColor="@color/textPrimary"
             android:layout_marginStart="10dp"/>

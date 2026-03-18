@@ -5,6 +5,7 @@ import android.view.View;
 import android.view.MotionEvent;
 import android.widget.ImageButton;
 import android.widget.ImageView;
+import android.widget.LinearLayout;
 import android.widget.SeekBar;
 import android.widget.TextView;
 import android.graphics.Bitmap;
@@ -42,6 +43,7 @@ public class PlayerActivity extends AppCompatActivity implements PlaybackManager
     private long lastTrackChangeTime = 0;
     private static final int SWIPE_THRESHOLD = 180;
     private TextView tvBottomLabel, tvBottomTrack;
+    private ImageView btnFavourite;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -120,6 +122,35 @@ public class PlayerActivity extends AppCompatActivity implements PlaybackManager
         tvTotalTime = findViewById(R.id.tvTotalTime);
         tvBottomLabel = findViewById(R.id.tvBottomLabel);
         tvBottomTrack = findViewById(R.id.tvBottomTrack);
+        btnFavourite = findViewById(R.id.btnFavourite);
+
+        btnFavourite.setOnClickListener(v -> {
+            Song song = SongRepository.findByAudioResId(pm.getCurrentAudioResId());
+
+            if (song == null) return;
+
+            String songId = String.valueOf(song.getAudioResId());
+            LikedSongsRepository.toggleLike(this, songId);
+            boolean liked = LikedSongsRepository.isLiked(this, songId);
+
+            if (liked) {
+                btnFavourite.setImageResource(R.drawable.ic_liked);
+
+                android.widget.Toast.makeText(
+                        this,
+                        "Added to favorites",
+                        android.widget.Toast.LENGTH_SHORT
+                ).show();
+            } else {
+                btnFavourite.setImageResource(R.drawable.ic_like);
+
+                android.widget.Toast.makeText(
+                        this,
+                        "Removed from favorites",
+                        android.widget.Toast.LENGTH_SHORT
+                ).show();
+            }
+        });
 
         btnBack.setOnClickListener(v -> finish());
 
@@ -145,12 +176,45 @@ public class PlayerActivity extends AppCompatActivity implements PlaybackManager
 
             popupWindow.setElevation(16f);
 
-            popupView.findViewById(R.id.actionAddToFavourites).setOnClickListener(v1 -> {
-                android.widget.Toast.makeText(
-                        this,
-                        "Add to favourites soon",
-                        android.widget.Toast.LENGTH_SHORT
-                ).show();
+            LinearLayout favAction = popupView.findViewById(R.id.actionAddToFavorites);
+            ImageView favIcon = (ImageView) favAction.getChildAt(0);
+            TextView favText = (TextView) favAction.getChildAt(1);
+
+            String songId = String.valueOf(song.getAudioResId());
+            boolean liked = LikedSongsRepository.isLiked(this, songId);
+
+            if (liked) {
+                favIcon.setImageResource(R.drawable.ic_liked);
+                favIcon.setColorFilter(ContextCompat.getColor(this, R.color.accent));
+                favText.setText("Remove from favorites");
+            } else {
+                favIcon.setImageResource(R.drawable.ic_like);
+                favIcon.setColorFilter(ContextCompat.getColor(this, R.color.textPrimary));
+                favText.setText("Add to favorites");
+            }
+
+            favAction.setOnClickListener(v1 -> {
+                LikedSongsRepository.toggleLike(this, songId);
+
+                boolean newLiked = LikedSongsRepository.isLiked(this, songId);
+
+                if (newLiked) {
+                    btnFavourite.setImageResource(R.drawable.ic_liked);
+
+                    android.widget.Toast.makeText(
+                            this,
+                            "Added to favorites",
+                            android.widget.Toast.LENGTH_SHORT
+                    ).show();
+                } else {
+                    btnFavourite.setImageResource(R.drawable.ic_like);
+
+                    android.widget.Toast.makeText(
+                            this,
+                            "Removed from favorites",
+                            android.widget.Toast.LENGTH_SHORT
+                    ).show();
+                }
                 popupWindow.dismiss();
             });
 
@@ -426,6 +490,14 @@ public class PlayerActivity extends AppCompatActivity implements PlaybackManager
             }
             ivCover.setImageResource(s.getCoverResId());
             applyDynamicGradient(s.getCoverResId());
+        }
+
+        String songId = String.valueOf(s.getAudioResId());
+
+        if (LikedSongsRepository.isLiked(this, songId)) {
+            btnFavourite.setImageResource(R.drawable.ic_liked);
+        } else {
+            btnFavourite.setImageResource(R.drawable.ic_like);
         }
     }
     private void updatePlayPauseIcon() {
