@@ -50,7 +50,8 @@ public class SongRepository {
         return null;
     }
     public static ArrayList<Song> getMostPlayedSongs(Context ctx) {
-        ArrayList<Song> allSongs = getSongs();
+        ArrayList<Song> allSongs = new ArrayList<>(getSongs());
+        int limit = 10;
 
         allSongs.sort((a, b) -> {
             int countA = PlayCountRepository.getCount(ctx, a.getAudioResId());
@@ -59,8 +60,8 @@ public class SongRepository {
             return Integer.compare(countB, countA);
         });
 
-        if (allSongs.size() > 5) {
-            return new ArrayList<>(allSongs.subList(0, 5));
+        if (allSongs.size() > limit) {
+            return new ArrayList<>(allSongs.subList(0, limit));
         }
         return allSongs;
     }

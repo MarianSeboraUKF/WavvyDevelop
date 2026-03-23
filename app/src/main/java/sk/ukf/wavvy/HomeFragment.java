@@ -170,13 +170,9 @@ public class HomeFragment extends Fragment implements PlaybackManager.Listener {
 
         updateContinueCard();
 
-        if (mostPlayedAdapter != null) {
-            mostPlayed.clear();
-            mostPlayed.addAll(
-                    SongRepository.getMostPlayedSongs(requireContext())
-            );
-            mostPlayedAdapter.notifyDataSetChanged();
-        }
+        mostPlayedAdapter.updateData(
+                SongRepository.getMostPlayedSongs(requireContext())
+        );
 
         recentSongs.clear();
         recentSongs.addAll(
@@ -224,19 +220,26 @@ public class HomeFragment extends Fragment implements PlaybackManager.Listener {
 
             if (oldIndex >= 0) adapter.notifyItemChanged(oldIndex);
             if (newIndex >= 0) adapter.notifyItemChanged(newIndex);
+
             lastPlayingAudioId = audioResId;
         }
 
-        if (mostPlayedAdapter != null) {
-            mostPlayedAdapter.notifyDataSetChanged();
-        }
+        recentSongs.clear();
+        recentSongs.addAll(
+                SongRepository.getRecentlyPlayedSongs(requireContext())
+        );
+        recentAdapter.notifyDataSetChanged();
 
-        if (recentAdapter != null) {
-            recentAdapter.notifyDataSetChanged();
-        }
+        mostPlayedAdapter.updateData(
+                SongRepository.getMostPlayedSongs(requireContext())
+        );
     }
     @Override
-    public void onIsPlayingChanged(boolean isPlaying) {}
+    public void onIsPlayingChanged(boolean isPlaying) {
+        mostPlayedAdapter.updateData(
+                SongRepository.getMostPlayedSongs(requireContext())
+        );
+    }
     @Override
     public void onProgress(long positionMs, long durationMs) {}
 }

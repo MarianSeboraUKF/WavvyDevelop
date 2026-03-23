@@ -33,9 +33,7 @@ public class SongAdapter extends RecyclerView.Adapter<SongAdapter.SongViewHolder
     private final List<Song> songs;
     private final OnSongClickListener clickListener;
     private String highlightQuery = "";
-    public SongAdapter(List<Song> songs,
-                       OnSongClickListener clickListener,
-                       Object ignored) {
+    public SongAdapter(List<Song> songs, OnSongClickListener clickListener, Object ignored) {
         this.songs = songs;
         this.clickListener = clickListener;
     }

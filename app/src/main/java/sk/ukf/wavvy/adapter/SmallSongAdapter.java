@@ -57,4 +57,9 @@ public class SmallSongAdapter extends RecyclerView.Adapter<SmallSongAdapter.View
             tvTitle = itemView.findViewById(R.id.tvTitle);
         }
     }
+    public void updateData(List<Song> newSongs) {
+        this.songs.clear();
+        this.songs.addAll(newSongs);
+        notifyDataSetChanged();
+    }
 }

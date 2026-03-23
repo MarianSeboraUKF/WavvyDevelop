@@ -31,6 +31,7 @@ public class PlaybackManager {
     private int[] activeQueue = null;
     private int queueIndex = 0;
     private int currentAudioResId = 0;
+    private int lastCountedAudioId = -1;
     private boolean shuffleEnabled = false;
     private RepeatMode repeatMode = RepeatMode.OFF;
     private final List<WeakReference<Listener>> listeners = new ArrayList<>();
@@ -73,6 +74,11 @@ public class PlaybackManager {
             @Override
             public void onIsPlayingChanged(boolean isPlaying) {
                 notifyIsPlaying(isPlaying);
+
+                if (isPlaying && currentAudioResId != 0 && currentAudioResId != lastCountedAudioId) {
+                    PlayCountRepository.increment(appContext, currentAudioResId);
+                    lastCountedAudioId = currentAudioResId;
+                }
             }
 
             @Override
@@ -305,10 +311,9 @@ public class PlaybackManager {
     private void loadCurrent(boolean autoPlay) {
         if (activeQueue == null || activeQueue.length == 0) return;
         currentAudioResId = activeQueue[queueIndex];
+        lastCountedAudioId = -1;
 
-        MediaItem item = MediaItem.fromUri(
-                "android.resource://" + appContext.getPackageName() + "/" + currentAudioResId
-        );
+        MediaItem item = MediaItem.fromUri("android.resource://" + appContext.getPackageName() + "/" + currentAudioResId);
 
         player.setMediaItem(item);
         player.prepare();
@@ -319,14 +324,15 @@ public class PlaybackManager {
                 activeQueue,
                 queueIndex
         );
+
+        if (autoPlay) {
+            RecentlyPlayedRepository.add(appContext, currentAudioResId);
+        }
+
         notifyNowPlaying();
 
         if (autoPlay) {
-            PlayCountRepository.increment(appContext, currentAudioResId);
-            RecentlyPlayedRepository.add(appContext, currentAudioResId);
             player.play();
-        } else {
-            notifyIsPlaying(player.isPlaying());
         }
     }
     private void onTrackEnded() {
