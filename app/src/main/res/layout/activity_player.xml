@@ -75,7 +75,14 @@
         android:textColor="@color/textPrimary"
         android:gravity="center"
         android:maxLines="1"
-        android:ellipsize="end"
+
+        android:ellipsize="marquee"
+        android:marqueeRepeatLimit="marquee_forever"
+        android:singleLine="true"
+        android:focusable="true"
+        android:focusableInTouchMode="true"
+        android:scrollHorizontally="true"
+
         app:layout_constraintTop_toBottomOf="@id/tvPlaybackStatus"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent"/>
@@ -94,12 +101,12 @@
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintDimensionRatio="1:1">
 
-        <ImageView
+        <com.google.android.material.imageview.ShapeableImageView
             android:id="@+id/ivCover"
             android:layout_width="match_parent"
             android:layout_height="match_parent"
             android:scaleType="centerCrop"
-            android:clipToOutline="true"
+            app:shapeAppearanceOverlay="@style/CoverShape"
             android:src="@drawable/kto_som_cover"/>
     </com.google.android.material.card.MaterialCardView>
 
@@ -303,7 +310,14 @@
             android:textSize="22sp"
             android:textColor="@color/textPrimary"
             android:maxLines="1"
-            android:ellipsize="end"
+
+            android:ellipsize="marquee"
+            android:marqueeRepeatLimit="marquee_forever"
+            android:singleLine="true"
+            android:focusable="true"
+            android:focusableInTouchMode="true"
+            android:scrollHorizontally="true"
+
             android:layout_width="match_parent"
             android:layout_height="wrap_content"/>
     </LinearLayout>

@@ -65,6 +65,7 @@ public class HomeFragment extends Fragment implements PlaybackManager.Listener {
         cardContinue.setOnClickListener(v -> {
             PlaybackManager pm = PlaybackManager.get(requireContext());
 
+            if (pm.getCurrentAudioResId() == 0) return;
             if (!pm.isPlaying()) {
                 pm.togglePlayPause();
             }
@@ -118,9 +119,7 @@ public class HomeFragment extends Fragment implements PlaybackManager.Listener {
         rvMostPlayed.setAdapter(mostPlayedAdapter);
         rvSongs.setAdapter(adapter);
 
-        rvSongs.setItemAnimator(
-                new androidx.recyclerview.widget.DefaultItemAnimator()
-        );
+        rvSongs.setItemAnimator(null);
 
         RecyclerView rvAlbums = view.findViewById(R.id.rvAlbums);
 

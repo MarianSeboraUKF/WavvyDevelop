@@ -1,5 +1,6 @@
 package sk.ukf.wavvy;
 
+import android.annotation.SuppressLint;
 import android.content.Intent;
 import android.os.Bundle;
 import android.view.MotionEvent;
@@ -28,6 +29,7 @@ public class MainActivity extends AppCompatActivity implements PlaybackManager.L
     private Fragment searchFragment;
     private Fragment playlistsFragment;
     private Fragment activeFragment;
+    private float startX;
     private float startY;
     private static final int SWIPE_THRESHOLD = 140;
 
@@ -49,7 +51,7 @@ public class MainActivity extends AppCompatActivity implements PlaybackManager.L
 
             homeFragment = new HomeFragment();
             searchFragment = new SearchFragment();
-            playlistsFragment = new PlaylistsFragment();
+            playlistsFragment = new LibraryFragment();
 
             activeFragment = homeFragment;
 
@@ -62,7 +64,6 @@ public class MainActivity extends AppCompatActivity implements PlaybackManager.L
             getSupportFragmentManager().executePendingTransactions();
             preloadFragments();
         }
-
         setupBottomNavigation();
         setupMiniPlayer();
 
@@ -206,6 +207,7 @@ public class MainActivity extends AppCompatActivity implements PlaybackManager.L
             }
         }
     }
+    @SuppressLint("ClickableViewAccessibility")
     private void setupMiniPlayer() {
         miniPlayer = findViewById(R.id.miniPlayer);
         ivMiniCover = findViewById(R.id.ivMiniCover);
@@ -216,26 +218,59 @@ public class MainActivity extends AppCompatActivity implements PlaybackManager.L
         btnMiniNext = findViewById(R.id.btnMiniNext);
         miniProgress = findViewById(R.id.miniProgress);
 
-        miniPlayer.setOnTouchListener((v,event)->{
 
-            if(event.getAction()==MotionEvent.ACTION_DOWN){
-                startY=event.getRawY();
-                return true;
-            }
+        miniPlayer.setOnTouchListener((v, event) -> {
+            switch (event.getAction()) {
+                case MotionEvent.ACTION_DOWN:
+                    startX = event.getRawX();
+                    startY = event.getRawY();
+                    return true;
 
-            if(event.getAction()==MotionEvent.ACTION_UP){
-                v.performClick();
-                float diff=startY-event.getRawY();
+                case MotionEvent.ACTION_UP:
+                    v.performClick();
+                    float endX = event.getRawX();
+                    float endY = event.getRawY();
+                    float deltaX = endX - startX;
+                    float deltaY = endY - startY;
 
-                if(Math.abs(diff)<20||diff>SWIPE_THRESHOLD){
-                    openPlayerFromNowPlaying();
-                }
-                return true;
+                    if (Math.abs(deltaX) > 120 && Math.abs(deltaX) > Math.abs(deltaY)) {
+                        if (deltaX > 0) {
+                            PlaybackManager.get(this).playPrev(true);
+                        } else {
+                            PlaybackManager.get(this).playNext(true);
+                        }
+
+                        float move = deltaX > 0 ? 40f : -40f;
+                        View[] views = {ivMiniCover, tvMiniTitle, tvMiniArtist};
+
+                        for (View view : views) {
+                            view.animate()
+                                    .translationX(move)
+                                    .alpha(0.7f)
+                                    .setDuration(120)
+                                    .withEndAction(() ->
+                                            view.animate()
+                                                    .translationX(0f)
+                                                    .alpha(1f)
+                                                    .setDuration(120)
+                                                    .start()
+                                    )
+                                    .start();
+                        }
+                        return true;
+                    }
+                    if (Math.abs(deltaY) < 20 || -deltaY > SWIPE_THRESHOLD) {
+                        openPlayerFromNowPlaying();
+                    }
+                    v.performClick();
+                    return true;
             }
             return false;
         });
-
         btnMiniPrev.setOnClickListener(v -> {
+
+            haptic(v);
+
             PlaybackManager pm = PlaybackManager.get(this);
             long pos = pm.getPlayer().getCurrentPosition();
 
@@ -246,11 +281,26 @@ public class MainActivity extends AppCompatActivity implements PlaybackManager.L
             }
         });
 
-        btnMiniPlay.setOnClickListener(v ->
-                PlaybackManager.get(this).togglePlayPause());
-
-        btnMiniNext.setOnClickListener(v ->
-                PlaybackManager.get(this).playNext(true));
+        btnMiniPlay.setOnClickListener(v -> {
+            haptic(v);
+            v.animate()
+                    .scaleX(0.85f)
+                    .scaleY(0.85f)
+                    .setDuration(80)
+                    .withEndAction(() ->
+                            v.animate()
+                                    .scaleX(1f)
+                                    .scaleY(1f)
+                                    .setDuration(120)
+                                    .start()
+                    )
+                    .start();
+            PlaybackManager.get(this).togglePlayPause();
+        });
+        btnMiniNext.setOnClickListener(v -> {
+            haptic(v);
+            PlaybackManager.get(this).playNext(true);
+        });
     }
 
     @Override protected void onStart(){
@@ -269,11 +319,17 @@ public class MainActivity extends AppCompatActivity implements PlaybackManager.L
     @Override public void onNowPlayingChanged(int a,int[]b,int c){
         updateMiniPlayer();
     }
-    @Override public void onProgress(long pos,long dur){
-        if(dur>0){
-            miniProgress.setMax((int)dur);
-            miniProgress.setProgress((int)pos);
-        }
+    @Override
+    public void onProgress(long pos, long dur) {
+        if (dur <= 0) return;
+        miniProgress.setMax((int) dur);
+
+        miniProgress.animate()
+                .setDuration(200)
+                .withStartAction(() ->
+                        miniProgress.setProgress((int) pos)
+                )
+                .start();
     }
     private void updateMiniPlayer(){
         if(!NowPlayingRepository.hasNowPlaying(this)){
@@ -287,9 +343,68 @@ public class MainActivity extends AppCompatActivity implements PlaybackManager.L
         if(s==null)return;
 
         miniPlayer.setVisibility(View.VISIBLE);
-        ivMiniCover.setImageResource(s.getCoverResId());
-        tvMiniTitle.setText(s.getTitle());
-        tvMiniArtist.setText(s.getArtist());
+        android.view.animation.Interpolator ease =
+                new android.view.animation.DecelerateInterpolator();
+
+        ivMiniCover.animate()
+                .alpha(0f)
+                .scaleX(0.92f)
+                .scaleY(0.92f)
+                .setDuration(180)
+                .setInterpolator(ease)
+                .withEndAction(() -> {
+                    ivMiniCover.setImageResource(s.getCoverResId());
+
+                    ivMiniCover.animate()
+                            .alpha(1f)
+                            .scaleX(1f)
+                            .scaleY(1f)
+                            .setDuration(260)
+                            .setInterpolator(ease)
+                            .start();
+                })
+                .start();
+
+        tvMiniTitle.animate()
+                .alpha(0f)
+                .translationY(10f)
+                .setDuration(160)
+                .setInterpolator(ease)
+                .withEndAction(() -> {
+                    tvMiniTitle.setText(s.getTitle());
+
+                    tvMiniTitle.setTranslationY(-10f);
+
+                    tvMiniTitle.animate()
+                            .alpha(1f)
+                            .translationY(0f)
+                            .setDuration(260)
+                            .setInterpolator(ease)
+                            .start();
+                })
+                .start();
+
+        tvMiniArtist.animate()
+                .alpha(0f)
+                .translationY(10f)
+                .setDuration(160)
+                .setInterpolator(ease)
+                .withEndAction(() -> {
+                    tvMiniArtist.setText(s.getArtist());
+
+                    tvMiniArtist.setTranslationY(-10f);
+
+                    tvMiniArtist.animate()
+                            .alpha(1f)
+                            .translationY(0f)
+                            .setDuration(260)
+                            .setInterpolator(ease)
+                            .start();
+                })
+                .start();
+    }
+    private void haptic(View v){
+        v.performHapticFeedback(android.view.HapticFeedbackConstants.VIRTUAL_KEY);
     }
     private void openPlayerFromNowPlaying(){
 

@@ -1,8 +1,11 @@
 package sk.ukf.wavvy;
 
+import android.animation.ValueAnimator;
+import android.annotation.SuppressLint;
 import android.os.Bundle;
 import android.view.View;
 import android.view.MotionEvent;
+import android.view.animation.DecelerateInterpolator;
 import android.widget.ImageButton;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
@@ -19,6 +22,7 @@ import androidx.core.content.ContextCompat;
 import androidx.core.view.WindowCompat;
 import androidx.core.view.WindowInsetsControllerCompat;
 import androidx.media3.exoplayer.ExoPlayer;
+import com.google.android.material.imageview.ShapeableImageView;
 import sk.ukf.wavvy.adapter.PickPlaylistAdapter;
 import sk.ukf.wavvy.model.Playlist;
 import sk.ukf.wavvy.model.Song;
@@ -44,7 +48,13 @@ public class PlayerActivity extends AppCompatActivity implements PlaybackManager
     private static final int SWIPE_THRESHOLD = 180;
     private TextView tvBottomLabel, tvBottomTrack;
     private ImageView btnFavourite;
+    private float startX;
+    private Boolean lastIsPlaying = null;
+    private int lastAnimatedAudioId = -1;
+    private boolean ignorePlaybackChanges = false;
+    private boolean ignoreCoverAnimation = false;
 
+    @SuppressLint("ClickableViewAccessibility")
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -60,31 +70,6 @@ public class PlayerActivity extends AppCompatActivity implements PlaybackManager
                 .alpha(1f)
                 .setDuration(350)
                 .start();
-
-        root.setOnTouchListener((v, event) -> {
-            switch (event.getAction()) {
-
-                case MotionEvent.ACTION_DOWN:
-                    startY = event.getY();
-                    return true;
-
-                case MotionEvent.ACTION_UP:
-
-                    float endY = event.getY();
-                    float deltaY = endY - startY;
-
-                    if (getSupportFragmentManager().findFragmentByTag("queue") != null) {
-                        return false;
-                    }
-
-                    if (deltaY > SWIPE_THRESHOLD) {
-                        finish();
-                    }
-                    v.performClick();
-                    return true;
-            }
-            return false;
-        });
 
         ViewCompat.setOnApplyWindowInsetsListener(root, (v, insets) -> {
             int bottom = insets.getInsets(
@@ -114,6 +99,38 @@ public class PlayerActivity extends AppCompatActivity implements PlaybackManager
         tvSongArtist = findViewById(R.id.tvSongArtist);
         tvSongAlbum = findViewById(R.id.tvSongAlbum);
         ivCover = findViewById(R.id.ivCover);
+        ivCover.setOnTouchListener((v, event) -> {
+            switch (event.getAction()) {
+                case MotionEvent.ACTION_DOWN:
+                    startY = event.getY();
+                    startX = event.getX();
+                    return true;
+
+                case MotionEvent.ACTION_UP:
+
+                    float endY = event.getY();
+                    float endX = event.getX();
+
+                    float deltaY = endY - startY;
+                    float deltaX = endX - startX;
+
+                    if (Math.abs(deltaX) > 180) {
+                        if (deltaX > 0) {
+                            pm.playPrev(true);
+                        } else {
+                            pm.playNext(true);
+                        }
+                        return true;
+                    }
+                    if (deltaY > SWIPE_THRESHOLD) {
+                        finish();
+                    }
+                    v.performClick();
+                    return true;
+            }
+            return false;
+        });
+
         btnShuffle = findViewById(R.id.btnShuffle);
         btnPrev = findViewById(R.id.btnPrev);
         btnPlayPause = findViewById(R.id.btnPlayPause);
@@ -126,6 +143,8 @@ public class PlayerActivity extends AppCompatActivity implements PlaybackManager
         tvBottomLabel = findViewById(R.id.tvBottomLabel);
         tvBottomTrack = findViewById(R.id.tvBottomTrack);
         btnFavourite = findViewById(R.id.btnFavourite);
+        tvSongTitle.setSelected(true);
+        tvBottomTrack.setSelected(true);
 
         btnFavourite.setOnClickListener(v -> {
             Song song = SongRepository.findByAudioResId(pm.getCurrentAudioResId());
@@ -300,10 +319,29 @@ public class PlayerActivity extends AppCompatActivity implements PlaybackManager
             popupWindow.showAsDropDown(btnMore, -245, 0);
         });
 
-        btnPlayPause.setOnClickListener(v -> pm.togglePlayPause());
-        btnNext.setOnClickListener(v -> pm.playNext(true));
+        btnPlayPause.setOnClickListener(v -> {
+            haptic(v);
+            v.animate()
+                    .scaleX(0.85f)
+                    .scaleY(0.85f)
+                    .setDuration(80)
+                    .withEndAction(() ->
+                            v.animate()
+                                    .scaleX(1f)
+                                    .scaleY(1f)
+                                    .setDuration(120)
+                                    .start()
+                    )
+                    .start();
+            pm.togglePlayPause();
+        });
+        btnNext.setOnClickListener(v -> {
+            haptic(v);
+            pm.playNext(true);
+        });
 
         btnPrev.setOnClickListener(v -> {
+            haptic(v);
             if (player != null && player.getCurrentPosition() > 3000) {
                 player.seekTo(0);
                 return;
@@ -312,17 +350,23 @@ public class PlayerActivity extends AppCompatActivity implements PlaybackManager
         });
 
         btnShuffle.setOnClickListener(v -> {
+            haptic(v);
+            ignoreCoverAnimation = true;
             pm.toggleShuffle();
             updateShuffleUi();
             updatePlaybackStatusText();
             updateNavButtons();
+            v.postDelayed(() -> ignoreCoverAnimation = false, 150);
         });
 
         btnRepeat.setOnClickListener(v -> {
+            haptic(v);
+            ignoreCoverAnimation = true;
             pm.cycleRepeatMode();
             updateRepeatUi();
             updatePlaybackStatusText();
             updateNavButtons();
+            v.postDelayed(() -> ignoreCoverAnimation = false, 150);
         });
 
         seekBar.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
@@ -333,24 +377,36 @@ public class PlayerActivity extends AppCompatActivity implements PlaybackManager
             @Override
             public void onStartTrackingTouch(SeekBar sb) {
                 isUserSeeking = true;
+                ignorePlaybackChanges = true;
             }
             @Override
             public void onStopTrackingTouch(SeekBar sb) {
                 isUserSeeking = false;
                 if (player != null) player.seekTo(sb.getProgress());
+                sb.postDelayed(() -> {
+                    ignorePlaybackChanges = false;
+                    boolean playing = player != null && player.isPlaying();
+                    lastIsPlaying = playing;
+                    animateCoverState(playing);
+                }, 200);
             }
         });
+
         handleIntentPlayback();
         updateShuffleUi();
         updateRepeatUi();
         updatePlaybackStatusText();
         updateNowPlayingUiFromRepo();
         updatePlayPauseIcon();
+        animateCoverState(player != null && player.isPlaying());
         updateNavButtons();
-
         LinearLayout bottomArea = findViewById(R.id.bottomNowPlaying);
 
         bottomArea.setOnClickListener(v -> {
+            if (getSupportFragmentManager().isStateSaved()) return;
+            if (getSupportFragmentManager().findFragmentByTag("queue") != null) {
+                return;
+            }
             QueueBottomSheet sheet = new QueueBottomSheet();
             sheet.show(getSupportFragmentManager(), "queue");
         });
@@ -403,16 +459,84 @@ public class PlayerActivity extends AppCompatActivity implements PlaybackManager
     }
     @Override
     public void onNowPlayingChanged(int audioResId, int[] queueIds, int queueIndex) {
+
+        if (audioResId == lastAnimatedAudioId) {
+            return;
+        }
+
         lastTrackChangeTime = System.currentTimeMillis();
+        lastAnimatedAudioId = -1;
+
         updateNowPlayingUiFromRepo();
         updateNavButtons();
     }
     @Override
     public void onIsPlayingChanged(boolean isPlaying) {
+
         updatePlayPauseIcon();
+
+        if (ignorePlaybackChanges || ignoreCoverAnimation) return;
+
+        if (isUserSeeking) return;
+
+        if (lastIsPlaying != null && lastIsPlaying == isPlaying) {
+
+            float currentScale = ivCover.getScaleX();
+
+            if ((isPlaying && currentScale == 1f) ||
+                    (!isPlaying && currentScale == 0.75f)) {
+                return;
+            }
+        }
+        lastIsPlaying = isPlaying;
+        animateCoverState(isPlaying);
+    }
+    private void animateCoverState(boolean isPlaying) {
+        if (ignoreCoverAnimation) return;
+        if (isUserSeeking) return;
+
+        ivCover.animate().cancel();
+        ivCover.setAlpha(1f);
+        float targetScale = isPlaying ? 1f : 0.75f;
+
+        ivCover.animate()
+                .scaleX(targetScale)
+                .scaleY(targetScale)
+                .setDuration(320)
+                .setInterpolator(new android.view.animation.DecelerateInterpolator())
+                .start();
+        animateCornerRadius(isPlaying);
+    }
+    private void animateCornerRadius(boolean isPlaying) {
+        if (isUserSeeking || ignoreCoverAnimation) return;
+        ShapeableImageView image = findViewById(R.id.ivCover);
+
+        float start = image.getShapeAppearanceModel().getTopLeftCornerSize().getCornerSize(null);
+        float end = isPlaying ? dp(20) : dp(40);
+
+        ValueAnimator animator = ValueAnimator.ofFloat(start, end);
+
+        animator.setDuration(320);
+        animator.setInterpolator(new android.view.animation.PathInterpolator(0.4f, 0f, 0.2f, 1f));
+
+        animator.addUpdateListener(animation -> {
+            float value = (float) animation.getAnimatedValue();
+
+            image.setShapeAppearanceModel(
+                    image.getShapeAppearanceModel()
+                            .toBuilder()
+                            .setAllCornerSizes(value)
+                            .build()
+            );
+        });
+        animator.start();
+    }
+    private float dp(int value) {
+        return value * getResources().getDisplayMetrics().density;
     }
     @Override
     public void onProgress(long positionMs, long durationMs) {
+        seekBar.setSecondaryProgress((int) durationMs);
         if (isUserSeeking) return;
 
         if (durationMs > 0) {
@@ -492,7 +616,7 @@ public class PlayerActivity extends AppCompatActivity implements PlaybackManager
         dialog.show();
     }
     private void updateNowPlayingUiFromRepo() {
-        int audioResId = NowPlayingRepository.getAudioResId(this);
+        int audioResId = pm.getCurrentAudioResId();
         Song s = SongRepository.findByAudioResId(audioResId);
 
         if (s != null) {
@@ -508,10 +632,32 @@ public class PlayerActivity extends AppCompatActivity implements PlaybackManager
             } else {
                 tvSongAlbum.setVisibility(View.GONE);
             }
-            ivCover.setImageResource(s.getCoverResId());
+            boolean isNewSong = audioResId != lastAnimatedAudioId;
+            if (isNewSong) {
+                lastAnimatedAudioId = audioResId;
+                ivCover.animate().cancel();
+                ivCover.setImageResource(s.getCoverResId());
+                ivCover.setAlpha(0f);
+                ivCover.setScaleX(0.97f);
+                ivCover.setScaleY(0.97f);
+
+                ivCover.animate()
+                        .alpha(1f)
+                        .scaleX(1f)
+                        .scaleY(1f)
+                        .setDuration(520)
+                        .setInterpolator(new DecelerateInterpolator())
+                        .start();
+
+            } else {
+                ivCover.animate().cancel();
+                ivCover.setAlpha(1f);
+                ivCover.setScaleX(player.isPlaying() ? 1f : 0.75f);
+                ivCover.setScaleY(player.isPlaying() ? 1f : 0.75f);
+                ivCover.setImageResource(s.getCoverResId());
+            }
             applyDynamicGradient(s.getCoverResId());
         }
-
         String songId = String.valueOf(s.getAudioResId());
 
         if (LikedSongsRepository.isLiked(this, songId)) {
@@ -671,6 +817,9 @@ public class PlayerActivity extends AppCompatActivity implements PlaybackManager
         long seconds = totalSeconds % 60;
 
         return String.format("%02d:%02d", minutes, seconds);
+    }
+    private void haptic(View v) {
+        v.performHapticFeedback(android.view.HapticFeedbackConstants.VIRTUAL_KEY);
     }
     private void animateBottomText(String label, String track) {
         String currentLabel = tvBottomLabel.getText().toString();

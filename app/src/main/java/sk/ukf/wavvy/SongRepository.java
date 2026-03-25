@@ -24,12 +24,14 @@ public class SongRepository {
         cached.add(new Song("23", "Raphael", "", "23", "Raphael", "-",1, R.drawable.raphael_23_cover, R.raw.raphael_23));
         cached.add(new Song("ROZMÝŠLAM", "RAYYY P", "Majkyyy", "kto.som.?", "RAYYY P", "Majkyyy", 5, R.drawable.kto_som_cover, R.raw.rozmyslam));
         cached.add(new Song("NEBOJÍM SA", "RAYYY P", "Relon", "kto.som.?", "RAYYY P", "-", 6, R.drawable.kto_som_cover, R.raw.nebojim_sa));
+        cached.add(new Song("Tsunami", "DJ Snake", "Future, Travis Scott", "Nomad", "DJ Snake", "DJ Snake", 8, R.drawable.nomad_cover, R.raw.tsunami));
         cached.add(new Song("ROZMÝŠLAM - Majkyyy Remix DnB Version", "RAYYY P", "Majkyyy", "kto.som.?", "RAYYY P", "Majkyyy", 8, R.drawable.kto_som_cover, R.raw.rozmyslam_dnb_version));
         cached.add(new Song("BODY ON BODY", "Danisen", "", "ANJELI A DEMONI", "Danisen", "Slavyyy",1, R.drawable.anjeli_a_demoni_cover, R.raw.body_on_body));
         cached.add(new Song("VÝZNAM? - skit", "RAYYY P", "", "kto.som.?", "RAYYY P","-",7, R.drawable.kto_som_cover, R.raw.vyznam_skit));
         cached.add(new Song("BBL", "P T K", "", "KARAKORAM", "P T K", "Rigas Beats, Anyvibe",16, R.drawable.karakoram_cover, R.raw.bbl));
         cached.add(new Song("TAK DOSŤ!", "RAYYY P", "", "kto.som.?", "RAYYY P", "-",9, R.drawable.kto_som_cover, R.raw.tak_dost));
         cached.add(new Song("12 FREESTYLE", "RAYYY P", "", "kto.som.?", "RAYYY P", "-",11, R.drawable.kto_som_cover, R.raw.freestyle_1_2));
+        cached.add(new Song("Zub za zub", "Separ", "Raphael", "Zub za zub", "Separ", "Die For",1, R.drawable.zub_za_zub_cover, R.raw.zub_za_zub));
         cached.add(new Song("CHODÍM SPAŤ RÁNO", "RAYYY P", "", "kto.som.?", "RAYYY P", "-",12, R.drawable.kto_som_cover, R.raw.chodim_spat_rano));
         cached.add(new Song("Tempo za 2", "Sara Rikas", "Raphael", "Ja, Sára", "Sara Rikas", "Lou Xtwo, Decky",2, R.drawable.ja_sara_cover, R.raw.tempo_za_2));
         cached.add(new Song("MOON", "RAYYY P", "", "kto.som.?", "RAYYY P", "-",13, R.drawable.kto_som_cover, R.raw.moon));

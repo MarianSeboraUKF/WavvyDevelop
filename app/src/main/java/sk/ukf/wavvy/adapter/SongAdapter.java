@@ -110,6 +110,19 @@ public class SongAdapter extends RecyclerView.Adapter<SongAdapter.SongViewHolder
         }
 
         holder.itemView.setOnClickListener(v -> {
+            v.animate()
+                    .scaleX(0.96f)
+                    .scaleY(0.96f)
+                    .setDuration(80)
+                    .withEndAction(() ->
+                            v.animate()
+                                    .scaleX(1f)
+                                    .scaleY(1f)
+                                    .setDuration(120)
+                                    .start()
+                    )
+                    .start();
+
             if (clickListener != null) {
                 clickListener.onSongClick(song);
             }
