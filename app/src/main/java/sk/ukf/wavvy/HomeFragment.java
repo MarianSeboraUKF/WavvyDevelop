@@ -111,8 +111,8 @@ public class HomeFragment extends Fragment implements PlaybackManager.Listener {
 
         adapter = new SongAdapter(
                 allSongs,
-                song -> PlayerLauncher.openQueue(requireContext(), allSongs, song),
-                null
+                false,
+                song -> PlayerLauncher.openQueue(requireContext(), allSongs, song)
         );
 
         rvMostPlayed.setAdapter(mostPlayedAdapter);

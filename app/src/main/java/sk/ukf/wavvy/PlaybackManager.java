@@ -387,6 +387,77 @@ public class PlaybackManager {
         }
         return 0;
     }
+    public void removeFromQueue(int position) {
+        if (activeQueue == null || position < 0 || position >= activeQueue.length) return;
+
+        int[] newQueue = new int[activeQueue.length - 1];
+        int j = 0;
+        for (int i = 0; i < activeQueue.length; i++) {
+            if (i == position) continue;
+            newQueue[j++] = activeQueue[i];
+        }
+        activeQueue = newQueue;
+
+        if (queueIndex > position) {
+            queueIndex--;
+        } else if (queueIndex == position) {
+            if (activeQueue.length > 0) {
+                queueIndex = Math.min(queueIndex, activeQueue.length - 1);
+                loadCurrent(true);
+            } else {
+                player.stop();
+            }
+        }
+
+        NowPlayingRepository.saveNowPlaying(
+                appContext,
+                currentAudioResId,
+                activeQueue,
+                queueIndex
+        );
+        notifyNowPlaying();
+    }
+    public void playFromQueue(int position) {
+        ensureQueueLoadedIfPossible();
+
+        if (activeQueue == null || position < 0 || position >= activeQueue.length) return;
+
+        queueIndex = position;
+        loadCurrent(true);
+    }
+    public void moveQueueItem(int from, int to) {
+        if (activeQueue == null) return;
+        if (from < 0 || to < 0 || from >= activeQueue.length || to >= activeQueue.length) return;
+
+        int moved = activeQueue[from];
+
+        if (from < to) {
+            for (int i = from; i < to; i++) {
+                activeQueue[i] = activeQueue[i + 1];
+            }
+        } else {
+            for (int i = from; i > to; i--) {
+                activeQueue[i] = activeQueue[i - 1];
+            }
+        }
+        activeQueue[to] = moved;
+
+        if (queueIndex == from) {
+            queueIndex = to;
+        } else if (from < queueIndex && to >= queueIndex) {
+            queueIndex--;
+        } else if (from > queueIndex && to <= queueIndex) {
+            queueIndex++;
+        }
+
+        NowPlayingRepository.saveNowPlaying(
+                appContext,
+                currentAudioResId,
+                activeQueue,
+                queueIndex
+        );
+        notifyNowPlaying();
+    }
     public void insertNext(int audioResId) {
         ensureQueueLoadedIfPossible();
 

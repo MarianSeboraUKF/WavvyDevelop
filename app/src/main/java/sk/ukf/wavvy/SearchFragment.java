@@ -97,8 +97,12 @@ public class SearchFragment extends Fragment {
 
         adapter = new SongAdapter(
                 filteredSongs,
-                song -> PlayerLauncher.openQueue(requireContext(), filteredSongs, song),
-                null
+                false,
+                song -> PlayerLauncher.openQueue(
+                        requireContext(),
+                        filteredSongs,
+                        song
+                )
         );
 
         recyclerView.setAdapter(adapter);

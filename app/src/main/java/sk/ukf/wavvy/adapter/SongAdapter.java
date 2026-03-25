@@ -3,6 +3,7 @@ package sk.ukf.wavvy.adapter;
 import android.text.SpannableString;
 import android.text.Spanned;
 import android.text.style.ForegroundColorSpan;
+import android.view.Gravity;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -33,16 +34,20 @@ public class SongAdapter extends RecyclerView.Adapter<SongAdapter.SongViewHolder
     private final List<Song> songs;
     private final OnSongClickListener clickListener;
     private String highlightQuery = "";
-    public SongAdapter(List<Song> songs, OnSongClickListener clickListener, Object ignored) {
+    private boolean isQueue;
+    public SongAdapter(List<Song> songs, boolean isQueue, OnSongClickListener clickListener) {
         this.songs = songs;
         this.clickListener = clickListener;
+        this.isQueue = isQueue;
     }
 
     @NonNull
     @Override
     public SongViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
+        int layout = isQueue ? R.layout.item_song_queue : R.layout.item_song;
+
         View view = LayoutInflater.from(parent.getContext())
-                .inflate(R.layout.item_song, parent, false);
+                .inflate(layout, parent, false);
 
         return new SongViewHolder(view);
     }
@@ -110,172 +115,178 @@ public class SongAdapter extends RecyclerView.Adapter<SongAdapter.SongViewHolder
             }
         });
 
-        holder.btnSongMenu.setOnClickListener(v -> {
-            android.content.Context ctx = holder.itemView.getContext();
+        if (!isQueue && holder.btnSongMenu != null) {
+            holder.btnSongMenu.setOnClickListener(v -> {
+                android.content.Context ctx = holder.itemView.getContext();
 
-            View popupView = LayoutInflater.from(ctx)
-                    .inflate(R.layout.dialog_song_menu, null);
+                View popupView = LayoutInflater.from(ctx)
+                        .inflate(R.layout.dialog_song_menu, null);
 
-            PopupWindow popupWindow = new PopupWindow(
-                    popupView,
-                    ViewGroup.LayoutParams.WRAP_CONTENT,
-                    ViewGroup.LayoutParams.WRAP_CONTENT,
-                    true
-            );
-            popupWindow.setBackgroundDrawable(new ColorDrawable(android.graphics.Color.TRANSPARENT));
-            popupWindow.setElevation(16f);
-
-            popupView.findViewById(R.id.actionPlayNext).setOnClickListener(v1 -> {
-                PlaybackManager.get(ctx).insertNext(song.getAudioResId());
-
-                android.widget.Toast.makeText(
-                        ctx,
-                        "Added to queue",
-                        android.widget.Toast.LENGTH_SHORT
-                ).show();
-                popupWindow.dismiss();
-            });
-
-            popupView.findViewById(R.id.actionGoAlbum).setOnClickListener(v1 -> {
-                android.content.Intent intent =
-                        new android.content.Intent(
-                                ctx,
-                                AlbumDetailActivity.class
-                        );
-                intent.putExtra("album_title", song.getAlbum());
-                ctx.startActivity(intent);
-                popupWindow.dismiss();
-            });
-
-            LinearLayout favAction = popupView.findViewById(R.id.actionAddFavorite);
-            ImageView favIcon = (ImageView) favAction.getChildAt(0);
-            TextView favText = (TextView) favAction.getChildAt(1);
-
-            String songId = String.valueOf(song.getAudioResId());
-            boolean liked = LikedSongsRepository.isLiked(ctx, songId);
-
-            if (liked) {
-                favIcon.setImageResource(R.drawable.ic_liked);
-                favIcon.setColorFilter(ContextCompat.getColor(ctx, R.color.accent));
-                favText.setText("Remove from favorites");
-            } else {
-                favIcon.setImageResource(R.drawable.ic_like);
-                favIcon.setColorFilter(ContextCompat.getColor(ctx, R.color.textPrimary));
-                favText.setText("Add to favorites");
-            }
-
-            favAction.setOnClickListener(v1 -> {
-                LikedSongsRepository.toggleLike(ctx, songId);
-
-                boolean newLiked = LikedSongsRepository.isLiked(ctx, songId);
-
-                if (newLiked) {
-                    android.widget.Toast.makeText(
-                            ctx,
-                            "Added to favorites",
-                            android.widget.Toast.LENGTH_SHORT
-                    ).show();
-                } else {
-                    android.widget.Toast.makeText(
-                            ctx,
-                            "Removed from favorites",
-                            android.widget.Toast.LENGTH_SHORT
-                    ).show();
-                }
-                popupWindow.dismiss();
-            });
-
-            popupView.findViewById(R.id.actionAddPlaylist).setOnClickListener(v1 -> {
-                popupWindow.dismiss();
-
-                java.util.ArrayList<Playlist> playlists =
-                        PlaylistRepository.getPlaylists(ctx);
-
-                if (playlists.isEmpty()) {
-                    android.widget.Toast.makeText(
-                            ctx,
-                            "No playlists yet",
-                            android.widget.Toast.LENGTH_SHORT
-                    ).show();
-                    return;
-                }
-
-                android.view.View dialogView = LayoutInflater.from(ctx)
-                        .inflate(R.layout.dialog_pick_playlist, null);
-
-                androidx.recyclerview.widget.RecyclerView rv =
-                        dialogView.findViewById(R.id.rvPickPlaylists);
-
-                Button btnCancel =
-                        dialogView.findViewById(R.id.btnCancel);
-
-                AlertDialog dialog = new AlertDialog.Builder(ctx)
-                        .setView(dialogView)
-                        .create();
-
-                dialog.getWindow().setBackgroundDrawableResource(android.R.color.transparent);
-
-                rv.setLayoutManager(
-                        new androidx.recyclerview.widget.LinearLayoutManager(ctx)
+                PopupWindow popupWindow = new PopupWindow(
+                        popupView,
+                        ViewGroup.LayoutParams.WRAP_CONTENT,
+                        ViewGroup.LayoutParams.WRAP_CONTENT,
+                        true
                 );
+                popupWindow.setBackgroundDrawable(new ColorDrawable(android.graphics.Color.TRANSPARENT));
+                popupWindow.setElevation(16f);
 
-                PickPlaylistAdapter pickAdapter = new PickPlaylistAdapter(
-                        playlists,
-                        playlist -> {
-                            PlaylistRepository.addSongToPlaylist(
+                popupView.findViewById(R.id.actionPlayNext).setOnClickListener(v1 -> {
+                    PlaybackManager.get(ctx).insertNext(song.getAudioResId());
+
+                    android.widget.Toast.makeText(
+                            ctx,
+                            "Added to queue",
+                            android.widget.Toast.LENGTH_SHORT
+                    ).show();
+                    popupWindow.dismiss();
+                });
+
+                popupView.findViewById(R.id.actionGoAlbum).setOnClickListener(v1 -> {
+                    android.content.Intent intent =
+                            new android.content.Intent(
                                     ctx,
-                                    playlist.getId(),
-                                    song.getAudioResId()
+                                    AlbumDetailActivity.class
                             );
+                    intent.putExtra("album_title", song.getAlbum());
+                    ctx.startActivity(intent);
+                    popupWindow.dismiss();
+                });
 
-                            android.widget.Toast.makeText(
-                                    ctx,
-                                    "Added to " + playlist.getName(),
-                                    android.widget.Toast.LENGTH_SHORT
-                            ).show();
-                            dialog.dismiss();
-                        }
-                );
-                rv.setAdapter(pickAdapter);
-                btnCancel.setOnClickListener(v2 -> dialog.dismiss());
-                dialog.show();
-            });
+                LinearLayout favAction = popupView.findViewById(R.id.actionAddFavorite);
+                ImageView favIcon = (ImageView) favAction.getChildAt(0);
+                TextView favText = (TextView) favAction.getChildAt(1);
 
-            popupView.findViewById(R.id.actionInfo).setOnClickListener(v1 -> {
-                popupWindow.dismiss();
+                String songId = String.valueOf(song.getAudioResId());
+                boolean liked = LikedSongsRepository.isLiked(ctx, songId);
 
-                android.content.Context context = holder.itemView.getContext();
-
-                View dialogView = LayoutInflater.from(context)
-                        .inflate(R.layout.dialog_song_info, null);
-
-                ImageView ivCover = dialogView.findViewById(R.id.ivSongInfoCover);
-                TextView tvTitle = dialogView.findViewById(R.id.tvSongInfoTitle);
-                TextView tvArtist = dialogView.findViewById(R.id.tvSongInfoArtist);
-                TextView tvAlbum = dialogView.findViewById(R.id.tvSongInfoAlbum);
-                TextView tvProducer = dialogView.findViewById(R.id.tvSongInfoProducer);
-                TextView tvLength = dialogView.findViewById(R.id.tvSongInfoLength);
-                Button btnClose = dialogView.findViewById(R.id.btnCloseSongInfo);
-
-                ivCover.setImageResource(song.getCoverResId());
-                tvTitle.setText(song.getTitle());
-                tvArtist.setText(song.getArtist());
-                tvAlbum.setText(song.getAlbum());
-                tvProducer.setText(song.getProducedBy());
-                tvLength.setText(formatDuration(song.getDurationMs()));
-
-                AlertDialog dialog = new AlertDialog.Builder(context)
-                        .setView(dialogView)
-                        .create();
-
-                if (dialog.getWindow() != null) {
-                    dialog.getWindow().setBackgroundDrawableResource(android.R.color.transparent);
+                if (liked) {
+                    favIcon.setImageResource(R.drawable.ic_liked);
+                    favIcon.setColorFilter(ContextCompat.getColor(ctx, R.color.accent));
+                    favText.setText("Remove from favorites");
+                } else {
+                    favIcon.setImageResource(R.drawable.ic_like);
+                    favIcon.setColorFilter(ContextCompat.getColor(ctx, R.color.textPrimary));
+                    favText.setText("Add to favorites");
                 }
-                btnClose.setOnClickListener(v2 -> dialog.dismiss());
-                dialog.show();
+
+                favAction.setOnClickListener(v1 -> {
+                    LikedSongsRepository.toggleLike(ctx, songId);
+
+                    boolean newLiked = LikedSongsRepository.isLiked(ctx, songId);
+
+                    if (newLiked) {
+                        android.widget.Toast.makeText(
+                                ctx,
+                                "Added to favorites",
+                                android.widget.Toast.LENGTH_SHORT
+                        ).show();
+                    } else {
+                        android.widget.Toast.makeText(
+                                ctx,
+                                "Removed from favorites",
+                                android.widget.Toast.LENGTH_SHORT
+                        ).show();
+                    }
+                    popupWindow.dismiss();
+                });
+
+                popupView.findViewById(R.id.actionAddPlaylist).setOnClickListener(v1 -> {
+                    popupWindow.dismiss();
+
+                    java.util.ArrayList<Playlist> playlists =
+                            PlaylistRepository.getPlaylists(ctx);
+
+                    if (playlists.isEmpty()) {
+                        android.widget.Toast.makeText(
+                                ctx,
+                                "No playlists yet",
+                                android.widget.Toast.LENGTH_SHORT
+                        ).show();
+                        return;
+                    }
+
+                    android.view.View dialogView = LayoutInflater.from(ctx)
+                            .inflate(R.layout.dialog_pick_playlist, null);
+
+                    androidx.recyclerview.widget.RecyclerView rv =
+                            dialogView.findViewById(R.id.rvPickPlaylists);
+
+                    Button btnCancel =
+                            dialogView.findViewById(R.id.btnCancel);
+
+                    AlertDialog dialog = new AlertDialog.Builder(ctx)
+                            .setView(dialogView)
+                            .create();
+
+                    dialog.getWindow().setBackgroundDrawableResource(android.R.color.transparent);
+
+                    rv.setLayoutManager(
+                            new androidx.recyclerview.widget.LinearLayoutManager(ctx)
+                    );
+
+                    PickPlaylistAdapter pickAdapter = new PickPlaylistAdapter(
+                            playlists,
+                            playlist -> {
+                                PlaylistRepository.addSongToPlaylist(
+                                        ctx,
+                                        playlist.getId(),
+                                        song.getAudioResId()
+                                );
+
+                                android.widget.Toast.makeText(
+                                        ctx,
+                                        "Added to " + playlist.getName(),
+                                        android.widget.Toast.LENGTH_SHORT
+                                ).show();
+                                dialog.dismiss();
+                            }
+                    );
+                    rv.setAdapter(pickAdapter);
+                    btnCancel.setOnClickListener(v2 -> dialog.dismiss());
+                    dialog.show();
+                });
+
+                popupView.findViewById(R.id.actionInfo).setOnClickListener(v1 -> {
+                    popupWindow.dismiss();
+
+                    android.content.Context context = holder.itemView.getContext();
+
+                    View dialogView = LayoutInflater.from(context)
+                            .inflate(R.layout.dialog_song_info, null);
+
+                    ImageView ivCover = dialogView.findViewById(R.id.ivSongInfoCover);
+                    TextView tvTitle = dialogView.findViewById(R.id.tvSongInfoTitle);
+                    TextView tvArtist = dialogView.findViewById(R.id.tvSongInfoArtist);
+                    TextView tvAlbum = dialogView.findViewById(R.id.tvSongInfoAlbum);
+                    TextView tvProducer = dialogView.findViewById(R.id.tvSongInfoProducer);
+                    TextView tvLength = dialogView.findViewById(R.id.tvSongInfoLength);
+                    Button btnClose = dialogView.findViewById(R.id.btnCloseSongInfo);
+
+                    ivCover.setImageResource(song.getCoverResId());
+                    tvTitle.setText(song.getTitle());
+                    tvArtist.setText(song.getArtist());
+                    tvAlbum.setText(song.getAlbum());
+                    tvProducer.setText(song.getProducedBy());
+                    tvLength.setText(formatDuration(song.getDurationMs()));
+
+                    AlertDialog dialog = new AlertDialog.Builder(context)
+                            .setView(dialogView)
+                            .create();
+
+                    if (dialog.getWindow() != null) {
+                        dialog.getWindow().setBackgroundDrawableResource(android.R.color.transparent);
+                    }
+                    btnClose.setOnClickListener(v2 -> dialog.dismiss());
+                    dialog.show();
+                });
+                popupWindow.showAsDropDown(holder.btnSongMenu, 0, 0, Gravity.END);
             });
-            popupWindow.showAsDropDown(holder.btnSongMenu, -245, 0);
-        });
+        }
+
+        if (holder.dragHandle != null) {
+            holder.dragHandle.setVisibility(isQueue ? View.VISIBLE : View.GONE);
+        }
     }
     private String formatDuration(long ms) {
         long totalSeconds = ms / 1000;
@@ -319,21 +330,21 @@ public class SongAdapter extends RecyclerView.Adapter<SongAdapter.SongViewHolder
         return songs.size();
     }
     static class SongViewHolder extends RecyclerView.ViewHolder {
+        TextView tvTitle, tvArtist, tvAlbum;
         ImageView ivCover;
-        TextView tvTitle;
-        TextView tvArtist;
-        TextView tvAlbum;
         View viewNowPlayingStripe;
         ImageButton btnSongMenu;
+        ImageView dragHandle;
         public SongViewHolder(@NonNull View itemView) {
             super(itemView);
 
-            ivCover = itemView.findViewById(R.id.ivItemCover);
             tvTitle = itemView.findViewById(R.id.tvItemTitle);
             tvArtist = itemView.findViewById(R.id.tvItemArtist);
             tvAlbum = itemView.findViewById(R.id.tvItemAlbum);
-            viewNowPlayingStripe = itemView.findViewById(R.id.viewNowPlayingStripe);
+            ivCover = itemView.findViewById(R.id.ivItemCover);
             btnSongMenu = itemView.findViewById(R.id.btnSongMenu);
+            viewNowPlayingStripe = itemView.findViewById(R.id.viewNowPlayingStripe);
+            dragHandle = itemView.findViewById(R.id.dragHandle);
         }
     }
 }

@@ -1,0 +1,99 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:layout_marginBottom="12dp"
+    android:paddingTop="16dp"
+    android:paddingBottom="16dp"
+    android:paddingEnd="12dp"
+    android:background="@drawable/bg_card_selector">
+
+    <View
+        android:id="@+id/viewNowPlayingStripe"
+        android:layout_width="4dp"
+        android:layout_height="0dp"
+        android:background="@drawable/bg_now_playing_stripe"
+        android:visibility="gone"
+        android:layout_marginStart="18dp"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintStart_toStartOf="parent"/>
+
+    <com.google.android.material.card.MaterialCardView
+        android:id="@+id/cardItemCover"
+        android:layout_width="64dp"
+        android:layout_height="64dp"
+        android:layout_marginStart="14dp"
+        app:cardCornerRadius="14dp"
+        app:cardElevation="0dp"
+        app:strokeWidth="0dp"
+        app:layout_constraintStart_toEndOf="@id/viewNowPlayingStripe"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintBottom_toBottomOf="parent">
+
+        <ImageView
+            android:id="@+id/ivItemCover"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:scaleType="centerCrop"/>
+    </com.google.android.material.card.MaterialCardView>
+
+    <TextView
+        android:id="@+id/tvItemTitle"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:textStyle="bold"
+        android:textSize="17sp"
+        android:letterSpacing="0.02"
+        android:textColor="@color/textPrimary"
+        android:layout_marginStart="14dp"
+        android:maxLines="1"
+        android:ellipsize="end"
+        app:layout_constraintStart_toEndOf="@id/cardItemCover"
+        app:layout_constraintTop_toTopOf="@id/cardItemCover"
+        app:layout_constraintEnd_toStartOf="@id/dragHandle"/>
+
+    <TextView
+        android:id="@+id/tvItemArtist"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:textSize="14sp"
+        android:textColor="@color/textSecondary"
+        android:layout_marginStart="14dp"
+        android:layout_marginTop="4dp"
+        android:maxLines="1"
+        android:ellipsize="end"
+        app:layout_constraintStart_toEndOf="@id/cardItemCover"
+        app:layout_constraintTop_toBottomOf="@id/tvItemTitle"
+        app:layout_constraintEnd_toStartOf="@id/dragHandle"/>
+
+    <TextView
+        android:id="@+id/tvItemAlbum"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:textSize="12sp"
+        android:textColor="@color/textSecondary"
+        android:alpha="0.7"
+        android:layout_marginStart="14dp"
+        android:layout_marginTop="2dp"
+        android:maxLines="1"
+        android:ellipsize="end"
+        app:layout_constraintStart_toEndOf="@id/cardItemCover"
+        app:layout_constraintTop_toBottomOf="@id/tvItemArtist"
+        app:layout_constraintEnd_toStartOf="@id/dragHandle"/>
+
+    <ImageView
+        android:id="@+id/dragHandle"
+        android:layout_width="22dp"
+        android:layout_height="22dp"
+        android:layout_marginEnd="6dp"
+        android:layout_marginLeft="20dp"
+        android:alpha="0.4"
+        android:tint="@color/textPrimary"
+        android:src="@android:drawable/ic_menu_sort_by_size"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintBottom_toBottomOf="parent"/>
+</androidx.constraintlayout.widget.ConstraintLayout>

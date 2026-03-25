@@ -73,13 +73,16 @@ public class PlayerActivity extends AppCompatActivity implements PlaybackManager
                     float endY = event.getY();
                     float deltaY = endY - startY;
 
+                    if (getSupportFragmentManager().findFragmentByTag("queue") != null) {
+                        return false;
+                    }
+
                     if (deltaY > SWIPE_THRESHOLD) {
                         finish();
                     }
-
+                    v.performClick();
                     return true;
             }
-
             return false;
         });
 
@@ -344,6 +347,13 @@ public class PlayerActivity extends AppCompatActivity implements PlaybackManager
         updateNowPlayingUiFromRepo();
         updatePlayPauseIcon();
         updateNavButtons();
+
+        LinearLayout bottomArea = findViewById(R.id.bottomNowPlaying);
+
+        bottomArea.setOnClickListener(v -> {
+            QueueBottomSheet sheet = new QueueBottomSheet();
+            sheet.show(getSupportFragmentManager(), "queue");
+        });
     }
 
     @Override
@@ -379,6 +389,16 @@ public class PlayerActivity extends AppCompatActivity implements PlaybackManager
         }
 
         if (ids == null || ids.length == 0) return;
+
+        int[] currentQueue = pm.getQueueIds();
+
+        if (currentQueue != null && currentQueue.length > 0) {
+
+            if (java.util.Arrays.equals(currentQueue, ids)) {
+                pm.playFromQueue(idx);
+                return;
+            }
+        }
         pm.playQueue(ids, idx, autoPlay);
     }
     @Override
