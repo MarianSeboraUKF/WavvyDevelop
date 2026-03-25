@@ -20,10 +20,13 @@ import java.util.Locale;
 import sk.ukf.wavvy.adapter.SongAdapter;
 import sk.ukf.wavvy.model.Song;
 
-public class SearchFragment extends Fragment {
+public class SearchFragment extends Fragment implements PlaybackManager.Listener{
     private ArrayList<Song> allSongs;
     private ArrayList<Song> topSongs;
+    private PlaybackManager pm;
+    private int lastPlayingId = -1;
     private ArrayList<Song> filteredSongs;
+    private ArrayList<sk.ukf.wavvy.model.Album> allAlbums;
     private SongAdapter adapter;
     private TextView tvSectionTitle;
     private TextView tvSectionSubtitle;
@@ -56,10 +59,14 @@ public class SearchFragment extends Fragment {
         recyclerView = view.findViewById(R.id.rvSearchSongs);
         tvAlbumsLabel = view.findViewById(R.id.tvAlbumsLabel);
         tvSongsLabel = view.findViewById(R.id.tvSongsLabel);
+        allAlbums = AlbumRepository.getAlbums();
+        pm = PlaybackManager.get(requireContext());
 
         recyclerView.setLayoutManager(new LinearLayoutManager(requireContext()));
         recyclerView.setItemViewCacheSize(12);
         recyclerView.setHasFixedSize(true);
+
+        recyclerView.setItemAnimator(null);
 
         rvAlbums = view.findViewById(R.id.rvAlbums);
         rvAlbums.setLayoutManager(
@@ -170,6 +177,43 @@ public class SearchFragment extends Fragment {
     }
 
     @Override
+    public void onStart() {
+        super.onStart();
+        if (pm != null) pm.addListener(this);
+    }
+
+    @Override
+    public void onStop() {
+        super.onStop();
+        if (pm != null) pm.removeListener(this);
+    }
+    @Override
+    public void onNowPlayingChanged(int audioResId, int[] queueIds, int queueIndex) {
+
+        if (adapter == null) return;
+
+        int newIndex = -1;
+        int oldIndex = -1;
+
+        for (int i = 0; i < filteredSongs.size(); i++) {
+
+            int id = filteredSongs.get(i).getAudioResId();
+
+            if (id == audioResId) newIndex = i;
+            if (id == lastPlayingId) oldIndex = i;
+        }
+
+        if (oldIndex >= 0) adapter.notifyItemChanged(oldIndex);
+        if (newIndex >= 0) adapter.notifyItemChanged(newIndex);
+
+        lastPlayingId = audioResId;
+    }
+    @Override
+    public void onIsPlayingChanged(boolean isPlaying) {}
+    @Override
+    public void onProgress(long positionMs, long durationMs) {}
+
+    @Override
     public void onResume() {
         super.onResume();
 
@@ -229,73 +273,78 @@ public class SearchFragment extends Fragment {
             filteredSongs.addAll(topSongs);
             rvAlbums.setVisibility(View.GONE);
             recyclerView.setVisibility(View.VISIBLE);
-        } else {
-            tvSectionSubtitle.setVisibility(View.VISIBLE);
-            tvRecentSearchTitle.setVisibility(View.GONE);
-            tvRecentSearches.setVisibility(View.GONE);
-            tvEmpty.setVisibility(View.GONE);
 
-            ArrayList<String> addedAlbums = new ArrayList<>();
+            adapter.setHighlightQuery("");
+            albumAdapter.setHighlightQuery("");
 
-            for (Song s : allSongs) {
+            adapter.notifyDataSetChanged();
+            albumAdapter.notifyDataSetChanged();
+            return;
+        }
 
-                String title = norm(s.getTitle());
-                String artist = norm(s.getArtist());
-                String album = norm(s.getAlbum());
+        tvSectionSubtitle.setVisibility(View.GONE);
+        tvRecentSearchTitle.setVisibility(View.GONE);
+        tvRecentSearches.setVisibility(View.GONE);
+        tvEmpty.setVisibility(View.GONE);
 
-                if (title.contains(q) || artist.contains(q) || album.contains(q)) {
-                    filteredSongs.add(s);
-                }
-                if (album.contains(q) && !addedAlbums.contains(s.getAlbum())) {
-                    addedAlbums.add(s.getAlbum());
-                    ArrayList<Song> albumSongs = new ArrayList<>();
+        ArrayList<Song> titleMatches = new ArrayList<>();
+        ArrayList<Song> artistMatches = new ArrayList<>();
+        ArrayList<Song> albumMatches = new ArrayList<>();
 
-                    for (Song song : allSongs) {
-                        if (song.getAlbum().equals(s.getAlbum())) {
-                            albumSongs.add(song);
-                        }
-                    }
+        for (Song s : allSongs) {
 
-                    filteredAlbums.add(
-                            new sk.ukf.wavvy.model.Album(
-                                    s.getAlbum(),
-                                    s.getArtist(),
-                                    s.getCoverResId(),
-                                    albumSongs
-                            )
-                    );
-                }
-            }
+            String title = norm(s.getTitle());
+            String artist = norm(s.getArtist());
+            String album = norm(s.getAlbum());
 
-            if (!filteredAlbums.isEmpty()) {
-                tvAlbumsLabel.setVisibility(View.VISIBLE);
-                rvAlbums.setVisibility(View.VISIBLE);
-                tvSongsLabel.setVisibility(View.VISIBLE);
-            } else {
-                tvAlbumsLabel.setVisibility(View.GONE);
-                rvAlbums.setVisibility(View.GONE);
-                tvSongsLabel.setVisibility(View.GONE);
-            }
-
-            tvSectionTitle.setText("Results (" + filteredSongs.size() + ")");
-            tvSectionSubtitle.setVisibility(View.GONE);
-            tvRecentSearchTitle.setVisibility(View.GONE);
-            tvRecentSearches.setVisibility(View.GONE);
-
-            if (filteredSongs.isEmpty() && filteredAlbums.isEmpty()) {
-                tvEmpty.setVisibility(View.VISIBLE);
-                tvSectionSubtitle.setVisibility(View.GONE);
-                recyclerView.setVisibility(View.GONE);
-                rvAlbums.setVisibility(View.GONE);
-                tvAlbumsLabel.setVisibility(View.GONE);
-                tvSongsLabel.setVisibility(View.GONE);
-            } else {
-                recyclerView.setVisibility(View.VISIBLE);
+            if (title.contains(q)) {
+                titleMatches.add(s);
+            } else if (artist.contains(q)) {
+                artistMatches.add(s);
+            } else if (album.contains(q)) {
+                albumMatches.add(s);
             }
         }
+
+        filteredSongs.addAll(titleMatches);
+        filteredSongs.addAll(artistMatches);
+        filteredSongs.addAll(albumMatches);
+
+        for (sk.ukf.wavvy.model.Album a : allAlbums) {
+
+            String albumName = norm(a.getTitle());
+            String artist = norm(a.getArtist());
+
+            if (albumName.contains(q) || artist.contains(q)) {
+                filteredAlbums.add(a);
+            }
+        }
+
+        if (!filteredAlbums.isEmpty()) {
+            tvAlbumsLabel.setVisibility(View.VISIBLE);
+            rvAlbums.setVisibility(View.VISIBLE);
+            tvSongsLabel.setVisibility(View.VISIBLE);
+        } else {
+            tvAlbumsLabel.setVisibility(View.GONE);
+            rvAlbums.setVisibility(View.GONE);
+            tvSongsLabel.setVisibility(View.GONE);
+        }
+
+        tvSectionTitle.setText("Results (" + filteredSongs.size() + ")");
+
+        if (filteredSongs.isEmpty() && filteredAlbums.isEmpty()) {
+            tvEmpty.setVisibility(View.VISIBLE);
+            recyclerView.setVisibility(View.GONE);
+            rvAlbums.setVisibility(View.GONE);
+            tvAlbumsLabel.setVisibility(View.GONE);
+            tvSongsLabel.setVisibility(View.GONE);
+        } else {
+            recyclerView.setVisibility(View.VISIBLE);
+        }
+
+        adapter.setHighlightQuery(q);
         albumAdapter.setHighlightQuery(q);
         albumAdapter.notifyDataSetChanged();
-        adapter.setHighlightQuery(q);
         adapter.notifyDataSetChanged();
     }
     private void showTopState() {
@@ -309,6 +358,8 @@ public class SearchFragment extends Fragment {
         tvAlbumsLabel.setVisibility(View.GONE);
         tvSongsLabel.setVisibility(View.GONE);
         rvAlbums.setVisibility(View.GONE);
+        adapter.setHighlightQuery("");
+        albumAdapter.setHighlightQuery("");
 
         if (!lastSearch.isEmpty()) {
             tvRecentSearchTitle.setVisibility(View.VISIBLE);
