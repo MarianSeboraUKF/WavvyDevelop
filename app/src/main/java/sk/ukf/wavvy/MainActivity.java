@@ -32,6 +32,8 @@ public class MainActivity extends AppCompatActivity implements PlaybackManager.L
     private float startX;
     private float startY;
     private static final int SWIPE_THRESHOLD = 140;
+    private PlaybackManager pm;
+    private int lastAnimatedAudioId = -1;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -46,6 +48,7 @@ public class MainActivity extends AppCompatActivity implements PlaybackManager.L
 
         bottomNav = findViewById(R.id.bottomNav);
         navIndicator = findViewById(R.id.navIndicator);
+        pm = PlaybackManager.get(this);
 
         if (savedInstanceState == null) {
 
@@ -85,9 +88,7 @@ public class MainActivity extends AppCompatActivity implements PlaybackManager.L
                     );
                     ViewGroup.MarginLayoutParams lp =
                             (ViewGroup.MarginLayoutParams) v.getLayoutParams();
-
-                    lp.bottomMargin = dp(18) + bars.bottom;
-                    v.setLayoutParams(lp);
+                    v.setTranslationY(-dp(6));
                     return insets;
                 }
         );
@@ -235,24 +236,27 @@ public class MainActivity extends AppCompatActivity implements PlaybackManager.L
 
                     if (Math.abs(deltaX) > 120 && Math.abs(deltaX) > Math.abs(deltaY)) {
                         if (deltaX > 0) {
+                            lastAnimatedAudioId = -1;
                             PlaybackManager.get(this).playPrev(true);
                         } else {
+                            lastAnimatedAudioId = -1;
                             PlaybackManager.get(this).playNext(true);
                         }
 
                         float move = deltaX > 0 ? 40f : -40f;
-                        View[] views = {ivMiniCover, tvMiniTitle, tvMiniArtist};
+                        View[] views = {tvMiniTitle, tvMiniArtist};
 
                         for (View view : views) {
+                            view.animate().cancel();
                             view.animate()
                                     .translationX(move)
-                                    .alpha(0.7f)
                                     .setDuration(120)
+                                    .setInterpolator(new android.view.animation.DecelerateInterpolator())
                                     .withEndAction(() ->
                                             view.animate()
                                                     .translationX(0f)
-                                                    .alpha(1f)
-                                                    .setDuration(120)
+                                                    .setDuration(140)
+                                                    .setInterpolator(new android.view.animation.DecelerateInterpolator())
                                                     .start()
                                     )
                                     .start();
@@ -341,67 +345,27 @@ public class MainActivity extends AppCompatActivity implements PlaybackManager.L
                 NowPlayingRepository.getAudioResId(this));
 
         if(s==null)return;
-
         miniPlayer.setVisibility(View.VISIBLE);
-        android.view.animation.Interpolator ease =
-                new android.view.animation.DecelerateInterpolator();
+        int currentId = pm.getCurrentAudioResId();
 
+        if (currentId == lastAnimatedAudioId) {
+            return;
+        }
+
+        tvMiniTitle.setText(s.getTitle());
+        tvMiniArtist.setText(s.getArtist());
+
+        ivMiniCover.animate().cancel();
+        ivMiniCover.setAlpha(1f);
+        ivMiniCover.setTranslationX(0f);
+        ivMiniCover.setImageResource(s.getCoverResId());
+        ivMiniCover.setAlpha(0.85f);
         ivMiniCover.animate()
-                .alpha(0f)
-                .scaleX(0.92f)
-                .scaleY(0.92f)
-                .setDuration(180)
-                .setInterpolator(ease)
-                .withEndAction(() -> {
-                    ivMiniCover.setImageResource(s.getCoverResId());
-
-                    ivMiniCover.animate()
-                            .alpha(1f)
-                            .scaleX(1f)
-                            .scaleY(1f)
-                            .setDuration(260)
-                            .setInterpolator(ease)
-                            .start();
-                })
+                .alpha(1f)
+                .setDuration(120)
+                .setInterpolator(new android.view.animation.DecelerateInterpolator())
                 .start();
-
-        tvMiniTitle.animate()
-                .alpha(0f)
-                .translationY(10f)
-                .setDuration(160)
-                .setInterpolator(ease)
-                .withEndAction(() -> {
-                    tvMiniTitle.setText(s.getTitle());
-
-                    tvMiniTitle.setTranslationY(-10f);
-
-                    tvMiniTitle.animate()
-                            .alpha(1f)
-                            .translationY(0f)
-                            .setDuration(260)
-                            .setInterpolator(ease)
-                            .start();
-                })
-                .start();
-
-        tvMiniArtist.animate()
-                .alpha(0f)
-                .translationY(10f)
-                .setDuration(160)
-                .setInterpolator(ease)
-                .withEndAction(() -> {
-                    tvMiniArtist.setText(s.getArtist());
-
-                    tvMiniArtist.setTranslationY(-10f);
-
-                    tvMiniArtist.animate()
-                            .alpha(1f)
-                            .translationY(0f)
-                            .setDuration(260)
-                            .setInterpolator(ease)
-                            .start();
-                })
-                .start();
+        lastAnimatedAudioId = currentId;
     }
     private void haptic(View v){
         v.performHapticFeedback(android.view.HapticFeedbackConstants.VIRTUAL_KEY);

@@ -127,7 +127,7 @@
                 android:id="@+id/tvEmpty"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:text="No songs found\nTry another title, artist or album"
+                android:text="No songs found :/\n\nTry another title, artist or album"
                 android:textSize="13sp"
                 android:textColor="@color/textSecondary"
                 android:gravity="center"

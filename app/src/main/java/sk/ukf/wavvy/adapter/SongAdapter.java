@@ -95,34 +95,33 @@ public class SongAdapter extends RecyclerView.Adapter<SongAdapter.SongViewHolder
                 .get(holder.itemView.getContext())
                 .getCurrentAudioResId();
 
-        if (song.getAudioResId() == currentId) {
+        boolean isPlaying = song.getAudioResId() == currentId;
+
+        if (isPlaying) {
+            holder.viewNowPlayingStripe.setVisibility(View.VISIBLE);
+
             holder.itemView.setForeground(
                     ContextCompat.getDrawable(
                             holder.itemView.getContext(),
                             R.drawable.bg_item_playing_overlay
                     )
             );
-            holder.viewNowPlayingStripe.setVisibility(View.VISIBLE);
+            holder.itemView.animate().cancel();
+            holder.itemView.setAlpha(0.85f);
+            holder.itemView.animate()
+                    .alpha(1f)
+                    .setDuration(260)
+                    .setInterpolator(new android.view.animation.DecelerateInterpolator())
+                    .start();
 
         } else {
-            holder.itemView.setForeground(null);
             holder.viewNowPlayingStripe.setVisibility(View.GONE);
+            holder.itemView.setForeground(null);
+            holder.itemView.animate().cancel();
+            holder.itemView.setAlpha(1f);
         }
 
         holder.itemView.setOnClickListener(v -> {
-            v.animate()
-                    .scaleX(0.96f)
-                    .scaleY(0.96f)
-                    .setDuration(80)
-                    .withEndAction(() ->
-                            v.animate()
-                                    .scaleX(1f)
-                                    .scaleY(1f)
-                                    .setDuration(120)
-                                    .start()
-                    )
-                    .start();
-
             if (clickListener != null) {
                 clickListener.onSongClick(song);
             }
@@ -317,24 +316,23 @@ public class SongAdapter extends RecyclerView.Adapter<SongAdapter.SongViewHolder
         String lowerText = text.toLowerCase();
         String lowerQuery = query.toLowerCase();
 
-        int start = lowerText.indexOf(lowerQuery);
-
-        if (start < 0) {
-            return text;
-        }
         SpannableString spannable = new SpannableString(text);
 
-        spannable.setSpan(
-                new ForegroundColorSpan(
-                        ContextCompat.getColor(
-                                holder.itemView.getContext(),
-                                R.color.accent
-                        )
-                ),
-                start,
-                start + query.length(),
-                Spanned.SPAN_EXCLUSIVE_EXCLUSIVE
-        );
+        int index = 0;
+        while ((index = lowerText.indexOf(lowerQuery, index)) >= 0) {
+            spannable.setSpan(
+                    new ForegroundColorSpan(
+                            ContextCompat.getColor(
+                                    holder.itemView.getContext(),
+                                    R.color.accent
+                            )
+                    ),
+                    index,
+                    index + query.length(),
+                    Spanned.SPAN_EXCLUSIVE_EXCLUSIVE
+            );
+            index += query.length();
+        }
         return spannable;
     }
 

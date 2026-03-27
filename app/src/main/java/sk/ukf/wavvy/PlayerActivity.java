@@ -52,7 +52,8 @@ public class PlayerActivity extends AppCompatActivity implements PlaybackManager
     private Boolean lastIsPlaying = null;
     private int lastAnimatedAudioId = -1;
     private boolean ignorePlaybackChanges = false;
-    private boolean ignoreCoverAnimation = false;
+    private String lastTitle = "";
+    private String lastArtist = "";
 
     @SuppressLint("ClickableViewAccessibility")
     @Override
@@ -351,22 +352,18 @@ public class PlayerActivity extends AppCompatActivity implements PlaybackManager
 
         btnShuffle.setOnClickListener(v -> {
             haptic(v);
-            ignoreCoverAnimation = true;
             pm.toggleShuffle();
             updateShuffleUi();
             updatePlaybackStatusText();
             updateNavButtons();
-            v.postDelayed(() -> ignoreCoverAnimation = false, 150);
         });
 
         btnRepeat.setOnClickListener(v -> {
             haptic(v);
-            ignoreCoverAnimation = true;
             pm.cycleRepeatMode();
             updateRepeatUi();
             updatePlaybackStatusText();
             updateNavButtons();
-            v.postDelayed(() -> ignoreCoverAnimation = false, 150);
         });
 
         seekBar.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
@@ -459,30 +456,18 @@ public class PlayerActivity extends AppCompatActivity implements PlaybackManager
     }
     @Override
     public void onNowPlayingChanged(int audioResId, int[] queueIds, int queueIndex) {
-
-        if (audioResId == lastAnimatedAudioId) {
-            return;
-        }
-
         lastTrackChangeTime = System.currentTimeMillis();
-        lastAnimatedAudioId = -1;
-
         updateNowPlayingUiFromRepo();
         updateNavButtons();
     }
     @Override
     public void onIsPlayingChanged(boolean isPlaying) {
-
         updatePlayPauseIcon();
-
-        if (ignorePlaybackChanges || ignoreCoverAnimation) return;
-
+        if (ignorePlaybackChanges) return;
         if (isUserSeeking) return;
 
         if (lastIsPlaying != null && lastIsPlaying == isPlaying) {
-
             float currentScale = ivCover.getScaleX();
-
             if ((isPlaying && currentScale == 1f) ||
                     (!isPlaying && currentScale == 0.75f)) {
                 return;
@@ -492,23 +477,19 @@ public class PlayerActivity extends AppCompatActivity implements PlaybackManager
         animateCoverState(isPlaying);
     }
     private void animateCoverState(boolean isPlaying) {
-        if (ignoreCoverAnimation) return;
         if (isUserSeeking) return;
-
         ivCover.animate().cancel();
-        ivCover.setAlpha(1f);
         float targetScale = isPlaying ? 1f : 0.75f;
-
         ivCover.animate()
                 .scaleX(targetScale)
                 .scaleY(targetScale)
-                .setDuration(320)
-                .setInterpolator(new android.view.animation.DecelerateInterpolator())
+                .setDuration(260)
+                .setInterpolator(new DecelerateInterpolator())
                 .start();
         animateCornerRadius(isPlaying);
     }
     private void animateCornerRadius(boolean isPlaying) {
-        if (isUserSeeking || ignoreCoverAnimation) return;
+        if (isUserSeeking) return;
         ShapeableImageView image = findViewById(R.id.ivCover);
 
         float start = image.getShapeAppearanceModel().getTopLeftCornerSize().getCornerSize(null);
@@ -595,7 +576,8 @@ public class PlayerActivity extends AppCompatActivity implements PlaybackManager
         android.widget.Button btnClose =
                 dialogView.findViewById(R.id.btnCloseSongInfo);
 
-        ivCover.setImageResource(song.getCoverResId());
+        ivCover.setImageDrawable(null);
+        ivCover.post(() -> ivCover.setImageResource(song.getCoverResId()));
         tvTitle.setText(song.getTitle());
         tvArtist.setText(song.getArtist());
         tvAlbum.setText(song.getAlbum());
@@ -620,8 +602,15 @@ public class PlayerActivity extends AppCompatActivity implements PlaybackManager
         Song s = SongRepository.findByAudioResId(audioResId);
 
         if (s != null) {
-            tvSongTitle.setText(s.getTitle());
-            tvSongArtist.setText(s.getArtist());
+            if (!lastTitle.equals(s.getTitle())) {
+                fadeText(tvSongTitle, s.getTitle());
+                lastTitle = s.getTitle();
+            }
+
+            if (!lastArtist.equals(s.getArtist())) {
+                fadeText(tvSongArtist, s.getArtist());
+                lastArtist = s.getArtist();
+            }
             animateBottomText("Now playing", s.getTitle());
 
             String album = s.getAlbum();
@@ -633,27 +622,15 @@ public class PlayerActivity extends AppCompatActivity implements PlaybackManager
                 tvSongAlbum.setVisibility(View.GONE);
             }
             boolean isNewSong = audioResId != lastAnimatedAudioId;
+
             if (isNewSong) {
                 lastAnimatedAudioId = audioResId;
+
                 ivCover.animate().cancel();
                 ivCover.setImageResource(s.getCoverResId());
-                ivCover.setAlpha(0f);
-                ivCover.setScaleX(0.97f);
-                ivCover.setScaleY(0.97f);
-
-                ivCover.animate()
-                        .alpha(1f)
-                        .scaleX(1f)
-                        .scaleY(1f)
-                        .setDuration(520)
-                        .setInterpolator(new DecelerateInterpolator())
-                        .start();
+                ivCover.setAlpha(1f);
 
             } else {
-                ivCover.animate().cancel();
-                ivCover.setAlpha(1f);
-                ivCover.setScaleX(player.isPlaying() ? 1f : 0.75f);
-                ivCover.setScaleY(player.isPlaying() ? 1f : 0.75f);
                 ivCover.setImageResource(s.getCoverResId());
             }
             applyDynamicGradient(s.getCoverResId());
@@ -665,6 +642,22 @@ public class PlayerActivity extends AppCompatActivity implements PlaybackManager
         } else {
             btnFavourite.setImageResource(R.drawable.ic_like);
         }
+    }
+    private void fadeText(TextView tv, String newText) {
+        tv.animate().cancel();
+
+        tv.animate()
+                .alpha(0.6f)
+                .setDuration(80)
+                .withEndAction(() -> {
+                    tv.setText(newText);
+                    tv.animate()
+                            .alpha(1f)
+                            .setDuration(140)
+                            .setInterpolator(new DecelerateInterpolator())
+                            .start();
+                })
+                .start();
     }
     private void updatePlayPauseIcon() {
         if (player == null) return;

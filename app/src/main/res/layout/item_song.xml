@@ -8,7 +8,9 @@
     android:paddingTop="16dp"
     android:paddingBottom="16dp"
     android:paddingEnd="16dp"
-    android:background="@drawable/bg_card_selector">
+    android:background="@drawable/bg_card_selector"
+    android:clickable="true"
+    android:focusable="true">
 
     <View
         android:id="@+id/viewNowPlayingStripe"

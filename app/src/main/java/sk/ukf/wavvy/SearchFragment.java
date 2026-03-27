@@ -41,6 +41,8 @@ public class SearchFragment extends Fragment implements PlaybackManager.Listener
     private RecyclerView rvAlbums;
     private ArrayList<sk.ukf.wavvy.model.Album> filteredAlbums;
     private sk.ukf.wavvy.adapter.AlbumAdapter albumAdapter;
+    private android.os.Handler handler = new android.os.Handler();
+    private Runnable searchRunnable;
 
     public SearchFragment() {}
     @Nullable
@@ -151,7 +153,11 @@ public class SearchFragment extends Fragment implements PlaybackManager.Listener
             }
             @Override
             public boolean onQueryTextChange(String newText) {
-                filter(newText);
+                if (searchRunnable != null) {
+                    handler.removeCallbacks(searchRunnable);
+                }
+                searchRunnable = () -> filter(newText);
+                handler.postDelayed(searchRunnable, 300);
                 return true;
             }
         });
