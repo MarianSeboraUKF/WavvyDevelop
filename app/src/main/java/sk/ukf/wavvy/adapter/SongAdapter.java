@@ -28,27 +28,24 @@ import android.widget.LinearLayout;
 import sk.ukf.wavvy.LikedSongsRepository;
 
 public class SongAdapter extends RecyclerView.Adapter<SongAdapter.SongViewHolder> {
-    public interface OnSongClickListener {
-        void onSongClick(Song song);
-    }
+    public interface OnSongClickListener { void onSongClick(Song song);}
     private final List<Song> songs;
     private final OnSongClickListener clickListener;
     private String highlightQuery = "";
     private boolean isQueue;
-    public SongAdapter(List<Song> songs, boolean isQueue, OnSongClickListener clickListener) {
+    private boolean isSystemPlaylist;
+    public SongAdapter(List<Song> songs, boolean isQueue, boolean isSystemPlaylist, OnSongClickListener clickListener) {
         this.songs = songs;
         this.clickListener = clickListener;
         this.isQueue = isQueue;
+        this.isSystemPlaylist = isSystemPlaylist;
     }
 
     @NonNull
     @Override
     public SongViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
         int layout = isQueue ? R.layout.item_song_queue : R.layout.item_song;
-
-        View view = LayoutInflater.from(parent.getContext())
-                .inflate(layout, parent, false);
-
+        View view = LayoutInflater.from(parent.getContext()).inflate(layout, parent, false);
         return new SongViewHolder(view);
     }
     public void setHighlightQuery(String query) {
@@ -59,61 +56,28 @@ public class SongAdapter extends RecyclerView.Adapter<SongAdapter.SongViewHolder
     public void onBindViewHolder(@NonNull SongViewHolder holder, int position) {
         Song song = songs.get(position);
 
-        holder.tvTitle.setText(
-                applyHighlight(
-                        song.getTitle(),
-                        highlightQuery,
-                        holder
-                )
-        );
-
-        holder.tvArtist.setText(
-                applyHighlight(
-                        song.getArtist(),
-                        highlightQuery,
-                        holder
-                )
-        );
+        holder.tvTitle.setText(applyHighlight(song.getTitle(), highlightQuery, holder));
+        holder.tvArtist.setText(applyHighlight(song.getArtist(), highlightQuery, holder));
 
         String album = song.getAlbum();
 
         if (album == null || album.trim().isEmpty()) {
             holder.tvAlbum.setVisibility(View.GONE);
         } else {
-            holder.tvAlbum.setText(
-                    applyHighlight(
-                            album,
-                            highlightQuery,
-                            holder
-                    )
-            );
+            holder.tvAlbum.setText(applyHighlight(album, highlightQuery, holder));
             holder.tvAlbum.setVisibility(View.VISIBLE);
         }
         holder.ivCover.setImageResource(song.getCoverResId());
 
-        int currentId = PlaybackManager
-                .get(holder.itemView.getContext())
-                .getCurrentAudioResId();
-
+        int currentId = PlaybackManager.get(holder.itemView.getContext()).getCurrentAudioResId();
         boolean isPlaying = song.getAudioResId() == currentId;
 
         if (isPlaying) {
             holder.viewNowPlayingStripe.setVisibility(View.VISIBLE);
-
-            holder.itemView.setForeground(
-                    ContextCompat.getDrawable(
-                            holder.itemView.getContext(),
-                            R.drawable.bg_item_playing_overlay
-                    )
-            );
+            holder.itemView.setForeground(ContextCompat.getDrawable(holder.itemView.getContext(), R.drawable.bg_item_playing_overlay));
             holder.itemView.animate().cancel();
             holder.itemView.setAlpha(0.85f);
-            holder.itemView.animate()
-                    .alpha(1f)
-                    .setDuration(260)
-                    .setInterpolator(new android.view.animation.DecelerateInterpolator())
-                    .start();
-
+            holder.itemView.animate().alpha(1f).setDuration(260).setInterpolator(new android.view.animation.DecelerateInterpolator()).start();
         } else {
             holder.viewNowPlayingStripe.setVisibility(View.GONE);
             holder.itemView.setForeground(null);
@@ -127,39 +91,24 @@ public class SongAdapter extends RecyclerView.Adapter<SongAdapter.SongViewHolder
             }
         });
 
-        if (!isQueue && holder.btnSongMenu != null) {
+        if (!isQueue && !isSystemPlaylist && holder.btnSongMenu != null) {
             holder.btnSongMenu.setOnClickListener(v -> {
                 android.content.Context ctx = holder.itemView.getContext();
 
-                View popupView = LayoutInflater.from(ctx)
-                        .inflate(R.layout.dialog_song_menu, null);
+                View popupView = LayoutInflater.from(ctx).inflate(R.layout.dialog_song_menu, null);
 
-                PopupWindow popupWindow = new PopupWindow(
-                        popupView,
-                        ViewGroup.LayoutParams.WRAP_CONTENT,
-                        ViewGroup.LayoutParams.WRAP_CONTENT,
-                        true
-                );
+                PopupWindow popupWindow = new PopupWindow(popupView, ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT, true);
                 popupWindow.setBackgroundDrawable(new ColorDrawable(android.graphics.Color.TRANSPARENT));
                 popupWindow.setElevation(16f);
 
                 popupView.findViewById(R.id.actionPlayNext).setOnClickListener(v1 -> {
                     PlaybackManager.get(ctx).insertNext(song.getAudioResId());
-
-                    android.widget.Toast.makeText(
-                            ctx,
-                            "Added to queue",
-                            android.widget.Toast.LENGTH_SHORT
-                    ).show();
+                    android.widget.Toast.makeText(ctx, "Added to queue", android.widget.Toast.LENGTH_SHORT).show();
                     popupWindow.dismiss();
                 });
 
                 popupView.findViewById(R.id.actionGoAlbum).setOnClickListener(v1 -> {
-                    android.content.Intent intent =
-                            new android.content.Intent(
-                                    ctx,
-                                    AlbumDetailActivity.class
-                            );
+                    android.content.Intent intent = new android.content.Intent(ctx, AlbumDetailActivity.class);
                     intent.putExtra("album_title", song.getAlbum());
                     ctx.startActivity(intent);
                     popupWindow.dismiss();
@@ -168,7 +117,6 @@ public class SongAdapter extends RecyclerView.Adapter<SongAdapter.SongViewHolder
                 LinearLayout favAction = popupView.findViewById(R.id.actionAddFavorite);
                 ImageView favIcon = (ImageView) favAction.getChildAt(0);
                 TextView favText = (TextView) favAction.getChildAt(1);
-
                 String songId = String.valueOf(song.getAudioResId());
                 boolean liked = LikedSongsRepository.isLiked(ctx, songId);
 
@@ -184,21 +132,12 @@ public class SongAdapter extends RecyclerView.Adapter<SongAdapter.SongViewHolder
 
                 favAction.setOnClickListener(v1 -> {
                     LikedSongsRepository.toggleLike(ctx, songId);
-
                     boolean newLiked = LikedSongsRepository.isLiked(ctx, songId);
 
                     if (newLiked) {
-                        android.widget.Toast.makeText(
-                                ctx,
-                                "Added to favorites",
-                                android.widget.Toast.LENGTH_SHORT
-                        ).show();
+                        android.widget.Toast.makeText(ctx, "Added to favorites", android.widget.Toast.LENGTH_SHORT).show();
                     } else {
-                        android.widget.Toast.makeText(
-                                ctx,
-                                "Removed from favorites",
-                                android.widget.Toast.LENGTH_SHORT
-                        ).show();
+                        android.widget.Toast.makeText(ctx, "Removed from favorites", android.widget.Toast.LENGTH_SHORT).show();
                     }
                     popupWindow.dismiss();
                 });
@@ -206,51 +145,25 @@ public class SongAdapter extends RecyclerView.Adapter<SongAdapter.SongViewHolder
                 popupView.findViewById(R.id.actionAddPlaylist).setOnClickListener(v1 -> {
                     popupWindow.dismiss();
 
-                    java.util.ArrayList<Playlist> playlists =
-                            PlaylistRepository.getPlaylists(ctx);
+                    java.util.ArrayList<Playlist> playlists = PlaylistRepository.getPlaylists(ctx);
 
                     if (playlists.isEmpty()) {
-                        android.widget.Toast.makeText(
-                                ctx,
-                                "No playlists yet",
-                                android.widget.Toast.LENGTH_SHORT
-                        ).show();
+                        android.widget.Toast.makeText(ctx, "No playlists yet", android.widget.Toast.LENGTH_SHORT).show();
                         return;
                     }
+                    android.view.View dialogView = LayoutInflater.from(ctx).inflate(R.layout.dialog_pick_playlist, null);
+                    androidx.recyclerview.widget.RecyclerView rv = dialogView.findViewById(R.id.rvPickPlaylists);
+                    Button btnCancel = dialogView.findViewById(R.id.btnCancel);
 
-                    android.view.View dialogView = LayoutInflater.from(ctx)
-                            .inflate(R.layout.dialog_pick_playlist, null);
-
-                    androidx.recyclerview.widget.RecyclerView rv =
-                            dialogView.findViewById(R.id.rvPickPlaylists);
-
-                    Button btnCancel =
-                            dialogView.findViewById(R.id.btnCancel);
-
-                    AlertDialog dialog = new AlertDialog.Builder(ctx)
-                            .setView(dialogView)
-                            .create();
-
+                    AlertDialog dialog = new AlertDialog.Builder(ctx).setView(dialogView).create();
                     dialog.getWindow().setBackgroundDrawableResource(android.R.color.transparent);
-
-                    rv.setLayoutManager(
-                            new androidx.recyclerview.widget.LinearLayoutManager(ctx)
-                    );
+                    rv.setLayoutManager(new androidx.recyclerview.widget.LinearLayoutManager(ctx));
 
                     PickPlaylistAdapter pickAdapter = new PickPlaylistAdapter(
                             playlists,
                             playlist -> {
-                                PlaylistRepository.addSongToPlaylist(
-                                        ctx,
-                                        playlist.getId(),
-                                        song.getAudioResId()
-                                );
-
-                                android.widget.Toast.makeText(
-                                        ctx,
-                                        "Added to " + playlist.getName(),
-                                        android.widget.Toast.LENGTH_SHORT
-                                ).show();
+                                PlaylistRepository.addSongToPlaylist(ctx, playlist.getId(), song.getAudioResId());
+                                android.widget.Toast.makeText(ctx, "Added to " + playlist.getName(), android.widget.Toast.LENGTH_SHORT).show();
                                 dialog.dismiss();
                             }
                     );
@@ -261,11 +174,8 @@ public class SongAdapter extends RecyclerView.Adapter<SongAdapter.SongViewHolder
 
                 popupView.findViewById(R.id.actionInfo).setOnClickListener(v1 -> {
                     popupWindow.dismiss();
-
                     android.content.Context context = holder.itemView.getContext();
-
-                    View dialogView = LayoutInflater.from(context)
-                            .inflate(R.layout.dialog_song_info, null);
+                    View dialogView = LayoutInflater.from(context).inflate(R.layout.dialog_song_info, null);
 
                     ImageView ivCover = dialogView.findViewById(R.id.ivSongInfoCover);
                     TextView tvTitle = dialogView.findViewById(R.id.tvSongInfoTitle);
@@ -281,10 +191,7 @@ public class SongAdapter extends RecyclerView.Adapter<SongAdapter.SongViewHolder
                     tvAlbum.setText(song.getAlbum());
                     tvProducer.setText(song.getProducedBy());
                     tvLength.setText(formatDuration(song.getDurationMs()));
-
-                    AlertDialog dialog = new AlertDialog.Builder(context)
-                            .setView(dialogView)
-                            .create();
+                    AlertDialog dialog = new AlertDialog.Builder(context).setView(dialogView).create();
 
                     if (dialog.getWindow() != null) {
                         dialog.getWindow().setBackgroundDrawableResource(android.R.color.transparent);
@@ -295,7 +202,6 @@ public class SongAdapter extends RecyclerView.Adapter<SongAdapter.SongViewHolder
                 popupWindow.showAsDropDown(holder.btnSongMenu, 0, 0, Gravity.END);
             });
         }
-
         if (holder.dragHandle != null) {
             holder.dragHandle.setVisibility(isQueue ? View.VISIBLE : View.GONE);
         }
@@ -308,10 +214,7 @@ public class SongAdapter extends RecyclerView.Adapter<SongAdapter.SongViewHolder
     }
     private CharSequence applyHighlight(String text, String query, SongViewHolder holder) {
         if (text == null) return "";
-
-        if (query == null || query.isEmpty()) {
-            return text;
-        }
+        if (query == null || query.isEmpty()) { return text; }
 
         String lowerText = text.toLowerCase();
         String lowerQuery = query.toLowerCase();
@@ -321,16 +224,7 @@ public class SongAdapter extends RecyclerView.Adapter<SongAdapter.SongViewHolder
         int index = 0;
         while ((index = lowerText.indexOf(lowerQuery, index)) >= 0) {
             spannable.setSpan(
-                    new ForegroundColorSpan(
-                            ContextCompat.getColor(
-                                    holder.itemView.getContext(),
-                                    R.color.accent
-                            )
-                    ),
-                    index,
-                    index + query.length(),
-                    Spanned.SPAN_EXCLUSIVE_EXCLUSIVE
-            );
+                    new ForegroundColorSpan(ContextCompat.getColor(holder.itemView.getContext(), R.color.accent)), index, index + query.length(), Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
             index += query.length();
         }
         return spannable;
@@ -348,7 +242,6 @@ public class SongAdapter extends RecyclerView.Adapter<SongAdapter.SongViewHolder
         ImageView dragHandle;
         public SongViewHolder(@NonNull View itemView) {
             super(itemView);
-
             tvTitle = itemView.findViewById(R.id.tvItemTitle);
             tvArtist = itemView.findViewById(R.id.tvItemArtist);
             tvAlbum = itemView.findViewById(R.id.tvItemAlbum);

@@ -15,18 +15,12 @@ import sk.ukf.wavvy.model.Playlist;
 import sk.ukf.wavvy.model.Song;
 
 public class PlaylistAdapter extends RecyclerView.Adapter<PlaylistAdapter.PlaylistVH> {
-    public interface OnPlaylistClickListener {
-        void onPlaylistClick(Playlist playlist);
-    }
-    public interface OnPlaylistMenuClickListener {
-        void onPlaylistMenuClick(Playlist playlist, View anchor);
-    }
+    public interface OnPlaylistClickListener { void onPlaylistClick(Playlist playlist);}
+    public interface OnPlaylistMenuClickListener { void onPlaylistMenuClick(Playlist playlist, View anchor);}
     private final List<Playlist> playlists;
     private final OnPlaylistClickListener clickListener;
     private final OnPlaylistMenuClickListener menuClickListener;
-    public PlaylistAdapter(List<Playlist> playlists,
-                           OnPlaylistClickListener clickListener,
-                           OnPlaylistMenuClickListener menuClickListener) {
+    public PlaylistAdapter(List<Playlist> playlists, OnPlaylistClickListener clickListener, OnPlaylistMenuClickListener menuClickListener) {
         this.playlists = playlists;
         this.clickListener = clickListener;
         this.menuClickListener = menuClickListener;
@@ -35,17 +29,24 @@ public class PlaylistAdapter extends RecyclerView.Adapter<PlaylistAdapter.Playli
     @NonNull
     @Override
     public PlaylistVH onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
-        View v = LayoutInflater.from(parent.getContext())
-                .inflate(R.layout.item_playlist, parent, false);
+        View v = LayoutInflater.from(parent.getContext()).inflate(R.layout.item_playlist, parent, false);
         return new PlaylistVH(v);
     }
 
     @Override
     public void onBindViewHolder(@NonNull PlaylistVH holder, int position) {
         Playlist p = playlists.get(position);
-
+        holder.ivOverlayIcon.setVisibility(View.GONE);
         holder.tvName.setText(p.getName());
-        holder.tvCount.setText(p.getSongAudioResIds().size() + " songs");
+        int count = p.getSongAudioResIds().size();
+
+        if (count == 0) {
+            holder.tvCount.setText("Empty");
+        } else if (count == 1) {
+            holder.tvCount.setText("1 song");
+        } else {
+            holder.tvCount.setText(count + " songs");
+        }
 
         if (!p.getSongAudioResIds().isEmpty()) {
             Song firstSong = SongRepository.findByAudioResId(
@@ -58,6 +59,28 @@ public class PlaylistAdapter extends RecyclerView.Adapter<PlaylistAdapter.Playli
             }
         } else {
             holder.ivCover.setImageResource(R.drawable.default_cover);
+        }
+
+        if (p.isSystem()) {
+            holder.btnMore.setVisibility(View.GONE);
+        } else {
+            holder.btnMore.setVisibility(View.VISIBLE);
+        }
+
+        if (p.getId().equals("liked")) {
+            holder.ivCover.setImageResource(0);
+            holder.ivCover.setBackgroundResource(R.drawable.bg_liked_gradient);
+
+            holder.ivOverlayIcon.setVisibility(View.VISIBLE);
+            holder.ivOverlayIcon.setImageResource(R.drawable.ic_liked);
+        }
+
+        else if (p.getId().equals("local")) {
+            holder.ivCover.setImageResource(0);
+            holder.ivCover.setBackgroundResource(R.drawable.bg_local_gradient);
+
+            holder.ivOverlayIcon.setVisibility(View.VISIBLE);
+            holder.ivOverlayIcon.setImageResource(R.drawable.icon_local);
         }
 
         holder.itemView.setOnClickListener(v -> {
@@ -77,13 +100,14 @@ public class PlaylistAdapter extends RecyclerView.Adapter<PlaylistAdapter.Playli
         TextView tvName, tvCount;
         ImageButton btnMore;
         ImageView ivCover;
+        ImageView ivOverlayIcon;
         public PlaylistVH(@NonNull View itemView) {
             super(itemView);
-
             tvName = itemView.findViewById(R.id.tvPlaylistName);
             tvCount = itemView.findViewById(R.id.tvPlaylistCount);
             btnMore = itemView.findViewById(R.id.btnMore);
             ivCover = itemView.findViewById(R.id.ivPlaylistCover);
+            ivOverlayIcon = itemView.findViewById(R.id.ivOverlayIcon);
         }
     }
 }

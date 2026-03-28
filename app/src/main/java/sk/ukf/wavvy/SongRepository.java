@@ -14,6 +14,7 @@ public class SongRepository {
 
         cached.add(new Song("BERI 3", "RAYYY P", "Vašo Patejdl, Majkyyy", "kto.som.?", "RAYYY P", "Majkyyy", 3, R.drawable.kto_som_cover, R.raw.beri_3));
         cached.add(new Song("NEPÝTAM SA", "RAYYY P", "Majkyyy", "kto.som.?", "RAYYY P", "Majkyyy", 10, R.drawable.kto_som_cover, R.raw.nepytam_sa));
+        cached.add(new Song("Bouřka", "Lboy Bsc", "", "Bouřka", "Lboy Bsc", "Black Eagle Beats", 1, R.drawable.bourka_cover, R.raw.bourka));
         cached.add(new Song("DO OČÍ", "RAYYY P", "Majkyyy", "kto.som.?", "RAYYY P", "Majkyyy",1, R.drawable.kto_som_cover, R.raw.do_oci));
         cached.add(new Song("DIG ON(A)", "Frayer Flexking", "Separ", "DIG ON(A)", "Frayer Flexking", "Maiky Beatz, prodbyslope",1, R.drawable.dig_ona_cover, R.raw.dig_ona));
         cached.add(new Song("Streets", "guapanova", "Luca Brassi10x", "Deluzia", "guapanova", "Tristan. Hoodrich",4, R.drawable.deluzia_cover, R.raw.streets));

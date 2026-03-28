@@ -3,7 +3,6 @@ package sk.ukf.wavvy;
 import android.content.Intent;
 import android.media.MediaMetadataRetriever;
 import android.os.Bundle;
-import android.view.LayoutInflater;
 import android.view.View;
 import android.widget.ImageButton;
 import android.widget.ImageView;
@@ -80,9 +79,11 @@ public class PlaylistDetailActivity extends AppCompatActivity implements Playbac
         rvPlaylistSongs.setLayoutManager(new LinearLayoutManager(this));
         songsInPlaylist = new ArrayList<>();
 
+        boolean isSystem = playlistId != null && (playlistId.equals("liked") || playlistId.equals("local"));
         adapter = new SongAdapter(
                 songsInPlaylist,
                 false,
+                isSystem,
                 song -> PlayerLauncher.openQueue(
                         PlaylistDetailActivity.this,
                         songsInPlaylist,
@@ -90,7 +91,6 @@ public class PlaylistDetailActivity extends AppCompatActivity implements Playbac
                 )
         );
         rvPlaylistSongs.setAdapter(adapter);
-
         miniPlayer = findViewById(R.id.miniPlayer);
         ivMiniCover = findViewById(R.id.ivMiniCover);
         tvMiniTitle = findViewById(R.id.tvMiniTitle);
@@ -101,7 +101,6 @@ public class PlaylistDetailActivity extends AppCompatActivity implements Playbac
         miniProgress = findViewById(R.id.miniProgress);
 
         miniPlayer.setOnClickListener(v -> openPlayerFromNowPlaying());
-
         btnMiniPlay.setOnClickListener(v -> pm.togglePlayPause());
         btnMiniPrev.setOnClickListener(v -> {
             if (pm.getPlayer() != null && pm.getPlayer().getCurrentPosition() > 3000) {
@@ -215,27 +214,6 @@ public class PlaylistDetailActivity extends AppCompatActivity implements Playbac
         i.putExtra(PlayerActivity.EXTRA_OPEN_EXISTING, true);
         startActivity(i);
     }
-    private void showRemoveFromPlaylistDialog(Song song) {
-        View card = LayoutInflater.from(this).inflate(R.layout.dialog_remove_song, null);
-
-        TextView tvMessage = card.findViewById(R.id.tvMessage);
-        View btnRemove = card.findViewById(R.id.btnRemove);
-        View btnCancel = card.findViewById(R.id.btnCancel);
-
-        tvMessage.setText("Delete „" + song.getTitle() + "“ from playlist?");
-
-        android.app.Dialog dialog =
-                WavvyDialogs.showCenteredCardDialog(this, this, card);
-
-        btnRemove.setOnClickListener(x -> {
-            if (playlistId != null) {
-                PlaylistRepository.removeSongFromPlaylist(this, playlistId, song.getAudioResId());
-                dialog.dismiss();
-                loadSongs();
-            }
-        });
-        btnCancel.setOnClickListener(x -> dialog.dismiss());
-    }
     private void loadSongs() {
         songsInPlaylist.clear();
 
@@ -245,30 +223,39 @@ public class PlaylistDetailActivity extends AppCompatActivity implements Playbac
             return;
         }
 
-        Playlist p = PlaylistRepository.findById(this, playlistId);
-        if (p == null) {
-            tvPlaylistMeta.setText("0 songs • 0:00");
-            adapter.notifyDataSetChanged();
-            return;
-        }
+        if (playlistId.equals("liked")) {
 
-        for (Integer audioResId : p.getSongAudioResIds()) {
-            Song s = SongRepository.findByAudioResId(audioResId);
-            if (s != null) songsInPlaylist.add(s);
-        }
+            for (String id : LikedSongsRepository.getLikedSongs(this)) {
+                try {
+                    int audioId = Integer.parseInt(id);
+                    Song s = SongRepository.findByAudioResId(audioId);
+                    if (s != null) songsInPlaylist.add(s);
+                } catch (Exception ignored) {}
+            }
 
+        }
+        else if (playlistId.equals("local")) {
+
+            songsInPlaylist.addAll(SongRepository.getSongs());
+
+        }
+        else {
+            Playlist p = PlaylistRepository.findById(this, playlistId);
+            if (p != null) {
+                for (Integer audioResId : p.getSongAudioResIds()) {
+                    Song s = SongRepository.findByAudioResId(audioResId);
+                    if (s != null) songsInPlaylist.add(s);
+                }
+            }
+        }
         long totalMs = 0;
         for (Song s : songsInPlaylist) {
             totalMs += getDurationMsFromRaw(s.getAudioResId());
         }
 
-        if (songsInPlaylist.size() == 1) {
-            tvPlaylistMeta.setText(songsInPlaylist.size() + " song • " + formatDuration(totalMs));
-            adapter.notifyDataSetChanged();
-        } else {
-            tvPlaylistMeta.setText(songsInPlaylist.size() + " songs • " + formatDuration(totalMs));
-            adapter.notifyDataSetChanged();
-        }
+        String label = songsInPlaylist.size() == 1 ? "song" : "songs";
+        tvPlaylistMeta.setText(songsInPlaylist.size() + " " + label + " • " + formatDuration(totalMs));
+        adapter.notifyDataSetChanged();
     }
     private long getDurationMsFromRaw(int rawResId) {
         MediaMetadataRetriever mmr = new MediaMetadataRetriever();

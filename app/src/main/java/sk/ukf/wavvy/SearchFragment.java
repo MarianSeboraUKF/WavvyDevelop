@@ -107,6 +107,7 @@ public class SearchFragment extends Fragment implements PlaybackManager.Listener
         adapter = new SongAdapter(
                 filteredSongs,
                 false,
+                false,
                 song -> PlayerLauncher.openQueue(
                         requireContext(),
                         filteredSongs,

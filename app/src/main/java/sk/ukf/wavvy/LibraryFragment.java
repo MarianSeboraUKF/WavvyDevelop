@@ -14,11 +14,15 @@ import androidx.recyclerview.widget.GridLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 import java.util.ArrayList;
 import sk.ukf.wavvy.adapter.PlaylistAdapter;
+import sk.ukf.wavvy.adapter.SystemPlaylistAdapter;
 import sk.ukf.wavvy.model.Playlist;
+import sk.ukf.wavvy.model.Song;
 
 public class LibraryFragment extends Fragment {
     private ArrayList<Playlist> playlists;
     private PlaylistAdapter adapter;
+    private SystemPlaylistAdapter systemAdapter;
+    private ArrayList<Playlist> systemPlaylists;
 
     public LibraryFragment() {}
 
@@ -30,15 +34,34 @@ public class LibraryFragment extends Fragment {
 
         View view = inflater.inflate(R.layout.fragment_library, container, false);
 
+        RecyclerView rvSystem = view.findViewById(R.id.rvSystemPlaylists);
         RecyclerView rv = view.findViewById(R.id.rvPlaylists);
-
-        GridLayoutManager gridLayoutManager = new GridLayoutManager(requireContext(), 2);
-        rv.setLayoutManager(gridLayoutManager);
+        rvSystem.setLayoutManager(new GridLayoutManager(requireContext(), 2));
+        rv.setLayoutManager(new GridLayoutManager(requireContext(), 2));
         rv.setNestedScrollingEnabled(false);
         rv.setHasFixedSize(false);
 
-        playlists = PlaylistRepository.getPlaylists(requireContext());
+        systemPlaylists = new ArrayList<>();
 
+        Playlist liked = new Playlist("liked", "Liked songs", true);
+        for (String id : LikedSongsRepository.getLikedSongs(requireContext())) {
+            try {
+                liked.addSong(Integer.parseInt(id));
+            } catch (Exception ignored) {}
+        }
+
+        Playlist local = new Playlist("local", "Local songs", true);
+        for (Song s : SongRepository.getSongs()) {
+            local.addSong(s.getAudioResId());
+        }
+
+        systemPlaylists.add(liked);
+        systemPlaylists.add(local);
+        systemAdapter = new SystemPlaylistAdapter(systemPlaylists, this::openPlaylist);
+        rvSystem.setAdapter(systemAdapter);
+
+        playlists = new ArrayList<>();
+        playlists.addAll(PlaylistRepository.getPlaylists(requireContext()));
         adapter = new PlaylistAdapter(
                 playlists,
                 playlist -> {
@@ -52,7 +75,6 @@ public class LibraryFragment extends Fragment {
         rv.setAdapter(adapter);
         View btnCreate = view.findViewById(R.id.btnCreatePlaylist);
         btnCreate.setOnClickListener(v -> showCreateDialog());
-
         return view;
     }
 
@@ -61,7 +83,30 @@ public class LibraryFragment extends Fragment {
         super.onResume();
         reload();
     }
+    private void openPlaylist(Playlist playlist) {
+        Intent intent = new Intent(requireContext(), PlaylistDetailActivity.class);
+        intent.putExtra(PlaylistDetailActivity.EXTRA_PLAYLIST_ID, playlist.getId());
+        intent.putExtra(PlaylistDetailActivity.EXTRA_PLAYLIST_NAME, playlist.getName());
+        startActivity(intent);
+    }
     private void reload() {
+        systemPlaylists.clear();
+
+        Playlist liked = new Playlist("liked", "Liked songs", true);
+        for (String id : LikedSongsRepository.getLikedSongs(requireContext())) {
+            try {
+                liked.addSong(Integer.parseInt(id));
+            } catch (Exception ignored) {}
+        }
+
+        Playlist local = new Playlist("local", "Local songs", true);
+        for (Song s : SongRepository.getSongs()) {
+            local.addSong(s.getAudioResId());
+        }
+
+        systemPlaylists.add(liked);
+        systemPlaylists.add(local);
+        systemAdapter.notifyDataSetChanged();
         playlists.clear();
         playlists.addAll(PlaylistRepository.getPlaylists(requireContext()));
         adapter.notifyDataSetChanged();
@@ -81,16 +126,14 @@ public class LibraryFragment extends Fragment {
             String name = etName.getText().toString().trim();
             if (!name.isEmpty()) {
                 PlaylistRepository.createPlaylist(requireContext(), name);
-                dialog.dismiss();
                 reload();
+                dialog.dismiss();
             }
         });
-
         btnCancel.setOnClickListener(x -> dialog.dismiss());
     }
     private void showDeletePlaylistDialog(Playlist playlist) {
-        View card = LayoutInflater.from(requireContext())
-                .inflate(R.layout.dialog_delete_playlist, null);
+        View card = LayoutInflater.from(requireContext()).inflate(R.layout.dialog_delete_playlist, null);
 
         TextView tvMsg = card.findViewById(R.id.tvMsg);
         tvMsg.setText("Do you really want to delete „" + playlist.getName() + "“?");
@@ -98,8 +141,7 @@ public class LibraryFragment extends Fragment {
         View btnDelete = card.findViewById(R.id.btnDelete);
         View btnCancel = card.findViewById(R.id.btnCancel);
 
-        android.app.Dialog dialog =
-                WavvyDialogs.showCenteredCardDialog(requireContext(), requireActivity(), card);
+        android.app.Dialog dialog = WavvyDialogs.showCenteredCardDialog(requireContext(), requireActivity(), card);
 
         btnDelete.setOnClickListener(x -> {
             PlaylistRepository.deletePlaylist(requireContext(), playlist.getId());

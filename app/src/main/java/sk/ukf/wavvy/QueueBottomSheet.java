@@ -34,14 +34,19 @@ public class QueueBottomSheet extends BottomSheetDialogFragment {
             if (s != null) songs.add(s);
         }
 
-        SongAdapter adapter = new SongAdapter(songs, true, song -> {
-            int position = songs.indexOf(song);
+        SongAdapter adapter = new SongAdapter(
+                songs,
+                true,
+                false,
+                song -> {
+                    int position = songs.indexOf(song);
 
-            if (position != -1) {
-                pm.playFromQueue(position);
-            }
-            dismiss();
-        });
+                    if (position != -1) {
+                        pm.playFromQueue(position);
+                    }
+                    dismiss();
+                }
+        );
 
         rvQueue.setLayoutManager(new LinearLayoutManager(getContext()));
         rvQueue.setAdapter(adapter);

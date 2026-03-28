@@ -113,6 +113,7 @@ public class HomeFragment extends Fragment implements PlaybackManager.Listener {
         adapter = new SongAdapter(
                 allSongs,
                 false,
+                false,
                 song -> PlayerLauncher.openQueue(requireContext(), allSongs, song)
         );
 

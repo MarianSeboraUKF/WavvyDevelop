@@ -11,7 +11,10 @@
         android:layout_width="0dp"
         android:layout_height="wrap_content"
         android:orientation="vertical"
-        android:padding="16dp"
+        android:paddingTop="16dp"
+        android:paddingStart="16dp"
+        android:paddingEnd="16dp"
+        android:paddingBottom="0dp"
         app:layout_constraintTop_toTopOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent">
@@ -54,7 +57,7 @@
             android:textSize="14sp"
             android:textColor="@color/textSecondary"
             android:alpha="0.75"
-            android:layout_marginTop="6dp"
+            android:layout_marginTop="4dp"
             android:layout_gravity="center_horizontal"/>
 
     </LinearLayout>
@@ -75,6 +78,21 @@
             android:orientation="vertical"
             android:padding="16dp"
             android:paddingBottom="180dp">
+
+            <TextView
+                android:id="@+id/tvSystemSection"
+                style="@style/SectionTitle"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Your collection"
+                android:layout_marginTop="2dp"/>
+
+            <androidx.recyclerview.widget.RecyclerView
+                android:id="@+id/rvSystemPlaylists"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:nestedScrollingEnabled="false"
+                android:layout_marginTop="4dp"/>
 
             <TextView
                 android:id="@+id/tvPlaylistsSection"

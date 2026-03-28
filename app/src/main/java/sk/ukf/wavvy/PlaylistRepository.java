@@ -24,7 +24,7 @@ public class PlaylistRepository {
     }
     public static void savePlaylists(Context ctx, ArrayList<Playlist> playlists) {
         SharedPreferences sp = ctx.getSharedPreferences(PREFS, Context.MODE_PRIVATE);
-        sp.edit().putString(KEY_PLAYLISTS, gson.toJson(playlists)).apply();
+        sp.edit().putString(KEY_PLAYLISTS, gson.toJson(playlists)).commit();
     }
     public static Playlist createPlaylist(Context ctx, String name) {
         ArrayList<Playlist> playlists = getPlaylists(ctx);
@@ -49,17 +49,6 @@ public class PlaylistRepository {
         for (Playlist p : playlists) {
             if (p.getId().equals(playlistId)) {
                 p.addSong(audioResId);
-                break;
-            }
-        }
-        savePlaylists(ctx, playlists);
-    }
-    public static void removeSongFromPlaylist(Context ctx, String playlistId, int audioResId) {
-        ArrayList<Playlist> playlists = getPlaylists(ctx);
-
-        for (Playlist p : playlists) {
-            if (p.getId().equals(playlistId)) {
-                p.removeSong(audioResId);
                 break;
             }
         }
@@ -92,7 +81,6 @@ public class PlaylistRepository {
                 break;
             }
         }
-
         savePlaylists(ctx, playlists);
     }
 }
