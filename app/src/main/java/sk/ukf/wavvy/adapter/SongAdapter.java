@@ -91,7 +91,7 @@ public class SongAdapter extends RecyclerView.Adapter<SongAdapter.SongViewHolder
             }
         });
 
-        if (!isQueue && !isSystemPlaylist && holder.btnSongMenu != null) {
+        if (!isQueue && holder.btnSongMenu != null) {
             holder.btnSongMenu.setOnClickListener(v -> {
                 android.content.Context ctx = holder.itemView.getContext();
 

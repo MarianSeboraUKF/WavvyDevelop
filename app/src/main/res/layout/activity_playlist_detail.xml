@@ -1,182 +1,140 @@
 <?xml version="1.0" encoding="utf-8"?>
-<androidx.constraintlayout.widget.ConstraintLayout
-    xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:app="http://schemas.android.com/apk/res-auto"
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/playlistRoot"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:fitsSystemWindows="false"
-    android:clipToPadding="false"
+    android:orientation="vertical"
     android:background="@color/bg"
-    android:padding="16dp">
+    android:fitsSystemWindows="false">
 
     <LinearLayout
-        android:id="@+id/headerContainer"
-        android:layout_width="0dp"
+        android:id="@+id/topBar"
+        android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:orientation="vertical"
-        android:paddingTop="32dp"
-        app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintEnd_toEndOf="parent">
+        android:orientation="horizontal"
+        android:gravity="center_vertical"
+        android:paddingStart="12dp"
+        android:paddingEnd="12dp"
+        android:layout_marginTop="8dp">
+
+        <ImageButton
+            android:id="@+id/btnBack"
+            android:layout_width="48dp"
+            android:layout_height="48dp"
+            android:background="@android:color/transparent"
+            android:src="@drawable/ic_back"
+            android:tint="@color/textPrimary"/>
 
         <TextView
-            android:id="@+id/tvAppTitle"
-            style="@style/WavvyTitle"
-            android:layout_width="wrap_content"
+            android:id="@+id/tvTopTitle"
+            android:layout_width="0dp"
             android:layout_height="wrap_content"
-            android:text="Wavvy"/>
-
-        <TextView
-            android:id="@+id/tvPlaylistTitle"
-            style="@style/SectionTitle"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
+            android:layout_weight="1"
             android:text="Playlist"
-            android:layout_marginTop="6dp"/>
+            android:textColor="@color/textPrimary"
+            android:textSize="26sp"
+            android:textStyle="bold"
+            android:gravity="center"/>
 
-        <TextView
-            android:id="@+id/tvPlaylistMeta"
-            style="@style/SmallSecondary"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:text="0 songs • 0:00"
-            android:layout_marginTop="4dp"/>
+        <ImageButton
+            android:id="@+id/btnMenu"
+            android:layout_width="48dp"
+            android:layout_height="48dp"
+            android:background="@android:color/transparent"
+            android:src="@drawable/ic_more"
+            android:tint="@color/textPrimary"/>
 
     </LinearLayout>
 
-    <androidx.recyclerview.widget.RecyclerView
-        android:id="@+id/rvPlaylistSongs"
-        android:layout_width="0dp"
+    <androidx.core.widget.NestedScrollView
+        android:layout_width="match_parent"
         android:layout_height="0dp"
-        android:layout_marginTop="12dp"
-        app:layout_constraintTop_toBottomOf="@id/headerContainer"
-        app:layout_constraintBottom_toTopOf="@id/miniPlayer"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintEnd_toEndOf="parent" />
+        android:layout_weight="1"
+        android:fillViewport="true">
 
-    <androidx.constraintlayout.widget.ConstraintLayout
-        android:id="@+id/miniPlayer"
-        android:layout_width="0dp"
-        android:layout_height="72dp"
-        android:layout_marginStart="0dp"
-        android:layout_marginEnd="0dp"
-        android:layout_marginBottom="10dp"
-        android:background="@drawable/bg_miniplayer_glass"
-        android:paddingStart="16dp"
-        android:paddingEnd="16dp"
-        android:paddingTop="8dp"
-        android:paddingBottom="6dp"
-        android:visibility="gone"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintBottom_toBottomOf="parent">
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical">
 
-        <androidx.constraintlayout.widget.ConstraintLayout
-            android:id="@+id/miniContent"
-            android:layout_width="0dp"
-            android:layout_height="0dp"
-            app:layout_constraintTop_toTopOf="parent"
-            app:layout_constraintBottom_toTopOf="@id/miniProgress"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintEnd_toEndOf="parent">
+            <FrameLayout
+                android:layout_width="250dp"
+                android:layout_height="250dp"
+                android:layout_gravity="center_horizontal"
+                android:layout_marginTop="20dp"
+                android:background="@drawable/bg_cover_rounded"
+                android:clipToOutline="true">
 
-            <com.google.android.material.card.MaterialCardView
-                android:id="@+id/cardMiniCover"
-                android:layout_width="46dp"
-                android:layout_height="46dp"
-                app:cardCornerRadius="8dp"
-                app:cardElevation="0dp"
-                app:layout_constraintStart_toStartOf="parent"
-                app:layout_constraintTop_toTopOf="parent"
-                app:layout_constraintBottom_toBottomOf="parent">
-
-                <ImageView
-                    android:id="@+id/ivMiniCover"
+                <View
+                    android:id="@+id/playlistCoverBg"
                     android:layout_width="match_parent"
                     android:layout_height="match_parent"
-                    android:scaleType="centerCrop"
-                    android:src="@drawable/kto_som_cover" />
-            </com.google.android.material.card.MaterialCardView>
+                    android:background="@drawable/bg_liked_gradient"/>
+
+                <ImageView
+                    android:id="@+id/playlistCoverIcon"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:scaleType="centerCrop"/>
+            </FrameLayout>
 
             <TextView
-                android:id="@+id/tvMiniTitle"
-                android:layout_width="0dp"
+                android:id="@+id/tvPlaylistTitle"
+                android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_marginStart="10dp"
-                android:ellipsize="end"
-                android:maxLines="1"
-                android:text="Song"
                 android:textColor="@color/textPrimary"
+                android:textSize="26sp"
                 android:textStyle="bold"
-                app:layout_constraintStart_toEndOf="@id/cardMiniCover"
-                app:layout_constraintTop_toTopOf="@id/cardMiniCover"
-                app:layout_constraintEnd_toStartOf="@id/btnMiniPrev" />
+                android:layout_marginTop="16dp"
+                android:layout_gravity="center"/>
 
             <TextView
-                android:id="@+id/tvMiniArtist"
-                android:layout_width="0dp"
+                android:id="@+id/tvPlaylistMeta"
+                android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_marginStart="10dp"
-                android:ellipsize="end"
-                android:maxLines="1"
-                android:text="Artist"
                 android:textColor="@color/textSecondary"
-                android:textSize="12sp"
-                app:layout_constraintStart_toEndOf="@id/cardMiniCover"
-                app:layout_constraintTop_toBottomOf="@id/tvMiniTitle"
-                app:layout_constraintBottom_toBottomOf="@id/cardMiniCover"
-                app:layout_constraintEnd_toStartOf="@id/btnMiniPrev" />
+                android:textSize="14sp"
+                android:textStyle="bold"
+                android:layout_marginTop="4dp"
+                android:layout_gravity="center"/>
 
-            <ImageButton
-                android:id="@+id/btnMiniPrev"
-                android:layout_width="44dp"
-                android:layout_height="44dp"
-                android:background="@android:color/transparent"
-                android:contentDescription="Prev"
-                android:src="@drawable/ic_prev"
-                app:tint="@color/textPrimary"
-                app:layout_constraintEnd_toStartOf="@id/btnMiniPlay"
-                app:layout_constraintTop_toTopOf="@id/cardMiniCover"
-                app:layout_constraintBottom_toBottomOf="@id/cardMiniCover" />
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:layout_marginTop="20dp"
+                android:paddingStart="20dp"
+                android:paddingEnd="20dp">
 
-            <ImageButton
-                android:id="@+id/btnMiniPlay"
-                android:layout_width="44dp"
-                android:layout_height="44dp"
-                android:background="@android:color/transparent"
-                android:contentDescription="Play/Pause"
-                android:src="@drawable/ic_play"
-                app:tint="@color/textPrimary"
-                app:layout_constraintEnd_toStartOf="@id/btnMiniNext"
-                app:layout_constraintTop_toTopOf="@id/cardMiniCover"
-                app:layout_constraintBottom_toBottomOf="@id/cardMiniCover" />
+                <TextView
+                    android:id="@+id/btnPlay"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:text="▶ Play"
+                    android:textColor="@color/accent"
+                    android:textSize="18sp"
+                    android:textStyle="bold"/>
 
-            <ImageButton
-                android:id="@+id/btnMiniNext"
-                android:layout_width="44dp"
-                android:layout_height="44dp"
-                android:background="@android:color/transparent"
-                android:contentDescription="Next"
-                android:src="@drawable/ic_next"
-                app:tint="@color/textPrimary"
-                app:layout_constraintEnd_toEndOf="parent"
-                app:layout_constraintTop_toTopOf="@id/cardMiniCover"
-                app:layout_constraintBottom_toBottomOf="@id/cardMiniCover" />
-        </androidx.constraintlayout.widget.ConstraintLayout>
+                <TextView
+                    android:id="@+id/btnShuffle"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Shuffle"
+                    android:textColor="@color/accent"
+                    android:textSize="18sp"
+                    android:textStyle="bold"/>
 
-        <ProgressBar
-            android:id="@+id/miniProgress"
-            style="?android:attr/progressBarStyleHorizontal"
-            android:layout_width="0dp"
-            android:layout_height="4dp"
-            android:max="1000"
-            android:progress="0"
-            android:progressDrawable="@drawable/mini_player_progress"
-            android:indeterminate="false"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintBottom_toBottomOf="parent" />
+            </LinearLayout>
 
-    </androidx.constraintlayout.widget.ConstraintLayout>
+            <androidx.recyclerview.widget.RecyclerView
+                android:id="@+id/rvPlaylistSongs"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:nestedScrollingEnabled="false"
+                android:layout_marginTop="20dp"/>
 
-</androidx.constraintlayout.widget.ConstraintLayout>
+        </LinearLayout>
+    </androidx.core.widget.NestedScrollView>
+    <include layout="@layout/view_mini_player"/>
+</LinearLayout>

@@ -2,6 +2,7 @@ package sk.ukf.wavvy;
 
 import android.animation.ValueAnimator;
 import android.annotation.SuppressLint;
+import android.content.Intent;
 import android.os.Bundle;
 import android.view.View;
 import android.view.MotionEvent;
@@ -16,6 +17,7 @@ import android.graphics.BitmapFactory;
 import android.graphics.drawable.GradientDrawable;
 import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowInsetsCompat;
+import androidx.localbroadcastmanager.content.LocalBroadcastManager;
 import androidx.palette.graphics.Palette;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.content.ContextCompat;
@@ -154,6 +156,7 @@ public class PlayerActivity extends AppCompatActivity implements PlaybackManager
 
             String songId = String.valueOf(song.getAudioResId());
             LikedSongsRepository.toggleLike(this, songId);
+            LocalBroadcastManager.getInstance(this).sendBroadcast(new Intent("LIKED_UPDATED"));
             boolean liked = LikedSongsRepository.isLiked(this, songId);
 
             if (liked) {
@@ -218,6 +221,7 @@ public class PlayerActivity extends AppCompatActivity implements PlaybackManager
 
             favAction.setOnClickListener(v1 -> {
                 LikedSongsRepository.toggleLike(this, songId);
+                LocalBroadcastManager.getInstance(this).sendBroadcast(new Intent("LIKED_UPDATED"));
 
                 boolean newLiked = LikedSongsRepository.isLiked(this, songId);
 
@@ -388,7 +392,6 @@ public class PlayerActivity extends AppCompatActivity implements PlaybackManager
                 }, 200);
             }
         });
-
         handleIntentPlayback();
         updateShuffleUi();
         updateRepeatUi();
@@ -429,7 +432,6 @@ public class PlayerActivity extends AppCompatActivity implements PlaybackManager
     private void handleIntentPlayback() {
         boolean openExisting = getIntent().getBooleanExtra(EXTRA_OPEN_EXISTING, false);
         boolean autoPlay = getIntent().getBooleanExtra(EXTRA_AUTOPLAY, true);
-
         int[] ids = getIntent().getIntArrayExtra(EXTRA_QUEUE_AUDIO_IDS);
         int idx = getIntent().getIntExtra(EXTRA_QUEUE_INDEX, 0);
 
@@ -459,6 +461,9 @@ public class PlayerActivity extends AppCompatActivity implements PlaybackManager
         lastTrackChangeTime = System.currentTimeMillis();
         updateNowPlayingUiFromRepo();
         updateNavButtons();
+        updateShuffleUi();
+        updateRepeatUi();
+        updatePlaybackStatusText();
     }
     @Override
     public void onIsPlayingChanged(boolean isPlaying) {

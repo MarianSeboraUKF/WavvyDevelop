@@ -295,6 +295,29 @@ public class PlaybackManager {
         notifyNowPlaying();
         savePlaybackSettings();
     }
+    public void setShuffle(boolean enabled) {
+        ensureQueueLoadedIfPossible();
+
+        if (shuffleEnabled == enabled) return;
+        shuffleEnabled = enabled;
+
+        if (originalQueue == null || originalQueue.length <= 1) {
+            savePlaybackSettings();
+            notifyNowPlaying();
+            return;
+        }
+
+        int keepId = currentAudioResId;
+        if (shuffleEnabled) {
+            activeQueue = buildShuffledQueueKeepingCurrent(originalQueue, keepId);
+            queueIndex = 0;
+        } else {
+            activeQueue = originalQueue.clone();
+            queueIndex = indexOf(activeQueue, keepId);
+        }
+        savePlaybackSettings();
+        notifyNowPlaying();
+    }
     public void cycleRepeatMode() {
         if (repeatMode == RepeatMode.OFF) {
             repeatMode = RepeatMode.ALL;

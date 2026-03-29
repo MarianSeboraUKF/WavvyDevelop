@@ -11,6 +11,7 @@ import android.view.View;
 import android.view.Window;
 import android.view.WindowManager;
 import android.widget.FrameLayout;
+import androidx.core.view.WindowCompat;
 
 public class WavvyDialogs {
     private static int dialogWidthPx(Activity activity) {
@@ -33,9 +34,7 @@ public class WavvyDialogs {
         lp.gravity = Gravity.CENTER;
 
         host.addView(cardView, lp);
-
         Dialog dialog = new Dialog(ctx, R.style.WavvyFullscreenDialog);
-
         host.setOnClickListener(v -> dialog.dismiss());
 
         cardView.setOnClickListener(v -> {
@@ -45,6 +44,17 @@ public class WavvyDialogs {
         dialog.setCancelable(true);
         dialog.setCanceledOnTouchOutside(true);
         dialog.show();
+
+        Window window = dialog.getWindow();
+
+        if (window != null) {
+            window.setStatusBarColor(android.graphics.Color.TRANSPARENT);
+            View decor = window.getDecorView();
+            decor.setSystemUiVisibility(
+                    decor.getSystemUiVisibility() & ~View.SYSTEM_UI_FLAG_LIGHT_STATUS_BAR
+            );
+            WindowCompat.setDecorFitsSystemWindows(window, false);
+        }
 
         Window w = dialog.getWindow();
         if (w != null) {

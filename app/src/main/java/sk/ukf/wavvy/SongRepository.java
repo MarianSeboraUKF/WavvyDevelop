@@ -15,6 +15,8 @@ public class SongRepository {
         cached.add(new Song("BERI 3", "RAYYY P", "Vašo Patejdl, Majkyyy", "kto.som.?", "RAYYY P", "Majkyyy", 3, R.drawable.kto_som_cover, R.raw.beri_3));
         cached.add(new Song("NEPÝTAM SA", "RAYYY P", "Majkyyy", "kto.som.?", "RAYYY P", "Majkyyy", 10, R.drawable.kto_som_cover, R.raw.nepytam_sa));
         cached.add(new Song("Bouřka", "Lboy Bsc", "", "Bouřka", "Lboy Bsc", "Black Eagle Beats", 1, R.drawable.bourka_cover, R.raw.bourka));
+        cached.add(new Song("Čikitas 2", "Lboy Bsc", "Freez247", "Čikitas 2", "Lboy Bsc", "Anyvibe", 1, R.drawable.cikitas_2_cover, R.raw.cikitas_2));
+        cached.add(new Song("Plaza", "Lboy Bsc", "", "Plaza", "Lboy Bsc", "-", 1, R.drawable.plaza_cover, R.raw.plaza));
         cached.add(new Song("DO OČÍ", "RAYYY P", "Majkyyy", "kto.som.?", "RAYYY P", "Majkyyy",1, R.drawable.kto_som_cover, R.raw.do_oci));
         cached.add(new Song("DIG ON(A)", "Frayer Flexking", "Separ", "DIG ON(A)", "Frayer Flexking", "Maiky Beatz, prodbyslope",1, R.drawable.dig_ona_cover, R.raw.dig_ona));
         cached.add(new Song("Streets", "guapanova", "Luca Brassi10x", "Deluzia", "guapanova", "Tristan. Hoodrich",4, R.drawable.deluzia_cover, R.raw.streets));
@@ -80,6 +82,24 @@ public class SongRepository {
             }
         }
         return songs;
+    }
+    public static ArrayList<Song> getLikedSongs(Context ctx) {
+        ArrayList<Song> result = new ArrayList<>();
+        ArrayList<String> liked = new ArrayList<>(LikedSongsRepository.getLikedSongs(ctx));
+        java.util.Collections.reverse(liked);
+
+        for (String id : liked) {
+            try {
+                int audioId = Integer.parseInt(id);
+                Song s = findByAudioResId(audioId);
+
+                if (s != null) {
+                    result.add(s);
+                }
+
+            } catch (Exception ignored) {}
+        }
+        return result;
     }
     public static void preloadDurations(Context ctx) {
         for (Song s : getSongs()) {

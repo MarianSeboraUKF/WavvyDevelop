@@ -6,6 +6,8 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.EditText;
+import android.widget.ImageView;
+import android.widget.PopupWindow;
 import android.widget.TextView;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -42,12 +44,11 @@ public class LibraryFragment extends Fragment {
         rv.setHasFixedSize(false);
 
         systemPlaylists = new ArrayList<>();
-
         Playlist liked = new Playlist("liked", "Liked songs", true);
-        for (String id : LikedSongsRepository.getLikedSongs(requireContext())) {
-            try {
-                liked.addSong(Integer.parseInt(id));
-            } catch (Exception ignored) {}
+        ArrayList<Song> likedSongs = SongRepository.getLikedSongs(requireContext());
+
+        for (Song s : likedSongs) {
+            liked.addSong(s.getAudioResId());
         }
 
         Playlist local = new Playlist("local", "Local songs", true);
@@ -91,12 +92,10 @@ public class LibraryFragment extends Fragment {
     }
     private void reload() {
         systemPlaylists.clear();
-
         Playlist liked = new Playlist("liked", "Liked songs", true);
-        for (String id : LikedSongsRepository.getLikedSongs(requireContext())) {
-            try {
-                liked.addSong(Integer.parseInt(id));
-            } catch (Exception ignored) {}
+        ArrayList<Song> likedSongs = SongRepository.getLikedSongs(requireContext());
+        for (Song s : likedSongs) {
+            liked.addSong(s.getAudioResId());
         }
 
         Playlist local = new Playlist("local", "Local songs", true);
@@ -134,7 +133,6 @@ public class LibraryFragment extends Fragment {
     }
     private void showDeletePlaylistDialog(Playlist playlist) {
         View card = LayoutInflater.from(requireContext()).inflate(R.layout.dialog_delete_playlist, null);
-
         TextView tvMsg = card.findViewById(R.id.tvMsg);
         tvMsg.setText("Do you really want to delete „" + playlist.getName() + "“?");
 
@@ -175,46 +173,99 @@ public class LibraryFragment extends Fragment {
         btnCancel.setOnClickListener(x -> dialog.dismiss());
     }
     private void showPopupMenu(Playlist playlist, View anchor) {
-        View card = LayoutInflater.from(requireContext())
+        View popupView = LayoutInflater.from(requireContext())
                 .inflate(R.layout.dialog_playlist_menu, null);
 
-        View btnRename = card.findViewById(R.id.btnRename);
-        View btnDelete = card.findViewById(R.id.btnDelete);
-        View btnInfo = card.findViewById(R.id.btnInfo);
+        PopupWindow popup = new PopupWindow(
+                popupView,
+                ViewGroup.LayoutParams.WRAP_CONTENT,
+                ViewGroup.LayoutParams.WRAP_CONTENT,
+                true
+        );
 
-        android.app.Dialog dialog =
-                WavvyDialogs.showCenteredCardDialog(requireContext(), requireActivity(), card);
+        popup.setBackgroundDrawable(new android.graphics.drawable.ColorDrawable(android.graphics.Color.TRANSPARENT));
+        popup.setElevation(12f);
 
-        btnRename.setOnClickListener(v -> {
-            dialog.dismiss();
-            showRenameDialog(playlist);
-        });
+        View actionInfo = popupView.findViewById(R.id.actionInfo);
+        View actionImport = popupView.findViewById(R.id.actionImport);
+        View actionEdit = popupView.findViewById(R.id.actionEdit);
+        View actionDelete = popupView.findViewById(R.id.actionDelete);
 
-        btnDelete.setOnClickListener(v -> {
-            dialog.dismiss();
-            showDeletePlaylistDialog(playlist);
-        });
+        actionImport.setVisibility(View.GONE);
+        actionEdit.setVisibility(View.GONE);
+        actionDelete.setVisibility(View.GONE);
 
-        btnInfo.setOnClickListener(v -> {
-            dialog.dismiss();
+        if (!playlist.isSystem()) {
+            actionEdit.setVisibility(View.VISIBLE);
+            actionDelete.setVisibility(View.VISIBLE);
+            actionEdit.setOnClickListener(v -> {
+                popup.dismiss();
+                showRenameDialog(playlist);
+            });
+
+            actionDelete.setOnClickListener(v -> {
+                popup.dismiss();
+                showDeletePlaylistDialog(playlist);
+            });
+        }
+
+        actionInfo.setOnClickListener(v -> {
+            popup.dismiss();
             showPlaylistInfoDialog(playlist);
         });
+        popup.showAsDropDown(anchor, -200, 20);
     }
     private void showPlaylistInfoDialog(Playlist playlist) {
-        View card = LayoutInflater.from(requireContext())
-                .inflate(R.layout.dialog_playlist_info, null);
+        View card = LayoutInflater.from(requireContext()).inflate(R.layout.dialog_playlist_info, null);
 
-        TextView tvInfo = card.findViewById(R.id.tvInfoContent);
+        View coverBg = card.findViewById(R.id.playlistCoverBg);
+        ImageView coverIcon = card.findViewById(R.id.playlistCoverIcon);
+        TextView tvTitle = card.findViewById(R.id.tvPlaylistTitle);
+        TextView tvCount = card.findViewById(R.id.tvPlaylistCount);
+        TextView tvLength = card.findViewById(R.id.tvPlaylistLength);
+        View btnClose = card.findViewById(R.id.btnClose);
+        tvTitle.setText(playlist.getName());
 
         int count = playlist.getSongAudioResIds().size();
+        long totalMs = 0;
+        for (Integer id : playlist.getSongAudioResIds()) {
+            Song s = SongRepository.findByAudioResId(id);
+            if (s != null) totalMs += s.getDurationMs();
+        }
 
-        String info =
-                "Name: " + playlist.getName() +
-                        "\n\nTracks: " + count +
-                        "\n\nCreated: available locally" +
-                        "\n\nUpdated: last saved locally";
+        tvCount.setText(count == 1 ? "1 song" : count + " songs");
+        tvLength.setText(formatDuration(totalMs));
 
-        tvInfo.setText(info);
-        WavvyDialogs.showCenteredCardDialog(requireContext(), requireActivity(), card);
+        if (playlist.getId().equals("liked")) {
+            coverBg.setBackgroundResource(R.drawable.bg_liked_gradient);
+            coverIcon.setImageResource(R.drawable.ic_liked);
+        } else if (playlist.getId().equals("local")) {
+            coverBg.setBackgroundResource(R.drawable.bg_local_gradient);
+            coverIcon.setImageResource(R.drawable.icon_local);
+        } else {
+            coverBg.setBackgroundColor(android.graphics.Color.TRANSPARENT);
+            if (!playlist.getSongAudioResIds().isEmpty()) {
+                Song s = SongRepository.findByAudioResId(
+                        playlist.getSongAudioResIds().get(0)
+                );
+                if (s != null) {
+                    coverIcon.setImageResource(s.getCoverResId());
+                }
+            }
+        }
+        android.app.Dialog dialog = WavvyDialogs.showCenteredCardDialog(requireContext(), requireActivity(), card);
+        btnClose.setOnClickListener(v -> dialog.dismiss());
+    }
+    private String formatDuration(long ms) {
+        long totalSeconds = ms / 1000;
+        long hours = totalSeconds / 3600;
+        long minutes = (totalSeconds % 3600) / 60;
+        long seconds = totalSeconds % 60;
+
+        if (hours > 0) {
+            return hours + " hr " + minutes + " min";
+        } else {
+            return minutes + " min " + seconds + " sec";
+        }
     }
 }

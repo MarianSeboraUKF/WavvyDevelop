@@ -1,11 +1,15 @@
 package sk.ukf.wavvy;
 
 import android.content.Intent;
-import android.media.MediaMetadataRetriever;
+import android.graphics.drawable.ColorDrawable;
 import android.os.Bundle;
 import android.view.View;
+import android.view.ViewGroup;
+import android.widget.EditText;
+import android.widget.FrameLayout;
 import android.widget.ImageButton;
 import android.widget.ImageView;
+import android.widget.PopupWindow;
 import android.widget.TextView;
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
@@ -39,6 +43,10 @@ public class PlaylistDetailActivity extends AppCompatActivity implements Playbac
     private ImageButton btnMiniNext;
     private ProgressBar miniProgress;
     private PlaybackManager pm;
+    private View coverBg;
+    private ImageView coverIcon;
+    private TextView btnPlay;
+    private TextView btnShuffle;
 
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
@@ -49,26 +57,61 @@ public class PlaylistDetailActivity extends AppCompatActivity implements Playbac
         getWindow().setStatusBarColor(android.graphics.Color.TRANSPARENT);
         getWindow().setNavigationBarColor(android.graphics.Color.TRANSPARENT);
 
-        View top = findViewById(R.id.headerContainer);
+        View root = findViewById(R.id.playlistRoot);
+        ViewCompat.setOnApplyWindowInsetsListener(root, (v, insets) -> {
 
-        ViewCompat.setOnApplyWindowInsetsListener(top, (v, insets) -> {
+            int topInset = insets.getInsets(WindowInsetsCompat.Type.statusBars()).top;
 
-            int topInset =
-                    insets.getInsets(WindowInsetsCompat.Type.statusBars()).top;
-
-            v.setPadding(0, topInset, 0, 0);
+            v.setPadding(0, topInset + 8, 0, 0);
 
             return insets;
         });
 
         pm = PlaybackManager.get(this);
-
         tvPlaylistTitle = findViewById(R.id.tvPlaylistTitle);
         tvPlaylistMeta = findViewById(R.id.tvPlaylistMeta);
         rvPlaylistSongs = findViewById(R.id.rvPlaylistSongs);
+        coverBg = findViewById(R.id.playlistCoverBg);
+        coverIcon = findViewById(R.id.playlistCoverIcon);
+        ImageButton btnBack = findViewById(R.id.btnBack);
+        btnBack.setOnClickListener(v -> finish());
+        btnPlay = findViewById(R.id.btnPlay);
+        btnShuffle = findViewById(R.id.btnShuffle);
+
+        btnPlay.setOnClickListener(v -> {
+            if (songsInPlaylist.isEmpty()) return;
+
+            PlayerLauncher.openQueue(
+                    PlaylistDetailActivity.this,
+                    songsInPlaylist,
+                    songsInPlaylist.get(0)
+            );
+            pm.setShuffle(false);
+        });
+
+        btnShuffle.setOnClickListener(v -> {
+            if (songsInPlaylist.isEmpty()) return;
+
+            PlayerLauncher.openQueue(
+                    PlaylistDetailActivity.this,
+                    songsInPlaylist,
+                    songsInPlaylist.get(0)
+            );
+            pm.setShuffle(true);
+        });
 
         Intent intent = getIntent();
         playlistId = intent.getStringExtra(EXTRA_PLAYLIST_ID);
+
+        TextView tvTopTitle = findViewById(R.id.tvTopTitle);
+        if (tvTopTitle != null) {
+            tvTopTitle.setText("Playlist");
+        }
+
+        ImageButton btnMenu = findViewById(R.id.btnMenu);
+        btnMenu.setOnClickListener(v -> {
+            showPlaylistMenu(v);
+        });
 
         String nameFromIntent = intent.getStringExtra(EXTRA_PLAYLIST_NAME);
         if (nameFromIntent != null && !nameFromIntent.trim().isEmpty()) {
@@ -76,6 +119,44 @@ public class PlaylistDetailActivity extends AppCompatActivity implements Playbac
         }
         tvPlaylistTitle.setText(playlistName);
 
+        if (playlistId != null) {
+            ViewGroup.LayoutParams params = coverIcon.getLayoutParams();
+
+            if ("liked".equals(playlistId)) {
+                coverBg.setBackgroundResource(R.drawable.bg_liked_gradient);
+                coverIcon.setImageResource(R.drawable.ic_liked);
+                coverIcon.setColorFilter(android.graphics.Color.BLACK);
+                params.width = 350;
+                params.height = 350;
+                coverIcon.setLayoutParams(params);
+                ((FrameLayout.LayoutParams) coverIcon.getLayoutParams()).gravity = android.view.Gravity.CENTER;
+            } else if ("local".equals(playlistId)) {
+                coverBg.setBackgroundResource(R.drawable.bg_local_gradient);
+                coverIcon.setImageResource(R.drawable.icon_local);
+                coverIcon.setColorFilter(android.graphics.Color.BLACK);
+                params.width = 350;
+                params.height = 350;
+                coverIcon.setLayoutParams(params);
+                ((FrameLayout.LayoutParams) coverIcon.getLayoutParams()).gravity = android.view.Gravity.CENTER;
+            } else {
+                coverIcon.clearColorFilter();
+                params.width = ViewGroup.LayoutParams.MATCH_PARENT;
+                params.height = ViewGroup.LayoutParams.MATCH_PARENT;
+                coverIcon.setLayoutParams(params);
+                Playlist p = PlaylistRepository.findById(this, playlistId);
+
+                if (p != null && !p.getSongAudioResIds().isEmpty()) {
+                    Song s = SongRepository.findByAudioResId(p.getSongAudioResIds().get(0));
+                    if (s != null) {
+                        coverBg.setBackgroundColor(android.graphics.Color.TRANSPARENT);
+                        coverIcon.setImageResource(s.getCoverResId());
+                    }
+                } else {
+                    coverBg.setBackgroundColor(android.graphics.Color.TRANSPARENT);
+                    coverIcon.setImageResource(R.drawable.default_cover);
+                }
+            }
+        }
         rvPlaylistSongs.setLayoutManager(new LinearLayoutManager(this));
         songsInPlaylist = new ArrayList<>();
 
@@ -99,7 +180,6 @@ public class PlaylistDetailActivity extends AppCompatActivity implements Playbac
         btnMiniPlay = findViewById(R.id.btnMiniPlay);
         btnMiniNext = findViewById(R.id.btnMiniNext);
         miniProgress = findViewById(R.id.miniProgress);
-
         miniPlayer.setOnClickListener(v -> openPlayerFromNowPlaying());
         btnMiniPlay.setOnClickListener(v -> pm.togglePlayPause());
         btnMiniPrev.setOnClickListener(v -> {
@@ -110,11 +190,7 @@ public class PlaylistDetailActivity extends AppCompatActivity implements Playbac
             pm.playPrev(true);
         });
         btnMiniNext.setOnClickListener(v -> pm.playNext(true));
-
         loadSongs();
-        for (Song s : songsInPlaylist) {
-            GradientPreloader.preload(this, s.getCoverResId());
-        }
         updateMiniPlayerUi();
     }
 
@@ -122,6 +198,8 @@ public class PlaylistDetailActivity extends AppCompatActivity implements Playbac
     protected void onResume() {
         super.onResume();
         loadSongs();
+        updateMeta();
+        adapter.notifyDataSetChanged();
         updateMiniPlayerUi();
     }
 
@@ -145,11 +223,17 @@ public class PlaylistDetailActivity extends AppCompatActivity implements Playbac
     @Override
     public void onNowPlayingChanged(int audioResId, int[] queueIds, int queueIndex) {
         updateMiniPlayerUi();
+        if (adapter != null) {
+            adapter.notifyDataSetChanged();
+        }
     }
     @Override
     public void onIsPlayingChanged(boolean isPlaying) {
         if (btnMiniPlay != null) {
             btnMiniPlay.setImageResource(isPlaying ? R.drawable.ic_pause : R.drawable.ic_play);
+        }
+        if (adapter != null) {
+            adapter.notifyDataSetChanged();
         }
     }
     @Override
@@ -160,7 +244,6 @@ public class PlaylistDetailActivity extends AppCompatActivity implements Playbac
             miniProgress.setIndeterminate(true);
             return;
         }
-
         miniProgress.setIndeterminate(false);
         miniProgress.setMax((int) durationMs);
         miniProgress.setProgress((int) positionMs);
@@ -185,7 +268,6 @@ public class PlaylistDetailActivity extends AppCompatActivity implements Playbac
         ivMiniCover.setImageResource(s.getCoverResId());
         tvMiniTitle.setText(s.getTitle());
         tvMiniArtist.setText(s.getArtist());
-
         btnMiniPlay.setImageResource(pm.isPlaying() ? R.drawable.ic_pause : R.drawable.ic_play);
 
         int[] q = pm.getQueueIds();
@@ -223,62 +305,198 @@ public class PlaylistDetailActivity extends AppCompatActivity implements Playbac
             return;
         }
 
-        if (playlistId.equals("liked")) {
-
-            for (String id : LikedSongsRepository.getLikedSongs(this)) {
-                try {
-                    int audioId = Integer.parseInt(id);
-                    Song s = SongRepository.findByAudioResId(audioId);
-                    if (s != null) songsInPlaylist.add(s);
-                } catch (Exception ignored) {}
-            }
-
-        }
-        else if (playlistId.equals("local")) {
-
+        if ("liked".equals(playlistId)) {
+            songsInPlaylist.addAll(SongRepository.getLikedSongs(this));
+        } else if ("local".equals(playlistId)) {
             songsInPlaylist.addAll(SongRepository.getSongs());
-
-        }
-        else {
+        } else {
             Playlist p = PlaylistRepository.findById(this, playlistId);
             if (p != null) {
                 for (Integer audioResId : p.getSongAudioResIds()) {
                     Song s = SongRepository.findByAudioResId(audioResId);
-                    if (s != null) songsInPlaylist.add(s);
+                    if (s != null) {
+                        songsInPlaylist.add(s);
+                    }
                 }
             }
         }
-        long totalMs = 0;
-        for (Song s : songsInPlaylist) {
-            totalMs += getDurationMsFromRaw(s.getAudioResId());
-        }
-
-        String label = songsInPlaylist.size() == 1 ? "song" : "songs";
-        tvPlaylistMeta.setText(songsInPlaylist.size() + " " + label + " • " + formatDuration(totalMs));
+        updateMeta();
         adapter.notifyDataSetChanged();
     }
-    private long getDurationMsFromRaw(int rawResId) {
-        MediaMetadataRetriever mmr = new MediaMetadataRetriever();
-        try {
-            android.content.res.AssetFileDescriptor afd = getResources().openRawResourceFd(rawResId);
-            if (afd == null) return 0;
-
-            mmr.setDataSource(afd.getFileDescriptor(), afd.getStartOffset(), afd.getLength());
-            String dur = mmr.extractMetadata(MediaMetadataRetriever.METADATA_KEY_DURATION);
-            afd.close();
-
-            if (dur == null) return 0;
-            return Long.parseLong(dur);
-        } catch (Exception e) {
-            return 0;
-        } finally {
-            try { mmr.release(); } catch (Exception ignored) {}
+    private void updateMeta() {
+        long totalMs = 0;
+        for (Song s : songsInPlaylist) {
+            totalMs += s.getDurationMs();
         }
+        String label = songsInPlaylist.size() == 1 ? "song" : "songs";
+        tvPlaylistMeta.setText(
+                songsInPlaylist.size() + " " + label + " • " + formatDuration(totalMs)
+        );
+    }
+    private void showDeletePlaylistDialog() {
+        View card = getLayoutInflater()
+                .inflate(R.layout.dialog_delete_playlist, null);
+
+        TextView tvMsg = card.findViewById(R.id.tvMsg);
+        tvMsg.setText("Do you really want to delete „" + playlistName + "“?");
+
+        View btnDelete = card.findViewById(R.id.btnDelete);
+        View btnCancel = card.findViewById(R.id.btnCancel);
+
+        android.app.Dialog dialog =
+                WavvyDialogs.showCenteredCardDialog(this, this, card);
+
+        btnDelete.setOnClickListener(v -> {
+            PlaylistRepository.deletePlaylist(this, playlistId);
+            dialog.dismiss();
+            finish();
+        });
+        btnCancel.setOnClickListener(v -> dialog.dismiss());
+    }
+    private void showRenameDialog() {
+        View card = getLayoutInflater().inflate(R.layout.dialog_rename_playlist, null);
+        EditText etName = card.findViewById(R.id.etName);
+        View btnRename = card.findViewById(R.id.btnRename);
+        View btnCancel = card.findViewById(R.id.btnCancel);
+        etName.setText(playlistName);
+        android.app.Dialog dialog = WavvyDialogs.showCenteredCardDialog(this, this, card);
+
+        btnRename.setOnClickListener(v -> {
+            String newName = etName.getText().toString().trim();
+
+            if (!newName.isEmpty()) {
+                PlaylistRepository.renamePlaylist(this, playlistId, newName);
+                playlistName = newName;
+                tvPlaylistTitle.setText(newName);
+                dialog.dismiss();
+            }
+        });
+        btnCancel.setOnClickListener(v -> dialog.dismiss());
+    }
+    private void showPlaylistMenu(View anchor) {
+        View popupView = getLayoutInflater().inflate(R.layout.dialog_playlist_menu, null);
+
+        final PopupWindow popup = new PopupWindow(
+                popupView,
+                ViewGroup.LayoutParams.WRAP_CONTENT,
+                ViewGroup.LayoutParams.WRAP_CONTENT,
+                true
+        );
+
+        popup.setBackgroundDrawable(new ColorDrawable(android.graphics.Color.TRANSPARENT));
+        popup.setElevation(12f);
+        View actionInfo = popupView.findViewById(R.id.actionInfo);
+        View actionImport = popupView.findViewById(R.id.actionImport);
+        View actionEdit = popupView.findViewById(R.id.actionEdit);
+        View actionDelete = popupView.findViewById(R.id.actionDelete);
+
+        actionImport.setVisibility(View.GONE);
+        actionEdit.setVisibility(View.GONE);
+        actionDelete.setVisibility(View.GONE);
+
+        if ("liked".equals(playlistId)) {}
+        else if ("local".equals(playlistId)) {
+            actionImport.setVisibility(View.VISIBLE);
+            actionImport.setOnClickListener(v -> {
+                popup.dismiss();
+            });
+        } else {
+            actionEdit.setVisibility(View.VISIBLE);
+            actionDelete.setVisibility(View.VISIBLE);
+
+            actionEdit.setOnClickListener(v -> {
+                popup.dismiss();
+                showRenameDialog();
+            });
+
+            actionDelete.setOnClickListener(v -> {
+                popup.dismiss();
+                showDeletePlaylistDialog();
+            });
+        }
+        actionInfo.setOnClickListener(v -> {
+            popup.dismiss();
+            showPlaylistInfo();
+        });
+        popup.showAsDropDown(anchor, -200, 20);
+    }
+    private void showPlaylistInfo() {
+        View dialogView = getLayoutInflater().inflate(R.layout.dialog_playlist_info, null);
+        View coverBg = dialogView.findViewById(R.id.playlistCoverBg);
+        ImageView coverIcon = dialogView.findViewById(R.id.playlistCoverIcon);
+        TextView tvTitle = dialogView.findViewById(R.id.tvPlaylistTitle);
+        TextView tvCount = dialogView.findViewById(R.id.tvPlaylistCount);
+        TextView tvLength = dialogView.findViewById(R.id.tvPlaylistLength);
+        TextView btnClose = dialogView.findViewById(R.id.btnClose);
+        tvTitle.setText(playlistName);
+
+        if ("liked".equals(playlistId)) {
+            ViewGroup.LayoutParams params = coverIcon.getLayoutParams();
+            params.width = 350;
+            params.height = 350;
+            coverIcon.setLayoutParams(params);
+            ((FrameLayout.LayoutParams) coverIcon.getLayoutParams()).gravity = android.view.Gravity.CENTER;
+            coverIcon.setScaleType(ImageView.ScaleType.CENTER_CROP);
+            coverBg.setBackgroundResource(R.drawable.bg_liked_gradient);
+            coverIcon.setImageResource(R.drawable.ic_liked);
+            coverIcon.setColorFilter(android.graphics.Color.BLACK);
+            coverIcon.setAlpha(1f);
+        } else if ("local".equals(playlistId)) {
+            ViewGroup.LayoutParams params = coverIcon.getLayoutParams();
+            params.width = 350;
+            params.height = 350;
+            coverIcon.setLayoutParams(params);
+            ((FrameLayout.LayoutParams) coverIcon.getLayoutParams()).gravity = android.view.Gravity.CENTER;
+            coverIcon.setScaleType(ImageView.ScaleType.CENTER_CROP);
+            coverBg.setBackgroundResource(R.drawable.bg_local_gradient);
+            coverIcon.setImageResource(R.drawable.icon_local);
+            coverIcon.setColorFilter(android.graphics.Color.BLACK);
+            coverIcon.setAlpha(1f);
+        } else {
+            coverBg.setBackgroundColor(android.graphics.Color.TRANSPARENT);
+            ViewGroup.LayoutParams params = coverIcon.getLayoutParams();
+            params.width = ViewGroup.LayoutParams.MATCH_PARENT;
+            params.height = ViewGroup.LayoutParams.MATCH_PARENT;
+            coverIcon.setLayoutParams(params);
+            ((FrameLayout.LayoutParams) coverIcon.getLayoutParams()).gravity = android.view.Gravity.CENTER;
+            coverIcon.setScaleType(ImageView.ScaleType.CENTER_CROP);
+            coverIcon.clearColorFilter();
+
+            if (!songsInPlaylist.isEmpty()) {
+                Song s = songsInPlaylist.get(0);
+                coverIcon.setImageResource(s.getCoverResId());
+            } else {
+                coverIcon.setImageResource(R.drawable.default_cover);
+            }
+        }
+
+        int count = songsInPlaylist.size();
+        long totalMs = 0;
+        for (Song s : songsInPlaylist) {
+            totalMs += s.getDurationMs();
+        }
+
+        tvCount.setText(count == 1 ? "1 song" : count + " songs");
+        tvLength.setText(formatDuration(totalMs));
+        android.app.Dialog dialog = WavvyDialogs.showCenteredCardDialog(this, this, dialogView);
+        btnClose.setOnClickListener(v -> dialog.dismiss());
     }
     private String formatDuration(long ms) {
         long totalSeconds = ms / 1000;
-        long minutes = totalSeconds / 60;
+        long hours = totalSeconds / 3600;
+        long minutes = (totalSeconds % 3600) / 60;
         long seconds = totalSeconds % 60;
-        return minutes + ":" + String.format("%02d", seconds);
+
+        if (hours > 0) {
+            if (minutes == 0) {
+                return hours + " hr";
+            }
+            return hours + " hr " + minutes + " min";
+        } else {
+            if (minutes == 0) {
+                return seconds + " sec";
+            }
+            return minutes + " min " + seconds + " sec";
+        }
     }
 }

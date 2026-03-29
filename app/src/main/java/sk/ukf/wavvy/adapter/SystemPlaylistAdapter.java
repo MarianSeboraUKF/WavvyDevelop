@@ -30,7 +30,6 @@ public class SystemPlaylistAdapter extends RecyclerView.Adapter<SystemPlaylistAd
     @Override
     public void onBindViewHolder(@NonNull VH h, int i) {
         Playlist p = list.get(i);
-
         h.tvName.setText(p.getName());
         int count = p.getSongAudioResIds().size();
 
@@ -39,7 +38,11 @@ public class SystemPlaylistAdapter extends RecyclerView.Adapter<SystemPlaylistAd
         } else if (count == 1) {
             h.tvCount.setText("1 song");
         } else {
-            h.tvCount.setText(count + " songs");
+            if (p.getId().equals("liked")) {
+                h.tvCount.setText(count + " liked");
+            } else {
+                h.tvCount.setText(count + " songs");
+            }
         }
 
         if (p.getId().equals("liked")) {
