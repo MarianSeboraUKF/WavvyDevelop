@@ -19,6 +19,7 @@ import androidx.core.view.WindowInsetsCompat;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 import android.widget.ProgressBar;
+import android.widget.Toast;
 import java.util.ArrayList;
 import sk.ukf.wavvy.adapter.SongAdapter;
 import sk.ukf.wavvy.model.Playlist;
@@ -47,6 +48,8 @@ public class PlaylistDetailActivity extends AppCompatActivity implements Playbac
     private ImageView coverIcon;
     private TextView btnPlay;
     private TextView btnShuffle;
+    private TextView btnImport;
+    private TextView btnSort;
 
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
@@ -59,28 +62,53 @@ public class PlaylistDetailActivity extends AppCompatActivity implements Playbac
 
         View root = findViewById(R.id.playlistRoot);
         ViewCompat.setOnApplyWindowInsetsListener(root, (v, insets) -> {
-
             int topInset = insets.getInsets(WindowInsetsCompat.Type.statusBars()).top;
-
             v.setPadding(0, topInset + 8, 0, 0);
-
             return insets;
         });
 
         pm = PlaybackManager.get(this);
+
+        Intent intent = getIntent();
+        playlistId = intent.getStringExtra(EXTRA_PLAYLIST_ID);
+
+        String nameFromIntent = intent.getStringExtra(EXTRA_PLAYLIST_NAME);
+        if (nameFromIntent != null && !nameFromIntent.trim().isEmpty()) {
+            playlistName = nameFromIntent.trim();
+        }
+
         tvPlaylistTitle = findViewById(R.id.tvPlaylistTitle);
         tvPlaylistMeta = findViewById(R.id.tvPlaylistMeta);
         rvPlaylistSongs = findViewById(R.id.rvPlaylistSongs);
         coverBg = findViewById(R.id.playlistCoverBg);
         coverIcon = findViewById(R.id.playlistCoverIcon);
-        ImageButton btnBack = findViewById(R.id.btnBack);
-        btnBack.setOnClickListener(v -> finish());
         btnPlay = findViewById(R.id.btnPlay);
         btnShuffle = findViewById(R.id.btnShuffle);
+        btnImport = findViewById(R.id.btnImport);
+        btnSort = findViewById(R.id.btnSort);
 
+        ImageButton btnBack = findViewById(R.id.btnBack);
+        ImageButton btnMenu = findViewById(R.id.btnMenu);
+        TextView tvTopTitle = findViewById(R.id.tvTopTitle);
+
+        btnBack.setOnClickListener(v -> {
+            finish();
+            overridePendingTransition(0, 0);
+        });
+
+        if (tvTopTitle != null) {
+            tvTopTitle.setText("Playlist");
+        }
+
+        btnMenu.setOnClickListener(v -> showPlaylistMenu(v));
+
+        tvPlaylistTitle.setText(playlistName);
+        boolean isSystem = "liked".equals(playlistId) || "local".equals(playlistId);
+
+        btnSort.setVisibility(isSystem ? View.GONE : View.VISIBLE);
+        btnImport.setVisibility("local".equals(playlistId) ? View.VISIBLE : View.GONE);
         btnPlay.setOnClickListener(v -> {
             if (songsInPlaylist.isEmpty()) return;
-
             PlayerLauncher.openQueue(
                     PlaylistDetailActivity.this,
                     songsInPlaylist,
@@ -91,33 +119,18 @@ public class PlaylistDetailActivity extends AppCompatActivity implements Playbac
 
         btnShuffle.setOnClickListener(v -> {
             if (songsInPlaylist.isEmpty()) return;
+            int randomIndex = new java.util.Random().nextInt(songsInPlaylist.size());
+            Song randomSong = songsInPlaylist.get(randomIndex);
 
             PlayerLauncher.openQueue(
                     PlaylistDetailActivity.this,
                     songsInPlaylist,
-                    songsInPlaylist.get(0)
+                    randomSong
             );
             pm.setShuffle(true);
         });
 
-        Intent intent = getIntent();
-        playlistId = intent.getStringExtra(EXTRA_PLAYLIST_ID);
-
-        TextView tvTopTitle = findViewById(R.id.tvTopTitle);
-        if (tvTopTitle != null) {
-            tvTopTitle.setText("Playlist");
-        }
-
-        ImageButton btnMenu = findViewById(R.id.btnMenu);
-        btnMenu.setOnClickListener(v -> {
-            showPlaylistMenu(v);
-        });
-
-        String nameFromIntent = intent.getStringExtra(EXTRA_PLAYLIST_NAME);
-        if (nameFromIntent != null && !nameFromIntent.trim().isEmpty()) {
-            playlistName = nameFromIntent.trim();
-        }
-        tvPlaylistTitle.setText(playlistName);
+        btnSort.setOnClickListener(v -> showSortPopup(v));
 
         if (playlistId != null) {
             ViewGroup.LayoutParams params = coverIcon.getLayoutParams();
@@ -126,23 +139,22 @@ public class PlaylistDetailActivity extends AppCompatActivity implements Playbac
                 coverBg.setBackgroundResource(R.drawable.bg_liked_gradient);
                 coverIcon.setImageResource(R.drawable.ic_liked);
                 coverIcon.setColorFilter(android.graphics.Color.BLACK);
+
                 params.width = 350;
                 params.height = 350;
-                coverIcon.setLayoutParams(params);
-                ((FrameLayout.LayoutParams) coverIcon.getLayoutParams()).gravity = android.view.Gravity.CENTER;
+
             } else if ("local".equals(playlistId)) {
                 coverBg.setBackgroundResource(R.drawable.bg_local_gradient);
                 coverIcon.setImageResource(R.drawable.icon_local);
                 coverIcon.setColorFilter(android.graphics.Color.BLACK);
+
                 params.width = 350;
                 params.height = 350;
-                coverIcon.setLayoutParams(params);
-                ((FrameLayout.LayoutParams) coverIcon.getLayoutParams()).gravity = android.view.Gravity.CENTER;
+
             } else {
                 coverIcon.clearColorFilter();
                 params.width = ViewGroup.LayoutParams.MATCH_PARENT;
                 params.height = ViewGroup.LayoutParams.MATCH_PARENT;
-                coverIcon.setLayoutParams(params);
                 Playlist p = PlaylistRepository.findById(this, playlistId);
 
                 if (p != null && !p.getSongAudioResIds().isEmpty()) {
@@ -156,11 +168,12 @@ public class PlaylistDetailActivity extends AppCompatActivity implements Playbac
                     coverIcon.setImageResource(R.drawable.default_cover);
                 }
             }
+            coverIcon.setLayoutParams(params);
+            ((FrameLayout.LayoutParams) coverIcon.getLayoutParams()).gravity = android.view.Gravity.CENTER;
         }
         rvPlaylistSongs.setLayoutManager(new LinearLayoutManager(this));
         songsInPlaylist = new ArrayList<>();
 
-        boolean isSystem = playlistId != null && (playlistId.equals("liked") || playlistId.equals("local"));
         adapter = new SongAdapter(
                 songsInPlaylist,
                 false,
@@ -182,24 +195,26 @@ public class PlaylistDetailActivity extends AppCompatActivity implements Playbac
         miniProgress = findViewById(R.id.miniProgress);
         miniPlayer.setOnClickListener(v -> openPlayerFromNowPlaying());
         btnMiniPlay.setOnClickListener(v -> pm.togglePlayPause());
+
         btnMiniPrev.setOnClickListener(v -> {
             if (pm.getPlayer() != null && pm.getPlayer().getCurrentPosition() > 3000) {
                 pm.getPlayer().seekTo(0);
-                return;
+            } else {
+                pm.playPrev(true);
             }
-            pm.playPrev(true);
         });
         btnMiniNext.setOnClickListener(v -> pm.playNext(true));
         loadSongs();
         updateMiniPlayerUi();
     }
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+    }
 
     @Override
     protected void onResume() {
         super.onResume();
-        loadSongs();
-        updateMeta();
-        adapter.notifyDataSetChanged();
         updateMiniPlayerUi();
     }
 
@@ -296,34 +311,76 @@ public class PlaylistDetailActivity extends AppCompatActivity implements Playbac
         i.putExtra(PlayerActivity.EXTRA_OPEN_EXISTING, true);
         startActivity(i);
     }
+    private void showSortPopup(View anchor) {
+        View popupView = getLayoutInflater().inflate(R.layout.dialog_sort_playlist, null);
+
+        PopupWindow popup = new PopupWindow(popupView, ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT, true);
+        popup.setBackgroundDrawable(new ColorDrawable(android.graphics.Color.TRANSPARENT));
+        popup.setElevation(12f);
+
+        TextView btnAZ = popupView.findViewById(R.id.btnSortAZ);
+        TextView btnZA = popupView.findViewById(R.id.btnSortZA);
+        TextView btnShort = popupView.findViewById(R.id.btnSortShort);
+        TextView btnLong = popupView.findViewById(R.id.btnSortLong);
+
+        btnAZ.setOnClickListener(v -> {
+            songsInPlaylist.sort((a, b) -> a.getTitle().compareToIgnoreCase(b.getTitle()));
+            afterSort(popup);
+        });
+
+        btnZA.setOnClickListener(v -> {
+            songsInPlaylist.sort((a, b) -> b.getTitle().compareToIgnoreCase(a.getTitle()));
+            afterSort(popup);
+        });
+
+        btnShort.setOnClickListener(v -> {
+            songsInPlaylist.sort((a, b) -> Long.compare(a.getDurationMs(), b.getDurationMs()));
+            afterSort(popup);
+        });
+
+        btnLong.setOnClickListener(v -> {
+            songsInPlaylist.sort((a, b) -> Long.compare(b.getDurationMs(), a.getDurationMs()));
+            afterSort(popup);
+        });
+        popup.showAsDropDown(anchor, -100, 20);
+    }
+    private void afterSort(PopupWindow popup) {
+        adapter.notifyDataSetChanged();
+        updateMeta();
+        popup.dismiss();
+        Toast.makeText(this, "Sorted", Toast.LENGTH_SHORT).show();
+    }
     private void loadSongs() {
         songsInPlaylist.clear();
+        adapter.notifyDataSetChanged();
+        tvPlaylistMeta.setText("Loading songs...");
 
-        if (playlistId == null) {
-            tvPlaylistMeta.setText("0 songs • 0:00");
-            adapter.notifyDataSetChanged();
-            return;
-        }
-
-        if ("liked".equals(playlistId)) {
-            songsInPlaylist.addAll(SongRepository.getLikedSongs(this));
-        } else if ("local".equals(playlistId)) {
-            songsInPlaylist.addAll(SongRepository.getSongs());
-        } else {
-            Playlist p = PlaylistRepository.findById(this, playlistId);
-            if (p != null) {
-                for (Integer audioResId : p.getSongAudioResIds()) {
-                    Song s = SongRepository.findByAudioResId(audioResId);
-                    if (s != null) {
-                        songsInPlaylist.add(s);
+        new Thread(() -> {
+            ArrayList<Song> loaded = new ArrayList<>();
+            if ("liked".equals(playlistId)) {
+                loaded.addAll(SongRepository.getLikedSongs(this));
+            } else if ("local".equals(playlistId)) {
+                loaded.addAll(SongRepository.getSongs());
+            } else {
+                Playlist p = PlaylistRepository.findById(this, playlistId);
+                if (p != null) {
+                    for (Integer id : p.getSongAudioResIds()) {
+                        Song s = SongRepository.findByAudioResId(id);
+                        if (s != null) loaded.add(s);
                     }
                 }
             }
-        }
-        updateMeta();
-        adapter.notifyDataSetChanged();
+
+            runOnUiThread(() -> {
+                songsInPlaylist.clear();
+                songsInPlaylist.addAll(loaded);
+
+                updateMeta();
+                adapter.notifyDataSetChanged();
+            });
+        }).start();
     }
-    private void updateMeta() {
+    public void updateMeta() {
         long totalMs = 0;
         for (Song s : songsInPlaylist) {
             totalMs += s.getDurationMs();
@@ -334,8 +391,7 @@ public class PlaylistDetailActivity extends AppCompatActivity implements Playbac
         );
     }
     private void showDeletePlaylistDialog() {
-        View card = getLayoutInflater()
-                .inflate(R.layout.dialog_delete_playlist, null);
+        View card = getLayoutInflater().inflate(R.layout.dialog_delete_playlist, null);
 
         TextView tvMsg = card.findViewById(R.id.tvMsg);
         tvMsg.setText("Do you really want to delete „" + playlistName + "“?");
@@ -343,8 +399,7 @@ public class PlaylistDetailActivity extends AppCompatActivity implements Playbac
         View btnDelete = card.findViewById(R.id.btnDelete);
         View btnCancel = card.findViewById(R.id.btnCancel);
 
-        android.app.Dialog dialog =
-                WavvyDialogs.showCenteredCardDialog(this, this, card);
+        android.app.Dialog dialog = WavvyDialogs.showCenteredCardDialog(this, this, card);
 
         btnDelete.setOnClickListener(v -> {
             PlaylistRepository.deletePlaylist(this, playlistId);
@@ -489,9 +544,9 @@ public class PlaylistDetailActivity extends AppCompatActivity implements Playbac
 
         if (hours > 0) {
             if (minutes == 0) {
-                return hours + " hr";
+                return hours + " h";
             }
-            return hours + " hr " + minutes + " min";
+            return hours + " h " + minutes + " min";
         } else {
             if (minutes == 0) {
                 return seconds + " sec";

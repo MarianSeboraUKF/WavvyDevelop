@@ -8,6 +8,7 @@ import java.util.ArrayList;
 public class LikedSongsRepository {
     private static final String PREFS = "liked_songs";
     private static final String KEY = "songs";
+    public static final String ACTION_LIKED_CHANGED = "wavvy_liked_changed";
     public static ArrayList<String> getLikedSongs(Context context) {
         SharedPreferences prefs = context.getSharedPreferences(PREFS, Context.MODE_PRIVATE);
         ArrayList<String> list = new ArrayList<>();
@@ -46,8 +47,9 @@ public class LikedSongsRepository {
         } else {
             liked.add(songId);
         }
-
         JSONArray arr = new JSONArray(liked);
-        prefs.edit().putString(KEY, arr.toString()).apply();
+        prefs.edit().putString(KEY, arr.toString()).commit();
+        android.content.Intent intent = new android.content.Intent(ACTION_LIKED_CHANGED);
+        context.sendBroadcast(intent);
     }
 }

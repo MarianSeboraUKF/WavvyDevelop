@@ -45,12 +45,6 @@ public class LibraryFragment extends Fragment {
 
         systemPlaylists = new ArrayList<>();
         Playlist liked = new Playlist("liked", "Liked songs", true);
-        ArrayList<Song> likedSongs = SongRepository.getLikedSongs(requireContext());
-
-        for (Song s : likedSongs) {
-            liked.addSong(s.getAudioResId());
-        }
-
         Playlist local = new Playlist("local", "Local songs", true);
         for (Song s : SongRepository.getSongs()) {
             local.addSong(s.getAudioResId());
@@ -80,6 +74,11 @@ public class LibraryFragment extends Fragment {
     }
 
     @Override
+    public void onDestroyView() {
+        super.onDestroyView();
+    }
+
+    @Override
     public void onResume() {
         super.onResume();
         reload();
@@ -88,27 +87,25 @@ public class LibraryFragment extends Fragment {
         Intent intent = new Intent(requireContext(), PlaylistDetailActivity.class);
         intent.putExtra(PlaylistDetailActivity.EXTRA_PLAYLIST_ID, playlist.getId());
         intent.putExtra(PlaylistDetailActivity.EXTRA_PLAYLIST_NAME, playlist.getName());
-        startActivity(intent);
+        startActivityForResult(intent, 1);
     }
     private void reload() {
         systemPlaylists.clear();
         Playlist liked = new Playlist("liked", "Liked songs", true);
-        ArrayList<Song> likedSongs = SongRepository.getLikedSongs(requireContext());
-        for (Song s : likedSongs) {
-            liked.addSong(s.getAudioResId());
-        }
-
         Playlist local = new Playlist("local", "Local songs", true);
-        for (Song s : SongRepository.getSongs()) {
-            local.addSong(s.getAudioResId());
-        }
-
         systemPlaylists.add(liked);
         systemPlaylists.add(local);
         systemAdapter.notifyDataSetChanged();
         playlists.clear();
         playlists.addAll(PlaylistRepository.getPlaylists(requireContext()));
         adapter.notifyDataSetChanged();
+    }
+    @Override
+    public void onHiddenChanged(boolean hidden) {
+        super.onHiddenChanged(hidden);
+        if (!hidden) {
+            reload();
+        }
     }
     private void showCreateDialog() {
         View card = LayoutInflater.from(requireContext())
@@ -149,8 +146,7 @@ public class LibraryFragment extends Fragment {
         btnCancel.setOnClickListener(x -> dialog.dismiss());
     }
     private void showRenameDialog(Playlist playlist) {
-        View card = LayoutInflater.from(requireContext())
-                .inflate(R.layout.dialog_rename_playlist, null);
+        View card = LayoutInflater.from(requireContext()).inflate(R.layout.dialog_rename_playlist, null);
 
         EditText etName = card.findViewById(R.id.etName);
         View btnRename = card.findViewById(R.id.btnRename);
@@ -158,8 +154,7 @@ public class LibraryFragment extends Fragment {
 
         etName.setText(playlist.getName());
 
-        android.app.Dialog dialog =
-                WavvyDialogs.showCenteredCardDialog(requireContext(), requireActivity(), card);
+        android.app.Dialog dialog = WavvyDialogs.showCenteredCardDialog(requireContext(), requireActivity(), card);
 
         btnRename.setOnClickListener(x -> {
             String newName = etName.getText().toString().trim();
@@ -176,12 +171,7 @@ public class LibraryFragment extends Fragment {
         View popupView = LayoutInflater.from(requireContext())
                 .inflate(R.layout.dialog_playlist_menu, null);
 
-        PopupWindow popup = new PopupWindow(
-                popupView,
-                ViewGroup.LayoutParams.WRAP_CONTENT,
-                ViewGroup.LayoutParams.WRAP_CONTENT,
-                true
-        );
+        PopupWindow popup = new PopupWindow(popupView, ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT, true);
 
         popup.setBackgroundDrawable(new android.graphics.drawable.ColorDrawable(android.graphics.Color.TRANSPARENT));
         popup.setElevation(12f);
@@ -263,7 +253,7 @@ public class LibraryFragment extends Fragment {
         long seconds = totalSeconds % 60;
 
         if (hours > 0) {
-            return hours + " hr " + minutes + " min";
+            return hours + " h " + minutes + " min";
         } else {
             return minutes + " min " + seconds + " sec";
         }

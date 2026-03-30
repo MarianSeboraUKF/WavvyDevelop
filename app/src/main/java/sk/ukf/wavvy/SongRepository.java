@@ -8,7 +8,7 @@ public class SongRepository {
     private static ArrayList<Song> cached;
 
     public static ArrayList<Song> getSongs() {
-        if (cached != null) return new ArrayList<>(cached);
+        if (cached != null) return cached;
 
         cached = new ArrayList<>();
 

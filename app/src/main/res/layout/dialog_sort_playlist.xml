@@ -1,0 +1,40 @@
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="220dp"
+    android:layout_height="wrap_content"
+    android:orientation="vertical"
+    android:background="@drawable/bg_popup_menu"
+    android:padding="8dp">
+
+    <TextView
+        android:id="@+id/btnSortAZ"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="A → Z"
+        android:textColor="@color/textPrimary"
+        android:padding="12dp"/>
+
+    <TextView
+        android:id="@+id/btnSortZA"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Z → A"
+        android:textColor="@color/textPrimary"
+        android:padding="12dp"/>
+
+    <TextView
+        android:id="@+id/btnSortShort"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Shortest first"
+        android:textColor="@color/textPrimary"
+        android:padding="12dp"/>
+
+    <TextView
+        android:id="@+id/btnSortLong"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Longest first"
+        android:textColor="@color/textPrimary"
+        android:padding="12dp"/>
+
+</LinearLayout>

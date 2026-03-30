@@ -1,6 +1,6 @@
 package sk.ukf.wavvy.model;
 
-public class Song {
+public class Song implements java.io.Serializable {
     private final String title;
     private final String mainArtist;
     private final String featArtist;

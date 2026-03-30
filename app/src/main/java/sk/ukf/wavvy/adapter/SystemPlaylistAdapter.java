@@ -9,6 +9,7 @@ import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
 import java.util.List;
 import sk.ukf.wavvy.R;
+import sk.ukf.wavvy.SongRepository;
 import sk.ukf.wavvy.model.Playlist;
 
 public class SystemPlaylistAdapter extends RecyclerView.Adapter<SystemPlaylistAdapter.VH> {
@@ -18,6 +19,7 @@ public class SystemPlaylistAdapter extends RecyclerView.Adapter<SystemPlaylistAd
     public SystemPlaylistAdapter(List<Playlist> list, OnClick listener) {
         this.list = list;
         this.listener = listener;
+        setHasStableIds(true);
     }
 
     @NonNull
@@ -26,12 +28,23 @@ public class SystemPlaylistAdapter extends RecyclerView.Adapter<SystemPlaylistAd
         View v = LayoutInflater.from(parent.getContext()).inflate(R.layout.item_playlist_large, parent, false);
         return new VH(v);
     }
-
+    @Override
+    public long getItemId(int position) {
+        return list.get(position).getId().hashCode();
+    }
     @Override
     public void onBindViewHolder(@NonNull VH h, int i) {
         Playlist p = list.get(i);
         h.tvName.setText(p.getName());
-        int count = p.getSongAudioResIds().size();
+
+        int count;
+        if (p.getId().equals("liked")) {
+            count = SongRepository.getLikedSongs(h.itemView.getContext()).size();
+        } else if (p.getId().equals("local")) {
+            count = SongRepository.getSongs().size();
+        } else {
+            count = p.getSongAudioResIds().size();
+        }
 
         if (count == 0) {
             h.tvCount.setText("Empty");

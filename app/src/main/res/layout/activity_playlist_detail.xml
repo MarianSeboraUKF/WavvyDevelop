@@ -114,16 +114,41 @@
                     android:text="▶ Play"
                     android:textColor="@color/accent"
                     android:textSize="18sp"
-                    android:textStyle="bold"/>
+                    android:textStyle="bold"
+                    android:gravity="start"/>
+
+                <TextView
+                    android:id="@+id/btnSort"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:text="Sort"
+                    android:textColor="@color/accent"
+                    android:textSize="18sp"
+                    android:textStyle="bold"
+                    android:gravity="center"/>
+
+                <TextView
+                    android:id="@+id/btnImport"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:text="Import"
+                    android:textColor="@color/accent"
+                    android:textSize="18sp"
+                    android:textStyle="bold"
+                    android:gravity="center"/>
 
                 <TextView
                     android:id="@+id/btnShuffle"
-                    android:layout_width="wrap_content"
+                    android:layout_width="0dp"
                     android:layout_height="wrap_content"
+                    android:layout_weight="1"
                     android:text="Shuffle"
                     android:textColor="@color/accent"
                     android:textSize="18sp"
-                    android:textStyle="bold"/>
+                    android:textStyle="bold"
+                    android:gravity="end"/>
 
             </LinearLayout>
 

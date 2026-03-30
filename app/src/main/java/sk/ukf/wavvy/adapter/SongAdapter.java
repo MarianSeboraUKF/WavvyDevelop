@@ -20,6 +20,7 @@ import androidx.recyclerview.widget.RecyclerView;
 import java.util.List;
 import sk.ukf.wavvy.AlbumDetailActivity;
 import sk.ukf.wavvy.PlaybackManager;
+import sk.ukf.wavvy.PlaylistDetailActivity;
 import sk.ukf.wavvy.PlaylistRepository;
 import sk.ukf.wavvy.R;
 import sk.ukf.wavvy.model.Playlist;
@@ -139,12 +140,24 @@ public class SongAdapter extends RecyclerView.Adapter<SongAdapter.SongViewHolder
                     } else {
                         android.widget.Toast.makeText(ctx, "Removed from favorites", android.widget.Toast.LENGTH_SHORT).show();
                     }
+
+                    int pos = holder.getAdapterPosition();
+                    if (pos != RecyclerView.NO_POSITION) {
+                        if (isSystemPlaylist && !newLiked) {
+                            songs.remove(pos);
+                            notifyItemRemoved(pos);
+                            if (holder.itemView.getContext() instanceof PlaylistDetailActivity) {
+                                ((PlaylistDetailActivity) holder.itemView.getContext()).updateMeta();
+                            }
+                        } else {
+                            notifyItemChanged(pos);
+                        }
+                    }
                     popupWindow.dismiss();
                 });
 
                 popupView.findViewById(R.id.actionAddPlaylist).setOnClickListener(v1 -> {
                     popupWindow.dismiss();
-
                     java.util.ArrayList<Playlist> playlists = PlaylistRepository.getPlaylists(ctx);
 
                     if (playlists.isEmpty()) {
@@ -154,7 +167,6 @@ public class SongAdapter extends RecyclerView.Adapter<SongAdapter.SongViewHolder
                     android.view.View dialogView = LayoutInflater.from(ctx).inflate(R.layout.dialog_pick_playlist, null);
                     androidx.recyclerview.widget.RecyclerView rv = dialogView.findViewById(R.id.rvPickPlaylists);
                     Button btnCancel = dialogView.findViewById(R.id.btnCancel);
-
                     AlertDialog dialog = new AlertDialog.Builder(ctx).setView(dialogView).create();
                     dialog.getWindow().setBackgroundDrawableResource(android.R.color.transparent);
                     rv.setLayoutManager(new androidx.recyclerview.widget.LinearLayoutManager(ctx));
