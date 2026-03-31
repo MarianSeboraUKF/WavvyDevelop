@@ -35,6 +35,7 @@ public class SongAdapter extends RecyclerView.Adapter<SongAdapter.SongViewHolder
     private String highlightQuery = "";
     private boolean isQueue;
     private boolean isSystemPlaylist;
+    private int selectedPosition = -1;
     public SongAdapter(List<Song> songs, boolean isQueue, boolean isSystemPlaylist, OnSongClickListener clickListener) {
         this.songs = songs;
         this.clickListener = clickListener;
@@ -71,7 +72,12 @@ public class SongAdapter extends RecyclerView.Adapter<SongAdapter.SongViewHolder
         holder.ivCover.setImageResource(song.getCoverResId());
 
         int currentId = PlaybackManager.get(holder.itemView.getContext()).getCurrentAudioResId();
-        boolean isPlaying = song.getAudioResId() == currentId;
+        boolean isPlaying;
+        if (position == selectedPosition) {
+            isPlaying = true;
+        } else {
+            isPlaying = song.getAudioResId() == currentId;
+        }
 
         if (isPlaying) {
             holder.viewNowPlayingStripe.setVisibility(View.VISIBLE);
@@ -87,9 +93,17 @@ public class SongAdapter extends RecyclerView.Adapter<SongAdapter.SongViewHolder
         }
 
         holder.itemView.setOnClickListener(v -> {
-            if (clickListener != null) {
-                clickListener.onSongClick(song);
-            }
+            int oldPos = selectedPosition;
+            selectedPosition = holder.getAdapterPosition();
+
+            if (oldPos != -1) notifyItemChanged(oldPos);
+            notifyItemChanged(selectedPosition);
+
+            holder.itemView.post(() -> {
+                if (clickListener != null) {
+                    clickListener.onSongClick(song);
+                }
+            });
         });
 
         if (!isQueue && holder.btnSongMenu != null) {

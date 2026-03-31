@@ -58,6 +58,7 @@
             android:textColor="@color/textSecondary"
             android:alpha="0.75"
             android:layout_marginTop="4dp"
+            android:layout_marginBottom="6dp"
             android:layout_gravity="center_horizontal"/>
 
     </LinearLayout>
@@ -110,12 +111,27 @@
                 android:layout_marginTop="4dp"/>
 
             <TextView
+                android:id="@+id/tvSongsSection"
+                style="@style/SectionTitle"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Songs"
+                android:layout_marginTop="20dp"/>
+
+            <androidx.recyclerview.widget.RecyclerView
+                android:id="@+id/rvSongsPager"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="4dp"
+                android:orientation="horizontal"/>
+
+            <TextView
                 android:id="@+id/tvAlbumsSection"
                 style="@style/SectionTitle"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:text="Albums"
-                android:layout_marginTop="20dp"/>
+                android:layout_marginTop="18dp"/>
 
             <TextView
                 android:id="@+id/tvSinglesSection"
@@ -126,6 +142,16 @@
                 android:layout_marginTop="20dp"/>
 
             <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Coming soon..."
+                android:textStyle="italic"
+                android:textColor="@color/textSecondary"
+                android:textSize="14sp"
+                android:alpha="0.6"
+                android:layout_marginTop="4dp"/>
+
+            <TextView
                 android:id="@+id/tvArtistsSection"
                 style="@style/SectionTitle"
                 android:layout_width="wrap_content"
@@ -133,10 +159,19 @@
                 android:text="Artists"
                 android:layout_marginTop="20dp"/>
 
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Coming soon..."
+                android:textStyle="italic"
+                android:textColor="@color/textSecondary"
+                android:textSize="14sp"
+                android:alpha="0.6"
+                android:layout_marginTop="4dp"/>
+
             <View
                 android:layout_width="match_parent"
                 android:layout_height="220dp"/>
-
         </LinearLayout>
     </androidx.core.widget.NestedScrollView>
 </androidx.constraintlayout.widget.ConstraintLayout>

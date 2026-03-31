@@ -82,7 +82,13 @@ public class AlbumDetailActivity extends AppCompatActivity implements PlaybackMa
         btnAlbumMore = findViewById(R.id.btnAlbumMore);
         btnSaveAlbum = findViewById(R.id.btnSaveAlbum);
 
-        findViewById(R.id.btnBack).setOnClickListener(v -> finish());
+        findViewById(R.id.btnBack).setOnClickListener(v -> {
+            finish();
+            overridePendingTransition(
+                    R.anim.slide_in_left_fast,
+                    R.anim.slide_out_right_fast
+            );
+        });
 
         miniPlayer.setOnClickListener(v -> PlayerLauncher.openExisting(this));
         btnMiniPlay.setOnClickListener(v -> pm.togglePlayPause());

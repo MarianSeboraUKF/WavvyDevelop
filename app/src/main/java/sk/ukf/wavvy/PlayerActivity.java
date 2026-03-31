@@ -62,6 +62,7 @@ public class PlayerActivity extends AppCompatActivity implements PlaybackManager
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_player);
+        overridePendingTransition(R.anim.slide_in_right_fast, R.anim.slide_out_left_fast);
 
         WindowCompat.setDecorFitsSystemWindows(getWindow(), false);
         getWindow().setStatusBarColor(android.graphics.Color.TRANSPARENT);
@@ -69,39 +70,26 @@ public class PlayerActivity extends AppCompatActivity implements PlaybackManager
 
         View root = findViewById(R.id.playerRoot);
         root.setAlpha(0f);
-        root.animate()
-                .alpha(1f)
-                .setDuration(350)
-                .start();
+        root.animate().alpha(1f).setDuration(350).start();
 
         ViewCompat.setOnApplyWindowInsetsListener(root, (v, insets) -> {
-            int bottom = insets.getInsets(
-                    WindowInsetsCompat.Type.systemBars()
-            ).bottom;
-
-            v.setPadding(
-                    v.getPaddingLeft(),
-                    v.getPaddingTop(),
-                    v.getPaddingRight(),
-                    bottom
-            );
+            int bottom = insets.getInsets(WindowInsetsCompat.Type.systemBars()).bottom;
+            v.setPadding(v.getPaddingLeft(), v.getPaddingTop(), v.getPaddingRight(), bottom);
             return insets;
         });
 
-        WindowInsetsControllerCompat insets =
-                new WindowInsetsControllerCompat(getWindow(), getWindow().getDecorView());
+        WindowInsetsControllerCompat insets = new WindowInsetsControllerCompat(getWindow(), getWindow().getDecorView());
         insets.setAppearanceLightStatusBars(false);
 
         pm = PlaybackManager.get(this);
         player = pm.getPlayer();
-
         btnBack = findViewById(R.id.btnBack);
         btnMore = findViewById(R.id.btnMore);
-
         tvSongTitle = findViewById(R.id.tvSongTitle);
         tvSongArtist = findViewById(R.id.tvSongArtist);
         tvSongAlbum = findViewById(R.id.tvSongAlbum);
         ivCover = findViewById(R.id.ivCover);
+
         ivCover.setOnTouchListener((v, event) -> {
             switch (event.getAction()) {
                 case MotionEvent.ACTION_DOWN:
@@ -127,6 +115,7 @@ public class PlayerActivity extends AppCompatActivity implements PlaybackManager
                     }
                     if (deltaY > SWIPE_THRESHOLD) {
                         finish();
+                        overridePendingTransition(R.anim.slide_in_left_fast, R.anim.slide_out_right_fast);
                     }
                     v.performClick();
                     return true;
@@ -178,7 +167,10 @@ public class PlayerActivity extends AppCompatActivity implements PlaybackManager
             }
         });
 
-        btnBack.setOnClickListener(v -> finish());
+        btnBack.setOnClickListener(v -> {
+            finish();
+            overridePendingTransition(R.anim.slide_in_left_fast, R.anim.slide_out_right_fast);
+        });
 
         btnMore.setOnClickListener(v -> {
             Song song = SongRepository.findByAudioResId(pm.getCurrentAudioResId());
@@ -260,45 +252,21 @@ public class PlayerActivity extends AppCompatActivity implements PlaybackManager
                     return;
                 }
 
-                View dialogView = getLayoutInflater()
-                        .inflate(R.layout.dialog_pick_playlist, null);
-
-                androidx.recyclerview.widget.RecyclerView rv =
-                        dialogView.findViewById(R.id.rvPickPlaylists);
-
-                android.widget.Button btnCancel =
-                        dialogView.findViewById(R.id.btnCancel);
-
-                androidx.appcompat.app.AlertDialog dialog =
-                        new androidx.appcompat.app.AlertDialog.Builder(this)
-                                .setView(dialogView)
-                                .create();
+                View dialogView = getLayoutInflater().inflate(R.layout.dialog_pick_playlist, null);
+                androidx.recyclerview.widget.RecyclerView rv = dialogView.findViewById(R.id.rvPickPlaylists);
+                android.widget.Button btnCancel = dialogView.findViewById(R.id.btnCancel);
+                androidx.appcompat.app.AlertDialog dialog = new androidx.appcompat.app.AlertDialog.Builder(this).setView(dialogView).create();
 
                 if (dialog.getWindow() != null) {
-                    dialog.getWindow().setBackgroundDrawableResource(
-                            android.R.color.transparent
-                    );
+                    dialog.getWindow().setBackgroundDrawableResource(android.R.color.transparent);
                 }
-
-                rv.setLayoutManager(
-                        new androidx.recyclerview.widget.LinearLayoutManager(this)
-                );
+                rv.setLayoutManager(new androidx.recyclerview.widget.LinearLayoutManager(this));
 
                 PickPlaylistAdapter pickAdapter = new PickPlaylistAdapter(
                         playlists,
                         playlist -> {
-                            PlaylistRepository.addSongToPlaylist(
-                                    this,
-                                    playlist.getId(),
-                                    song.getAudioResId()
-                            );
-
-                            android.widget.Toast.makeText(
-                                    this,
-                                    "Added to " + playlist.getName(),
-                                    android.widget.Toast.LENGTH_SHORT
-                            ).show();
-
+                            PlaylistRepository.addSongToPlaylist(this, playlist.getId(), song.getAudioResId());
+                            android.widget.Toast.makeText(this, "Added to " + playlist.getName(), android.widget.Toast.LENGTH_SHORT).show();
                             dialog.dismiss();
                         }
                 );
@@ -308,12 +276,9 @@ public class PlayerActivity extends AppCompatActivity implements PlaybackManager
             });
 
             popupView.findViewById(R.id.actionGoAlbum).setOnClickListener(v1 -> {
-                android.content.Intent intent =
-                        new android.content.Intent(this, AlbumDetailActivity.class);
-
+                android.content.Intent intent = new android.content.Intent(this, AlbumDetailActivity.class);
                 intent.putExtra("album_title", song.getAlbum());
                 startActivity(intent);
-
                 popupWindow.dismiss();
             });
 
@@ -326,18 +291,7 @@ public class PlayerActivity extends AppCompatActivity implements PlaybackManager
 
         btnPlayPause.setOnClickListener(v -> {
             haptic(v);
-            v.animate()
-                    .scaleX(0.85f)
-                    .scaleY(0.85f)
-                    .setDuration(80)
-                    .withEndAction(() ->
-                            v.animate()
-                                    .scaleX(1f)
-                                    .scaleY(1f)
-                                    .setDuration(120)
-                                    .start()
-                    )
-                    .start();
+            v.animate().scaleX(0.85f).scaleY(0.85f).setDuration(80).withEndAction(() -> v.animate().scaleX(1f).scaleY(1f).setDuration(120).start()).start();
             pm.togglePlayPause();
         });
         btnNext.setOnClickListener(v -> {
@@ -435,14 +389,8 @@ public class PlayerActivity extends AppCompatActivity implements PlaybackManager
         int[] ids = getIntent().getIntArrayExtra(EXTRA_QUEUE_AUDIO_IDS);
         int idx = getIntent().getIntExtra(EXTRA_QUEUE_INDEX, 0);
 
-        if (openExisting && ids == null && pm.getCurrentAudioResId() != 0 && pm.getQueueIds() != null) {
-            return;
-        }
-
-        if (openExisting) {
-            return;
-        }
-
+        if (openExisting && ids == null && pm.getCurrentAudioResId() != 0 && pm.getQueueIds() != null) { return; }
+        if (openExisting) { return; }
         if (ids == null || ids.length == 0) return;
 
         int[] currentQueue = pm.getQueueIds();
@@ -485,12 +433,7 @@ public class PlayerActivity extends AppCompatActivity implements PlaybackManager
         if (isUserSeeking) return;
         ivCover.animate().cancel();
         float targetScale = isPlaying ? 1f : 0.75f;
-        ivCover.animate()
-                .scaleX(targetScale)
-                .scaleY(targetScale)
-                .setDuration(260)
-                .setInterpolator(new DecelerateInterpolator())
-                .start();
+        ivCover.animate().scaleX(targetScale).scaleY(targetScale).setDuration(260).setInterpolator(new DecelerateInterpolator()).start();
         animateCornerRadius(isPlaying);
     }
     private void animateCornerRadius(boolean isPlaying) {
@@ -501,19 +444,12 @@ public class PlayerActivity extends AppCompatActivity implements PlaybackManager
         float end = isPlaying ? dp(20) : dp(40);
 
         ValueAnimator animator = ValueAnimator.ofFloat(start, end);
-
         animator.setDuration(320);
         animator.setInterpolator(new android.view.animation.PathInterpolator(0.4f, 0f, 0.2f, 1f));
 
         animator.addUpdateListener(animation -> {
             float value = (float) animation.getAnimatedValue();
-
-            image.setShapeAppearanceModel(
-                    image.getShapeAppearanceModel()
-                            .toBuilder()
-                            .setAllCornerSizes(value)
-                            .build()
-            );
+            image.setShapeAppearanceModel(image.getShapeAppearanceModel().toBuilder().setAllCornerSizes(value).build());
         });
         animator.start();
     }
@@ -578,9 +514,7 @@ public class PlayerActivity extends AppCompatActivity implements PlaybackManager
         TextView tvAlbum = dialogView.findViewById(R.id.tvSongInfoAlbum);
         TextView tvProducer = dialogView.findViewById(R.id.tvSongInfoProducer);
         TextView tvLength = dialogView.findViewById(R.id.tvSongInfoLength);
-        android.widget.Button btnClose =
-                dialogView.findViewById(R.id.btnCloseSongInfo);
-
+        android.widget.Button btnClose = dialogView.findViewById(R.id.btnCloseSongInfo);
         ivCover.setImageDrawable(null);
         ivCover.post(() -> ivCover.setImageResource(song.getCoverResId()));
         tvTitle.setText(song.getTitle());
@@ -588,11 +522,7 @@ public class PlayerActivity extends AppCompatActivity implements PlaybackManager
         tvAlbum.setText(song.getAlbum());
         tvProducer.setText(song.getProducedBy());
         tvLength.setText(formatTime(song.getDurationMs()));
-
-        androidx.appcompat.app.AlertDialog dialog =
-                new androidx.appcompat.app.AlertDialog.Builder(this)
-                        .setView(dialogView)
-                        .create();
+        androidx.appcompat.app.AlertDialog dialog = new androidx.appcompat.app.AlertDialog.Builder(this).setView(dialogView).create();
 
         if (dialog.getWindow() != null) {
             dialog.getWindow().setBackgroundDrawableResource(
@@ -650,19 +580,7 @@ public class PlayerActivity extends AppCompatActivity implements PlaybackManager
     }
     private void fadeText(TextView tv, String newText) {
         tv.animate().cancel();
-
-        tv.animate()
-                .alpha(0.6f)
-                .setDuration(80)
-                .withEndAction(() -> {
-                    tv.setText(newText);
-                    tv.animate()
-                            .alpha(1f)
-                            .setDuration(140)
-                            .setInterpolator(new DecelerateInterpolator())
-                            .start();
-                })
-                .start();
+        tv.animate().alpha(0.6f).setDuration(80).withEndAction(() -> {tv.setText(newText);tv.animate().alpha(1f).setDuration(140).setInterpolator(new DecelerateInterpolator()).start();}).start();
     }
     private void updatePlayPauseIcon() {
         if (player == null) return;
@@ -702,7 +620,6 @@ public class PlayerActivity extends AppCompatActivity implements PlaybackManager
         } else {
             btnRepeat.setImageResource(R.drawable.ic_repeat);
         }
-
         tintOn(btnRepeat);
     }
     private void updatePlaybackStatusText() {
@@ -721,9 +638,7 @@ public class PlayerActivity extends AppCompatActivity implements PlaybackManager
         }
 
         String fullText = shuffle + " • " + repeat;
-
-        android.text.SpannableString spannable =
-                new android.text.SpannableString(fullText);
+        android.text.SpannableString spannable = new android.text.SpannableString(fullText);
 
         int gray = ContextCompat.getColor(this, R.color.textSecondary);
         int white = ContextCompat.getColor(this, R.color.textPrimary);
@@ -749,13 +664,10 @@ public class PlayerActivity extends AppCompatActivity implements PlaybackManager
     }
     private void applyDynamicGradient(int coverResId) {
         View root = findViewById(R.id.playerRoot);
-
         Bitmap bitmap = BitmapFactory.decodeResource(getResources(), coverResId);
-
         if (bitmap == null) return;
 
         Palette.from(bitmap).generate(palette -> {
-
             int base = palette.getDarkMutedColor(
                     palette.getMutedColor(
                             ContextCompat.getColor(this, R.color.bg)

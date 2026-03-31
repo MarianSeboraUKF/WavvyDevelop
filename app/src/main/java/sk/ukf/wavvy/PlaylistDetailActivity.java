@@ -50,6 +50,7 @@ public class PlaylistDetailActivity extends AppCompatActivity implements Playbac
     private TextView btnShuffle;
     private TextView btnImport;
     private TextView btnSort;
+    private String currentSort = "TITLE_AZ";
 
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
@@ -94,6 +95,11 @@ public class PlaylistDetailActivity extends AppCompatActivity implements Playbac
         btnBack.setOnClickListener(v -> {
             finish();
             overridePendingTransition(0, 0);
+        });
+
+        findViewById(R.id.btnBack).setOnClickListener(v -> {
+            finish();
+            overridePendingTransition(R.anim.slide_in_left_fast, R.anim.slide_out_right_fast);
         });
 
         if (tvTopTitle != null) {
@@ -313,36 +319,79 @@ public class PlaylistDetailActivity extends AppCompatActivity implements Playbac
     }
     private void showSortPopup(View anchor) {
         View popupView = getLayoutInflater().inflate(R.layout.dialog_sort_playlist, null);
-
         PopupWindow popup = new PopupWindow(popupView, ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT, true);
         popup.setBackgroundDrawable(new ColorDrawable(android.graphics.Color.TRANSPARENT));
         popup.setElevation(12f);
 
-        TextView btnAZ = popupView.findViewById(R.id.btnSortAZ);
-        TextView btnZA = popupView.findViewById(R.id.btnSortZA);
-        TextView btnShort = popupView.findViewById(R.id.btnSortShort);
-        TextView btnLong = popupView.findViewById(R.id.btnSortLong);
+        View actionTitleAZ = popupView.findViewById(R.id.actionTitleAZ);
+        View actionTitleZA = popupView.findViewById(R.id.actionTitleZA);
+        View actionArtistAZ = popupView.findViewById(R.id.actionArtistAZ);
+        View actionArtistZA = popupView.findViewById(R.id.actionArtistZA);
 
-        btnAZ.setOnClickListener(v -> {
-            songsInPlaylist.sort((a, b) -> a.getTitle().compareToIgnoreCase(b.getTitle()));
+        actionTitleAZ.setOnClickListener(v -> {
+            currentSort = "TITLE_AZ";
+            songsInPlaylist.sort((a, b) ->
+                    a.getTitle().compareToIgnoreCase(b.getTitle())
+            );
             afterSort(popup);
         });
 
-        btnZA.setOnClickListener(v -> {
-            songsInPlaylist.sort((a, b) -> b.getTitle().compareToIgnoreCase(a.getTitle()));
+        actionTitleZA.setOnClickListener(v -> {
+            currentSort = "TITLE_ZA";
+            songsInPlaylist.sort((a, b) ->
+                    b.getTitle().compareToIgnoreCase(a.getTitle())
+            );
             afterSort(popup);
         });
 
-        btnShort.setOnClickListener(v -> {
-            songsInPlaylist.sort((a, b) -> Long.compare(a.getDurationMs(), b.getDurationMs()));
+        actionArtistAZ.setOnClickListener(v -> {
+            currentSort = "ARTIST_AZ";
+            songsInPlaylist.sort((a, b) ->
+                    a.getArtist().compareToIgnoreCase(b.getArtist())
+            );
             afterSort(popup);
         });
 
-        btnLong.setOnClickListener(v -> {
-            songsInPlaylist.sort((a, b) -> Long.compare(b.getDurationMs(), a.getDurationMs()));
+        actionArtistZA.setOnClickListener(v -> {
+            currentSort = "ARTIST_ZA";
+            songsInPlaylist.sort((a, b) ->
+                    b.getArtist().compareToIgnoreCase(a.getArtist())
+            );
             afterSort(popup);
         });
-        popup.showAsDropDown(anchor, -100, 20);
+
+        popupView.measure(View.MeasureSpec.UNSPECIFIED, View.MeasureSpec.UNSPECIFIED);
+        int popupWidth = popupView.getMeasuredWidth();
+        int anchorWidth = anchor.getWidth();
+        int offsetX = (anchorWidth / 2) - (popupWidth / 2);
+        int offsetY = 8;
+        updateSortUI(popupView);
+        popup.showAsDropDown(anchor, offsetX, offsetY);
+    }
+    private void updateSortUI(View popupView) {
+        View actionTitleAZ = popupView.findViewById(R.id.actionTitleAZ);
+        View actionTitleZA = popupView.findViewById(R.id.actionTitleZA);
+        View actionArtistAZ = popupView.findViewById(R.id.actionArtistAZ);
+        View actionArtistZA = popupView.findViewById(R.id.actionArtistZA);
+        actionTitleAZ.setSelected(false);
+        actionTitleZA.setSelected(false);
+        actionArtistAZ.setSelected(false);
+        actionArtistZA.setSelected(false);
+
+        switch (currentSort) {
+            case "TITLE_AZ":
+                actionTitleAZ.setSelected(true);
+                break;
+            case "TITLE_ZA":
+                actionTitleZA.setSelected(true);
+                break;
+            case "ARTIST_AZ":
+                actionArtistAZ.setSelected(true);
+                break;
+            case "ARTIST_ZA":
+                actionArtistZA.setSelected(true);
+                break;
+        }
     }
     private void afterSort(PopupWindow popup) {
         adapter.notifyDataSetChanged();
@@ -374,7 +423,6 @@ public class PlaylistDetailActivity extends AppCompatActivity implements Playbac
             runOnUiThread(() -> {
                 songsInPlaylist.clear();
                 songsInPlaylist.addAll(loaded);
-
                 updateMeta();
                 adapter.notifyDataSetChanged();
             });
@@ -386,13 +434,10 @@ public class PlaylistDetailActivity extends AppCompatActivity implements Playbac
             totalMs += s.getDurationMs();
         }
         String label = songsInPlaylist.size() == 1 ? "song" : "songs";
-        tvPlaylistMeta.setText(
-                songsInPlaylist.size() + " " + label + " • " + formatDuration(totalMs)
-        );
+        tvPlaylistMeta.setText(songsInPlaylist.size() + " " + label + " • " + formatDuration(totalMs));
     }
     private void showDeletePlaylistDialog() {
         View card = getLayoutInflater().inflate(R.layout.dialog_delete_playlist, null);
-
         TextView tvMsg = card.findViewById(R.id.tvMsg);
         tvMsg.setText("Do you really want to delete „" + playlistName + "“?");
 

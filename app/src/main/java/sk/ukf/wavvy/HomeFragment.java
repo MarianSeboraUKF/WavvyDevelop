@@ -134,6 +134,7 @@ public class HomeFragment extends Fragment implements PlaybackManager.Listener {
             Intent i = new Intent(requireContext(), AlbumDetailActivity.class);
             i.putExtra("album_title", album.getTitle());
             startActivity(i);
+            requireActivity().overridePendingTransition(R.anim.slide_in_right_fast, R.anim.slide_out_left_fast);
         });
 
         rvAlbums.setAdapter(albumAdapter);

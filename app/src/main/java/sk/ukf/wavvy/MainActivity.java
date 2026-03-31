@@ -14,6 +14,7 @@ import androidx.constraintlayout.widget.ConstraintLayout;
 import androidx.core.graphics.Insets;
 import androidx.core.view.*;
 import androidx.fragment.app.Fragment;
+import androidx.fragment.app.FragmentTransaction;
 import com.google.android.material.bottomnavigation.BottomNavigationView;
 import sk.ukf.wavvy.model.Song;
 
@@ -126,15 +127,13 @@ public class MainActivity extends AppCompatActivity implements PlaybackManager.L
         bottomNav.setSelectedItemId(R.id.nav_home);
     }
     private void switchFragment(Fragment target) {
-
         if (target == activeFragment) return;
 
-        getSupportFragmentManager()
-                .beginTransaction()
-                .hide(activeFragment)
-                .show(target)
-                .commit();
-
+        FragmentTransaction ft = getSupportFragmentManager().beginTransaction().setReorderingAllowed(true);
+        ft.setCustomAnimations(android.R.anim.fade_in, android.R.anim.fade_out);
+        ft.hide(activeFragment);
+        ft.show(target);
+        ft.commit();
         activeFragment = target;
     }
     private void preloadFragments() {

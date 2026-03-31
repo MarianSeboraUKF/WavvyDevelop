@@ -5,36 +5,71 @@
     android:background="@drawable/bg_popup_menu"
     android:padding="8dp">
 
-    <TextView
-        android:id="@+id/btnSortAZ"
+    <LinearLayout
+        android:id="@+id/actionTitleAZ"
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:text="A → Z"
-        android:textColor="@color/textPrimary"
-        android:padding="12dp"/>
+        android:layout_height="48dp"
+        android:gravity="center_vertical"
+        android:paddingHorizontal="14dp"
+        android:background="@drawable/popup_item_selected"
+        android:clickable="true"
+        android:focusable="true">
 
-    <TextView
-        android:id="@+id/btnSortZA"
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Title A → Z"
+            android:textColor="@color/textPrimary"/>
+    </LinearLayout>
+
+    <LinearLayout
+        android:id="@+id/actionTitleZA"
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:text="Z → A"
-        android:textColor="@color/textPrimary"
-        android:padding="12dp"/>
+        android:layout_height="48dp"
+        android:gravity="center_vertical"
+        android:paddingHorizontal="14dp"
+        android:background="@drawable/popup_item_selected"
+        android:clickable="true"
+        android:focusable="true">
 
-    <TextView
-        android:id="@+id/btnSortShort"
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Title Z → A"
+            android:textColor="@color/textPrimary"/>
+    </LinearLayout>
+
+    <LinearLayout
+        android:id="@+id/actionArtistAZ"
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:text="Shortest first"
-        android:textColor="@color/textPrimary"
-        android:padding="12dp"/>
+        android:layout_height="48dp"
+        android:gravity="center_vertical"
+        android:paddingHorizontal="14dp"
+        android:background="@drawable/popup_item_selected"
+        android:clickable="true"
+        android:focusable="true">
 
-    <TextView
-        android:id="@+id/btnSortLong"
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Artist A → Z"
+            android:textColor="@color/textPrimary"/>
+    </LinearLayout>
+
+    <LinearLayout
+        android:id="@+id/actionArtistZA"
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:text="Longest first"
-        android:textColor="@color/textPrimary"
-        android:padding="12dp"/>
+        android:layout_height="48dp"
+        android:gravity="center_vertical"
+        android:paddingHorizontal="14dp"
+        android:background="@drawable/popup_item_selected"
+        android:clickable="true"
+        android:focusable="true">
 
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Artist Z → A"
+            android:textColor="@color/textPrimary"/>
+    </LinearLayout>
 </LinearLayout>
