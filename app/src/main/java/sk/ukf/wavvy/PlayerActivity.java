@@ -294,8 +294,15 @@ public class PlayerActivity extends AppCompatActivity implements PlaybackManager
             v.animate().scaleX(0.85f).scaleY(0.85f).setDuration(80).withEndAction(() -> v.animate().scaleX(1f).scaleY(1f).setDuration(120).start()).start();
             pm.togglePlayPause();
         });
+
         btnNext.setOnClickListener(v -> {
             haptic(v);
+            if (pm.getRepeatMode() == PlaybackManager.RepeatMode.ONE) {
+                if (player != null) {
+                    player.seekTo(0);
+                }
+                return;
+            }
             pm.playNext(true);
         });
 
@@ -591,7 +598,8 @@ public class PlayerActivity extends AppCompatActivity implements PlaybackManager
         int idx = pm.getQueueIndex();
 
         boolean hasQueue = q != null && q.length > 1;
-        boolean prevEnabled = hasQueue && (idx > 0 || pm.getRepeatMode() == PlaybackManager.RepeatMode.ALL);
+        boolean isRepeatOne = pm.getRepeatMode() == PlaybackManager.RepeatMode.ONE;
+        boolean prevEnabled = hasQueue && (idx > 0 || isRepeatOne || pm.getRepeatMode() == PlaybackManager.RepeatMode.ALL);
         boolean nextEnabled = hasQueue && (idx < q.length - 1 || pm.getRepeatMode() == PlaybackManager.RepeatMode.ALL);
 
         btnPrev.setEnabled(prevEnabled);

@@ -22,15 +22,6 @@ public class PlayerLauncher {
 
         PlaybackManager pm = PlaybackManager.get(ctx);
         pm.playQueue(ids, index, true);
-        Intent intent = new Intent(ctx, PlayerActivity.class);
-        ctx.startActivity(intent);
-
-        if (ctx instanceof Activity) {
-            ((Activity) ctx).overridePendingTransition(
-                    R.anim.slide_in_right_fast,
-                    R.anim.slide_out_left_fast
-            );
-        }
     }
     public static void openExisting(Context ctx) {
         Intent intent = new Intent(ctx, PlayerActivity.class);
