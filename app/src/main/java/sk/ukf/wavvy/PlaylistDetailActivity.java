@@ -24,6 +24,8 @@ import java.util.ArrayList;
 import sk.ukf.wavvy.adapter.SongAdapter;
 import sk.ukf.wavvy.model.Playlist;
 import sk.ukf.wavvy.model.Song;
+import java.text.Collator;
+import java.util.Locale;
 
 public class PlaylistDetailActivity extends AppCompatActivity implements PlaybackManager.Listener {
     public static final String EXTRA_PLAYLIST_ID = "playlist_id";
@@ -51,6 +53,7 @@ public class PlaylistDetailActivity extends AppCompatActivity implements Playbac
     private TextView btnImport;
     private TextView btnSort;
     private String currentSort = "TITLE_AZ";
+    private Collator collator;
 
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
@@ -69,6 +72,8 @@ public class PlaylistDetailActivity extends AppCompatActivity implements Playbac
         });
 
         pm = PlaybackManager.get(this);
+        collator = Collator.getInstance(new Locale("sk", "SK"));
+        collator.setStrength(Collator.PRIMARY);
 
         Intent intent = getIntent();
         playlistId = intent.getStringExtra(EXTRA_PLAYLIST_ID);
@@ -135,7 +140,6 @@ public class PlaylistDetailActivity extends AppCompatActivity implements Playbac
             );
             pm.setShuffle(true);
         });
-
         btnSort.setOnClickListener(v -> showSortPopup(v));
 
         if (playlistId != null) {
@@ -331,7 +335,7 @@ public class PlaylistDetailActivity extends AppCompatActivity implements Playbac
         actionTitleAZ.setOnClickListener(v -> {
             currentSort = "TITLE_AZ";
             songsInPlaylist.sort((a, b) ->
-                    a.getTitle().compareToIgnoreCase(b.getTitle())
+                    collator.compare(a.getTitle(), b.getTitle())
             );
             afterSort(popup);
         });
@@ -339,7 +343,7 @@ public class PlaylistDetailActivity extends AppCompatActivity implements Playbac
         actionTitleZA.setOnClickListener(v -> {
             currentSort = "TITLE_ZA";
             songsInPlaylist.sort((a, b) ->
-                    b.getTitle().compareToIgnoreCase(a.getTitle())
+                    collator.compare(b.getTitle(), a.getTitle())
             );
             afterSort(popup);
         });
@@ -347,7 +351,7 @@ public class PlaylistDetailActivity extends AppCompatActivity implements Playbac
         actionArtistAZ.setOnClickListener(v -> {
             currentSort = "ARTIST_AZ";
             songsInPlaylist.sort((a, b) ->
-                    a.getArtist().compareToIgnoreCase(b.getArtist())
+                    collator.compare(a.getArtist(), b.getArtist())
             );
             afterSort(popup);
         });
@@ -355,11 +359,10 @@ public class PlaylistDetailActivity extends AppCompatActivity implements Playbac
         actionArtistZA.setOnClickListener(v -> {
             currentSort = "ARTIST_ZA";
             songsInPlaylist.sort((a, b) ->
-                    b.getArtist().compareToIgnoreCase(a.getArtist())
+                    collator.compare(b.getArtist(), a.getArtist())
             );
             afterSort(popup);
         });
-
         popupView.measure(View.MeasureSpec.UNSPECIFIED, View.MeasureSpec.UNSPECIFIED);
         int popupWidth = popupView.getMeasuredWidth();
         int anchorWidth = anchor.getWidth();
@@ -580,6 +583,19 @@ public class PlaylistDetailActivity extends AppCompatActivity implements Playbac
         tvLength.setText(formatDuration(totalMs));
         android.app.Dialog dialog = WavvyDialogs.showCenteredCardDialog(this, this, dialogView);
         btnClose.setOnClickListener(v -> dialog.dismiss());
+    }
+    public void updateCover() {
+        if ("liked".equals(playlistId)) return;
+        if ("local".equals(playlistId)) return;
+
+        if (songsInPlaylist.isEmpty()) {
+            coverBg.setBackgroundColor(android.graphics.Color.TRANSPARENT);
+            coverIcon.setImageResource(R.drawable.default_cover);
+            return;
+        }
+        Song first = songsInPlaylist.get(0);
+        coverBg.setBackgroundColor(android.graphics.Color.TRANSPARENT);
+        coverIcon.setImageResource(first.getCoverResId());
     }
     private String formatDuration(long ms) {
         long totalSeconds = ms / 1000;

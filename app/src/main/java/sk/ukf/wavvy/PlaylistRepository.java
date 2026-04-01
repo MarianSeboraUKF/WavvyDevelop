@@ -53,6 +53,8 @@ public class PlaylistRepository {
             }
         }
         savePlaylists(ctx, playlists);
+        android.content.Intent intent = new android.content.Intent("playlist_updated");
+        ctx.sendBroadcast(intent);
     }
     public static void deletePlaylist(Context ctx, String playlistId) {
         ArrayList<Playlist> playlists = getPlaylists(ctx);
@@ -60,6 +62,17 @@ public class PlaylistRepository {
         for (int i = 0; i < playlists.size(); i++) {
             if (playlists.get(i).getId().equals(playlistId)) {
                 playlists.remove(i);
+                break;
+            }
+        }
+        savePlaylists(ctx, playlists);
+    }
+    public static void removeSong(Context ctx, String playlistId, int audioResId) {
+        ArrayList<Playlist> playlists = getPlaylists(ctx);
+
+        for (Playlist p : playlists) {
+            if (p.getId().equals(playlistId)) {
+                p.getSongAudioResIds().remove(Integer.valueOf(audioResId));
                 break;
             }
         }

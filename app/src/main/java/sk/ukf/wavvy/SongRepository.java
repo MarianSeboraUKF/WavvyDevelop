@@ -20,6 +20,7 @@ public class SongRepository {
         cached.add(new Song("DO OČÍ", "RAYYY P", "Majkyyy", "kto.som.?", "RAYYY P", "Majkyyy",1, R.drawable.kto_som_cover, R.raw.do_oci));
         cached.add(new Song("DIG ON(A)", "Frayer Flexking", "Separ", "DIG ON(A)", "Frayer Flexking", "Maiky Beatz, prodbyslope",1, R.drawable.dig_ona_cover, R.raw.dig_ona));
         cached.add(new Song("Streets", "guapanova", "Luca Brassi10x", "Deluzia", "guapanova", "Tristan. Hoodrich",4, R.drawable.deluzia_cover, R.raw.streets));
+        cached.add(new Song("Forever rich", "Hard Rico", "", "Secret Eyes", "Hard Rico", "DEMO24", 11, R.drawable.forever_rich_cover, R.raw.forever_rich));
         cached.add(new Song("INTRO", "RAYYY P", "Majkyyy", "kto.som.?", "RAYYY P", "Majkyyy", 2, R.drawable.kto_som_cover, R.raw.intro));
         cached.add(new Song("Parabola", "Chawo", "Erik Tresor", "Glitch ve systému", "Chawo", "Mikaelbeatz", 8, R.drawable.glitch_ve_systemu_cover, R.raw.parabola));
         cached.add(new Song("E85", "Don Toliver", "", "OCTANE", "Don Toliver", "206derek, Aaron Paris, Dillon Brophy, Jess Jackson, Jaasu, Travis Scott", 1, R.drawable.octane_cover, R.raw.e85));

@@ -1,6 +1,9 @@
 package sk.ukf.wavvy;
 
 import android.content.Intent;
+import android.graphics.Color;
+import android.graphics.Rect;
+import android.graphics.drawable.ColorDrawable;
 import android.os.Bundle;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -15,10 +18,17 @@ import androidx.recyclerview.widget.GridLayoutManager;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
+import java.text.Normalizer;
+import android.widget.ImageView;
+import sk.ukf.wavvy.adapter.AlbumAdapter;
 import sk.ukf.wavvy.adapter.PlaylistAdapter;
 import sk.ukf.wavvy.adapter.SongHorizontalAdapter;
 import sk.ukf.wavvy.adapter.SystemPlaylistAdapter;
+import sk.ukf.wavvy.model.Album;
 import sk.ukf.wavvy.model.Playlist;
 import sk.ukf.wavvy.model.Song;
 import android.content.BroadcastReceiver;
@@ -35,6 +45,9 @@ public class LibraryFragment extends Fragment {
     private PagerSnapHelper snapHelper;
     private BroadcastReceiver libraryReceiver;
     private RecyclerView rvSongsPager;
+    private RecyclerView rvAlbums;
+    private AlbumAdapter albumAdapter;
+    private ArrayList<Album> albumsList;
 
     public LibraryFragment() {}
 
@@ -60,6 +73,19 @@ public class LibraryFragment extends Fragment {
         systemPlaylists.add(local);
         systemAdapter = new SystemPlaylistAdapter(systemPlaylists, this::openPlaylist);
         rvSystem.setAdapter(systemAdapter);
+
+        rvAlbums = view.findViewById(R.id.rvAlbums);
+        rvAlbums.setLayoutManager(new LinearLayoutManager(requireContext(), LinearLayoutManager.HORIZONTAL, false));
+        rvAlbums.setNestedScrollingEnabled(false);
+        rvAlbums.addItemDecoration(new RecyclerView.ItemDecoration() {
+            @Override
+            public void getItemOffsets(@NonNull Rect outRect, @NonNull View view,
+                                       RecyclerView parent, RecyclerView.State state) {
+                outRect.right = 24;
+            }
+        });
+        rvAlbums.setPadding(16, 0, 16, 0);
+        rvAlbums.setClipToPadding(false);
 
         rvSongsPager = view.findViewById(R.id.rvSongsPager);
         rvSongsPager.setLayoutManager(new LinearLayoutManager(requireContext(), LinearLayoutManager.HORIZONTAL, false));
@@ -92,6 +118,41 @@ public class LibraryFragment extends Fragment {
         rv.setAdapter(playlistAdapter);
         view.findViewById(R.id.btnCreatePlaylist).setOnClickListener(v -> showCreateDialog());
 
+        albumsList = new ArrayList<>();
+
+        Set<String> savedAlbums = requireContext()
+                .getSharedPreferences("saved_albums", Context.MODE_PRIVATE)
+                .getStringSet("album_titles", new HashSet<>());
+
+        if (savedAlbums == null) savedAlbums = new HashSet<>();
+
+        for (String albumTitle : savedAlbums) {
+            Album album = AlbumRepository.findByTitle(albumTitle);
+            if (album != null) {
+                albumsList.add(album);
+            }
+        }
+
+        Collections.sort(albumsList, (a, b) -> {
+            String t1 = Normalizer.normalize(a.getTitle(), Normalizer.Form.NFD)
+                    .replaceAll("\\p{InCombiningDiacriticalMarks}+", "");
+            String t2 = Normalizer.normalize(b.getTitle(), Normalizer.Form.NFD)
+                    .replaceAll("\\p{InCombiningDiacriticalMarks}+", "");
+
+            return t1.compareToIgnoreCase(t2);
+        });
+
+        albumAdapter = new AlbumAdapter(
+                albumsList,
+                album -> {
+                    Intent intent = new Intent(requireContext(), AlbumDetailActivity.class);
+                    intent.putExtra("album_title", album.getTitle());
+                    startActivity(intent);
+                    requireActivity().overridePendingTransition(R.anim.slide_in_right_fast, R.anim.slide_out_left_fast);
+                }
+        );
+
+        rvAlbums.setAdapter(albumAdapter);
         libraryReceiver = new BroadcastReceiver() {
             @Override
             public void onReceive(Context context, Intent intent) {
@@ -134,6 +195,7 @@ public class LibraryFragment extends Fragment {
         super.onStart();
         IntentFilter filter = new IntentFilter();
         filter.addAction(LikedSongsRepository.ACTION_LIKED_CHANGED);
+        filter.addAction("playlist_updated");
         requireContext().registerReceiver(libraryReceiver, filter, Context.RECEIVER_NOT_EXPORTED);
     }
 
@@ -168,19 +230,40 @@ public class LibraryFragment extends Fragment {
         systemPlaylists.add(liked);
         systemPlaylists.add(local);
         systemAdapter.notifyDataSetChanged();
-        playlists.clear();
-        playlists.addAll(PlaylistRepository.getPlaylists(requireContext()));
-        playlistAdapter.notifyDataSetChanged();
+        playlistAdapter.updateData(PlaylistRepository.getPlaylists(requireContext()));
 
         setupSongs();
         rvSongsPager.scrollToPosition(songsScrollPosition);
+
+        albumsList.clear();
+        Set<String> savedAlbums = requireContext()
+                .getSharedPreferences("saved_albums", Context.MODE_PRIVATE)
+                .getStringSet("album_titles", new HashSet<>());
+
+        if (savedAlbums == null) savedAlbums = new HashSet<>();
+
+        for (String albumTitle : savedAlbums) {
+            Album album = AlbumRepository.findByTitle(albumTitle);
+            if (album != null) {
+                albumsList.add(album);
+            }
+        }
+
+        Collections.sort(albumsList, (a, b) -> {
+            String t1 = Normalizer.normalize(a.getTitle(), Normalizer.Form.NFD)
+                    .replaceAll("\\p{InCombiningDiacriticalMarks}+", "");
+            String t2 = Normalizer.normalize(b.getTitle(), Normalizer.Form.NFD)
+                    .replaceAll("\\p{InCombiningDiacriticalMarks}+", "");
+            return t1.compareToIgnoreCase(t2);
+        });
+
+        albumAdapter.notifyDataSetChanged();
     }
     private void openPlaylist(Playlist playlist) {
         Intent intent = new Intent(requireContext(), PlaylistDetailActivity.class);
         intent.putExtra(PlaylistDetailActivity.EXTRA_PLAYLIST_ID, playlist.getId());
         intent.putExtra(PlaylistDetailActivity.EXTRA_PLAYLIST_NAME, playlist.getName());
         startActivity(intent);
-
         requireActivity().overridePendingTransition(R.anim.slide_in_right_fast, R.anim.slide_out_left_fast);
     }
     private void showCreateDialog() {
@@ -201,25 +284,115 @@ public class LibraryFragment extends Fragment {
     private void showPopupMenu(Playlist playlist, View anchor) {
         View popupView = LayoutInflater.from(requireContext()).inflate(R.layout.dialog_playlist_menu, null);
 
-        PopupWindow popup = new PopupWindow(
-                popupView,
-                ViewGroup.LayoutParams.WRAP_CONTENT,
-                ViewGroup.LayoutParams.WRAP_CONTENT,
-                true
-        );
-        popup.setBackgroundDrawable(new android.graphics.drawable.ColorDrawable(android.graphics.Color.TRANSPARENT));
+        PopupWindow popup = new PopupWindow(popupView, ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT, true);
+        popup.setBackgroundDrawable(new ColorDrawable(Color.TRANSPARENT));
         popup.setElevation(12f);
+        popup.setFocusable(true);
+        popup.setOutsideTouchable(true);
 
-        popupView.findViewById(R.id.actionInfo).setOnClickListener(v -> {
-            popup.dismiss();
-            showPlaylistInfoDialog(playlist);
-        });
+        View actionImport = popupView.findViewById(R.id.actionImport);
+        View actionEdit = popupView.findViewById(R.id.actionEdit);
+        View actionDelete = popupView.findViewById(R.id.actionDelete);
+        View actionInfo = popupView.findViewById(R.id.actionInfo);
+
+        actionImport.setVisibility(View.GONE);
+        actionEdit.setVisibility(View.GONE);
+        actionDelete.setVisibility(View.GONE);
+
+        if (playlist.getId().equals("liked")) {
+        } else if (playlist.getId().equals("local")) {
+            actionImport.setVisibility(View.VISIBLE);
+            actionImport.setOnClickListener(v -> {popup.dismiss();});
+        } else {
+            actionEdit.setVisibility(View.VISIBLE);
+            actionDelete.setVisibility(View.VISIBLE);
+            actionEdit.setOnClickListener(v -> {popup.dismiss();showRenameDialog(playlist);});
+            actionDelete.setOnClickListener(v -> {popup.dismiss();PlaylistRepository.deletePlaylist(requireContext(), playlist.getId());reload();});
+        }
+
+        actionInfo.setOnClickListener(v -> {popup.dismiss();showPlaylistInfoDialog(playlist);});
         popup.showAsDropDown(anchor, -200, 20);
+    }
+    private void showRenameDialog(Playlist playlist) {
+        View card = LayoutInflater.from(requireContext()).inflate(R.layout.dialog_rename_playlist, null);
+        EditText etName = card.findViewById(R.id.etName);
+        etName.setText(playlist.getName());
+        android.app.Dialog dialog = WavvyDialogs.showCenteredCardDialog(requireContext(), requireActivity(), card);
+
+        card.findViewById(R.id.btnRename).setOnClickListener(v -> {
+            String newName = etName.getText().toString().trim();
+            if (!newName.isEmpty()) {
+                PlaylistRepository.renamePlaylist(requireContext(), playlist.getId(), newName);
+                reload();
+                dialog.dismiss();
+            }
+        });
+        card.findViewById(R.id.btnCancel).setOnClickListener(v -> dialog.dismiss());
     }
     private void showPlaylistInfoDialog(Playlist playlist) {
         View card = LayoutInflater.from(requireContext()).inflate(R.layout.dialog_playlist_info, null);
-        ((TextView) card.findViewById(R.id.tvPlaylistTitle)).setText(playlist.getName());
+
+        ImageView cover = card.findViewById(R.id.playlistCoverIcon);
+        TextView tvTitle = card.findViewById(R.id.tvPlaylistTitle);
+        TextView tvCount = card.findViewById(R.id.tvPlaylistCount);
+        TextView tvLength = card.findViewById(R.id.tvPlaylistLength);
+        tvTitle.setText(playlist.getName());
+
+        ArrayList<Song> songs = new ArrayList<>();
+        if (playlist.getId().equals("liked")) {
+            songs.addAll(SongRepository.getLikedSongs(requireContext()));
+        }
+        else if (playlist.getId().equals("local")) {
+            songs.addAll(SongRepository.getSongs());
+        }
+        else {
+            for (Integer id : playlist.getSongAudioResIds()) {
+                Song s = SongRepository.findByAudioResId(id);
+                if (s != null) songs.add(s);
+            }
+        }
+
+        int count = songs.size();
+        tvCount.setText(count == 1 ? "1 song" : count + " songs");
+        long totalMs = 0;
+        for (Song s : songs) {
+            totalMs += s.getDurationMs();
+        }
+        tvLength.setText(formatDuration(totalMs));
+
+        if (playlist.getId().equals("liked")) {
+            cover.setImageResource(R.drawable.ic_liked);
+            cover.setBackgroundResource(R.drawable.bg_liked_gradient);
+        }
+        else if (playlist.getId().equals("local")) {
+            cover.setImageResource(R.drawable.icon_local);
+            cover.setBackgroundResource(R.drawable.bg_local_gradient);
+        }
+        else if (!songs.isEmpty()) {
+            cover.setImageResource(songs.get(0).getCoverResId());
+        }
+        else {
+            cover.setImageResource(R.drawable.default_cover);
+        }
         android.app.Dialog dialog = WavvyDialogs.showCenteredCardDialog(requireContext(), requireActivity(), card);
         card.findViewById(R.id.btnClose).setOnClickListener(v -> dialog.dismiss());
+    }
+    private String formatDuration(long ms) {
+        long totalSeconds = ms / 1000;
+        long hours = totalSeconds / 3600;
+        long minutes = (totalSeconds % 3600) / 60;
+        long seconds = totalSeconds % 60;
+
+        if (hours > 0) {
+            if (minutes == 0) {
+                return hours + " h";
+            }
+            return hours + " h " + minutes + " min";
+        } else {
+            if (minutes == 0) {
+                return seconds + " sec";
+            }
+            return minutes + " min " + seconds + " sec";
+        }
     }
 }

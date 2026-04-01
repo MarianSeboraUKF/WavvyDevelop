@@ -130,8 +130,14 @@
                 style="@style/SectionTitle"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="Albums"
-                android:layout_marginTop="18dp"/>
+                android:text="Albums"/>
+
+            <androidx.recyclerview.widget.RecyclerView
+                android:id="@+id/rvAlbums"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="8dp"
+                android:nestedScrollingEnabled="false"/>
 
             <TextView
                 android:id="@+id/tvSinglesSection"
@@ -171,7 +177,7 @@
 
             <View
                 android:layout_width="match_parent"
-                android:layout_height="220dp"/>
+                android:layout_height="100dp"/>
         </LinearLayout>
     </androidx.core.widget.NestedScrollView>
 </androidx.constraintlayout.widget.ConstraintLayout>

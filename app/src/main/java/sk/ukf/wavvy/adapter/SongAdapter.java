@@ -116,6 +116,7 @@ public class SongAdapter extends RecyclerView.Adapter<SongAdapter.SongViewHolder
                 });
 
                 LinearLayout favAction = popupView.findViewById(R.id.actionAddFavorite);
+                LinearLayout removeFromPlaylist = popupView.findViewById(R.id.actionRemoveFromPlaylist);
                 ImageView favIcon = (ImageView) favAction.getChildAt(0);
                 TextView favText = (TextView) favAction.getChildAt(1);
                 String songId = String.valueOf(song.getAudioResId());
@@ -141,7 +142,7 @@ public class SongAdapter extends RecyclerView.Adapter<SongAdapter.SongViewHolder
                         android.widget.Toast.makeText(ctx, "Removed from favorites", android.widget.Toast.LENGTH_SHORT).show();
                     }
 
-                    int pos = holder.getAdapterPosition();
+                    int pos = holder.getBindingAdapterPosition();
                     if (pos != RecyclerView.NO_POSITION) {
                         if (isSystemPlaylist && !newLiked) {
                             songs.remove(pos);
@@ -155,6 +156,36 @@ public class SongAdapter extends RecyclerView.Adapter<SongAdapter.SongViewHolder
                     }
                     popupWindow.dismiss();
                 });
+
+                if (ctx instanceof PlaylistDetailActivity) {
+                    PlaylistDetailActivity act = (PlaylistDetailActivity) ctx;
+                    String playlistId = act.getIntent().getStringExtra(PlaylistDetailActivity.EXTRA_PLAYLIST_ID);
+
+                    if ("liked".equals(playlistId)) {
+                        removeFromPlaylist.setVisibility(View.GONE);
+                    } else if ("local".equals(playlistId)) {
+                        removeFromPlaylist.setVisibility(View.GONE);
+                    } else {
+                        removeFromPlaylist.setVisibility(View.VISIBLE);
+                        removeFromPlaylist.setOnClickListener(v1 -> {
+                            PlaylistRepository.removeSong(ctx, playlistId, song.getAudioResId());
+
+                            int pos = holder.getBindingAdapterPosition();
+                            if (pos != RecyclerView.NO_POSITION) {
+                                songs.remove(pos);
+                                notifyItemRemoved(pos);
+                                if (ctx instanceof PlaylistDetailActivity) {
+                                    ((PlaylistDetailActivity) ctx).updateMeta();
+                                    ((PlaylistDetailActivity) ctx).updateCover();
+                                }
+                            }
+                            android.widget.Toast.makeText(ctx, "Removed from playlist", android.widget.Toast.LENGTH_SHORT).show();
+                            popupWindow.dismiss();
+                        });
+                    }
+                } else {
+                    removeFromPlaylist.setVisibility(View.GONE);
+                }
 
                 popupView.findViewById(R.id.actionAddPlaylist).setOnClickListener(v1 -> {
                     popupWindow.dismiss();

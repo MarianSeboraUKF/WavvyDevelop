@@ -90,6 +90,12 @@ public class PlaylistAdapter extends RecyclerView.Adapter<PlaylistAdapter.Playli
         holder.btnMore.setOnClickListener(v -> {
             if (menuClickListener != null) menuClickListener.onPlaylistMenuClick(p, v);
         });
+        holder.setIsRecyclable(false);
+    }
+    public void updateData(List<Playlist> newData) {
+        this.playlists.clear();
+        this.playlists.addAll(newData);
+        notifyDataSetChanged();
     }
 
     @Override
