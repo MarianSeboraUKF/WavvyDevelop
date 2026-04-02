@@ -306,10 +306,14 @@ public class LibraryFragment extends Fragment {
         } else {
             actionEdit.setVisibility(View.VISIBLE);
             actionDelete.setVisibility(View.VISIBLE);
-            actionEdit.setOnClickListener(v -> {popup.dismiss();showRenameDialog(playlist);});
-            actionDelete.setOnClickListener(v -> {popup.dismiss();PlaylistRepository.deletePlaylist(requireContext(), playlist.getId());reload();});
+            actionEdit.setOnClickListener(v -> {popup.dismiss();
+                showRenameDialog(playlist);
+            });
+            actionDelete.setOnClickListener(v -> {
+                popup.dismiss();
+                showDeleteDialog(playlist);
+            });
         }
-
         actionInfo.setOnClickListener(v -> {popup.dismiss();showPlaylistInfoDialog(playlist);});
         popup.showAsDropDown(anchor, -200, 20);
     }
@@ -376,6 +380,20 @@ public class LibraryFragment extends Fragment {
         }
         android.app.Dialog dialog = WavvyDialogs.showCenteredCardDialog(requireContext(), requireActivity(), card);
         card.findViewById(R.id.btnClose).setOnClickListener(v -> dialog.dismiss());
+    }
+    private void showDeleteDialog(Playlist playlist) {
+        View card = LayoutInflater.from(requireContext()).inflate(R.layout.dialog_delete_playlist, null);
+        TextView tvMsg = card.findViewById(R.id.tvMsg);
+        tvMsg.setText("Do you really want to delete \"" + playlist.getName() + "\"?");
+        android.app.Dialog dialog = WavvyDialogs.showCenteredCardDialog(requireContext(), requireActivity(), card);
+
+        card.findViewById(R.id.btnDelete).setOnClickListener(v -> {
+            PlaylistRepository.deletePlaylist(requireContext(), playlist.getId());
+            reload();
+            dialog.dismiss();
+            android.widget.Toast.makeText(requireContext(), "Playlist deleted", android.widget.Toast.LENGTH_SHORT).show();
+        });
+        card.findViewById(R.id.btnCancel).setOnClickListener(v -> dialog.dismiss());
     }
     private String formatDuration(long ms) {
         long totalSeconds = ms / 1000;
