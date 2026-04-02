@@ -12,7 +12,7 @@ import sk.ukf.wavvy.R;
 import sk.ukf.wavvy.model.Song;
 
 public class SongHorizontalAdapter extends RecyclerView.Adapter<SongHorizontalAdapter.PageVH> {
-    private final List<List<Song>> pages;
+    private List<List<Song>> pages;
     private final OnSongClick listener;
     public SongHorizontalAdapter(List<List<Song>> pages, OnSongClick listener) {
         this.pages = pages;
@@ -56,6 +56,10 @@ public class SongHorizontalAdapter extends RecyclerView.Adapter<SongHorizontalAd
                 listener::onClick
         );
         holder.rv.setAdapter(adapter);
+    }
+    public void updateData(List<List<Song>> newPages) {
+        this.pages = newPages;
+        notifyDataSetChanged();
     }
 
     @Override

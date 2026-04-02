@@ -11,6 +11,11 @@ import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Random;
+import android.support.v4.media.session.MediaSessionCompat;
+import sk.ukf.wavvy.model.Song;
+import android.support.v4.media.MediaMetadataCompat;
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
 
 public class PlaybackManager {
     public interface Listener {
@@ -40,11 +45,14 @@ public class PlaybackManager {
     private static final String KEY_SHUFFLE = "shuffle";
     private static final String KEY_REPEAT = "repeat";
     private long lastSave = 0;
+    private MediaNotificationManager notificationManager;
+    private MediaSessionCompat mediaSession;
     private final Runnable progressTick = new Runnable() {
         @Override public void run() {
             if (player != null) {
                 long pos = player.getCurrentPosition();
                 long dur = player.getDuration();
+                if (dur < 0) dur = 0;
 
                 notifyProgress(pos, dur);
 
@@ -66,6 +74,9 @@ public class PlaybackManager {
     private PlaybackManager(Context appContext) {
         this.appContext = appContext;
         this.player = new ExoPlayer.Builder(appContext).build();
+        notificationManager = new MediaNotificationManager(appContext);
+        mediaSession = new MediaSessionCompat(appContext, "WavvySession");
+        mediaSession.setActive(true);
 
         restoreFromNowPlayingRepository();
         loadPlaybackSettings();
@@ -74,6 +85,7 @@ public class PlaybackManager {
             @Override
             public void onIsPlayingChanged(boolean isPlaying) {
                 notifyIsPlaying(isPlaying);
+                updateNotification();
 
                 if (isPlaying && currentAudioResId != 0 && currentAudioResId != lastCountedAudioId) {
                     PlayCountRepository.increment(appContext, currentAudioResId);
@@ -92,6 +104,30 @@ public class PlaybackManager {
             public void onMediaItemTransition(@Nullable MediaItem mediaItem, int reason) {}
         });
         progressHandler.post(progressTick);
+    }
+    private void updateNotification() {
+        if (currentAudioResId == 0) return;
+
+        Song song = SongRepository.findByAudioResId(currentAudioResId);
+        if (song == null) return;
+        long duration = player.getDuration();
+        if (duration < 0) duration = 0;
+
+        Bitmap cover = BitmapFactory.decodeResource(appContext.getResources(), song.getCoverResId());
+        MediaMetadataCompat metadata = new MediaMetadataCompat.Builder()
+                .putString(MediaMetadataCompat.METADATA_KEY_TITLE, song.getTitle())
+                .putString(MediaMetadataCompat.METADATA_KEY_ARTIST, song.getArtist())
+                .putBitmap(MediaMetadataCompat.METADATA_KEY_ALBUM_ART, cover)
+                .build();
+        mediaSession.setMetadata(metadata);
+
+        notificationManager.showNotification(
+                song,
+                player.isPlaying(),
+                mediaSession,
+                player.getCurrentPosition(),
+                duration
+        );
     }
     private void restoreFromNowPlayingRepository() {
         if (!NowPlayingRepository.hasNowPlaying(appContext)) return;
@@ -177,6 +213,16 @@ public class PlaybackManager {
             Listener l = wr.get();
             if (l != null) l.onNowPlayingChanged(currentAudioResId, activeQueue, queueIndex);
         }
+        Song s = SongRepository.findByAudioResId(currentAudioResId);
+        if (s != null) {
+            notificationManager.showNotification(
+                    s,
+                    player.isPlaying(),
+                    mediaSession,
+                    player.getCurrentPosition(),
+                    player.getDuration()
+            );
+        }
     }
     private void notifyIsPlaying(boolean isPlaying) {
         cleanupListeners();
@@ -234,26 +280,12 @@ public class PlaybackManager {
     public void togglePlayPause() {
         ensureQueueLoadedIfPossible();
         if (activeQueue == null || activeQueue.length == 0) return;
-
-        if (player.isPlaying()) player.pause();
-        else player.play();
-    }
-    public boolean playNext(boolean autoPlay) {
-        ensureQueueLoadedIfPossible();
-        if (activeQueue == null || activeQueue.length == 0) return false;
-
-        if (queueIndex < activeQueue.length - 1) {
-            queueIndex++;
-            loadCurrent(autoPlay);
-            return true;
+        if (player.isPlaying()) {
+            player.pause();
+        } else {
+            player.play();
         }
-
-        if (repeatMode == RepeatMode.ALL && activeQueue.length > 1) {
-            queueIndex = 0;
-            loadCurrent(autoPlay);
-            return true;
-        }
-        return false;
+        updateNotification();
     }
     public boolean playPrev(boolean autoPlay) {
         ensureQueueLoadedIfPossible();
@@ -262,12 +294,33 @@ public class PlaybackManager {
         if (queueIndex > 0) {
             queueIndex--;
             loadCurrent(autoPlay);
+            updateNotification();
             return true;
         }
 
         if (repeatMode == RepeatMode.ALL && activeQueue.length > 1) {
             queueIndex = activeQueue.length - 1;
             loadCurrent(autoPlay);
+            updateNotification();
+            return true;
+        }
+        return false;
+    }
+    public boolean playNext(boolean autoPlay) {
+        ensureQueueLoadedIfPossible();
+        if (activeQueue == null || activeQueue.length == 0) return false;
+        if (queueIndex < activeQueue.length - 1) {
+            queueIndex++;
+            loadCurrent(autoPlay);
+
+            updateNotification();
+            return true;
+        }
+        if (repeatMode == RepeatMode.ALL && activeQueue.length > 1) {
+            queueIndex = 0;
+            loadCurrent(autoPlay);
+
+            updateNotification();
             return true;
         }
         return false;
@@ -357,6 +410,21 @@ public class PlaybackManager {
         if (autoPlay) {
             player.play();
         }
+        updateNotification();
+    }
+    public void release() {
+        if (player != null) {
+            player.stop();
+            player.clearMediaItems();
+            player.release();
+        }
+        notificationManager.cancel();
+
+        if (mediaSession != null) {
+            mediaSession.setActive(false);
+            mediaSession.release();
+        }
+        instance = null;
     }
     private void onTrackEnded() {
         if (repeatMode == RepeatMode.ONE) {
@@ -373,6 +441,7 @@ public class PlaybackManager {
                 player.pause();
                 player.seekTo(0);
                 notifyIsPlaying(false);
+                notificationManager.cancel();
             }
         }
     }
@@ -429,6 +498,8 @@ public class PlaybackManager {
                 loadCurrent(true);
             } else {
                 player.stop();
+                notificationManager.cancel();
+                mediaSession.setActive(false);
             }
         }
 

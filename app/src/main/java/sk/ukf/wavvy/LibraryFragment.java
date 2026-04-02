@@ -48,6 +48,7 @@ public class LibraryFragment extends Fragment {
     private RecyclerView rvAlbums;
     private AlbumAdapter albumAdapter;
     private ArrayList<Album> albumsList;
+    private SongHorizontalAdapter songPagerAdapter;
 
     public LibraryFragment() {}
 
@@ -92,6 +93,11 @@ public class LibraryFragment extends Fragment {
         snapHelper = new PagerSnapHelper();
         snapHelper.attachToRecyclerView(rvSongsPager);
         rvSongsPager.setOverScrollMode(View.OVER_SCROLL_NEVER);
+
+        songPagerAdapter = new SongHorizontalAdapter(new ArrayList<>(),
+                song -> PlayerLauncher.openQueue(requireContext(), new ArrayList<>(), song)
+        );
+        rvSongsPager.setAdapter(songPagerAdapter);
         setupSongs();
 
         rvSongsPager.addItemDecoration(new RecyclerView.ItemDecoration() {
@@ -100,7 +106,6 @@ public class LibraryFragment extends Fragment {
                 outRect.right = 24;
             }
         });
-
         playlists = new ArrayList<>();
         playlists.addAll(PlaylistRepository.getPlaylists(requireContext()));
 
@@ -183,11 +188,7 @@ public class LibraryFragment extends Fragment {
             }
             pages.add(page);
         }
-        SongHorizontalAdapter songPagerAdapter = new SongHorizontalAdapter(
-                pages,
-                song -> PlayerLauncher.openQueue(requireContext(), likedSongs, song)
-        );
-        rvSongsPager.setAdapter(songPagerAdapter);
+        songPagerAdapter.updateData(pages);
     }
 
     @Override
@@ -230,7 +231,15 @@ public class LibraryFragment extends Fragment {
         systemPlaylists.add(liked);
         systemPlaylists.add(local);
         systemAdapter.notifyDataSetChanged();
-        playlistAdapter.updateData(PlaylistRepository.getPlaylists(requireContext()));
+
+        ArrayList<Playlist> sorted = new ArrayList<>(PlaylistRepository.getPlaylists(requireContext()));
+
+        Collections.sort(sorted, (a, b) -> {
+            if (a.isSystem() && !b.isSystem()) return -1;
+            if (!a.isSystem() && b.isSystem()) return 1;
+            return a.getName().compareToIgnoreCase(b.getName());
+        });
+        playlistAdapter.updateData(sorted);
 
         setupSongs();
         rvSongsPager.scrollToPosition(songsScrollPosition);
@@ -315,7 +324,7 @@ public class LibraryFragment extends Fragment {
             });
         }
         actionInfo.setOnClickListener(v -> {popup.dismiss();showPlaylistInfoDialog(playlist);});
-        popup.showAsDropDown(anchor, -200, 20);
+        popup.showAsDropDown(anchor);
     }
     private void showRenameDialog(Playlist playlist) {
         View card = LayoutInflater.from(requireContext()).inflate(R.layout.dialog_rename_playlist, null);

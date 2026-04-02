@@ -372,6 +372,10 @@ public class PlayerActivity extends AppCompatActivity implements PlaybackManager
             sheet.show(getSupportFragmentManager(), "queue");
         });
     }
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+    }
 
     @Override
     protected void onStart() {
@@ -577,12 +581,14 @@ public class PlayerActivity extends AppCompatActivity implements PlaybackManager
             }
             applyDynamicGradient(s.getCoverResId());
         }
-        String songId = String.valueOf(s.getAudioResId());
+        if (s != null) {
+            String songId = String.valueOf(s.getAudioResId());
 
-        if (LikedSongsRepository.isLiked(this, songId)) {
-            btnFavourite.setImageResource(R.drawable.ic_liked);
-        } else {
-            btnFavourite.setImageResource(R.drawable.ic_like);
+            if (LikedSongsRepository.isLiked(this, songId)) {
+                btnFavourite.setImageResource(R.drawable.ic_liked);
+            } else {
+                btnFavourite.setImageResource(R.drawable.ic_like);
+            }
         }
     }
     private void fadeText(TextView tv, String newText) {

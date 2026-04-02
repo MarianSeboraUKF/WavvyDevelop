@@ -404,32 +404,24 @@ public class PlaylistDetailActivity extends AppCompatActivity implements Playbac
     }
     private void loadSongs() {
         songsInPlaylist.clear();
-        adapter.notifyDataSetChanged();
-        tvPlaylistMeta.setText("Loading songs...");
 
-        new Thread(() -> {
-            ArrayList<Song> loaded = new ArrayList<>();
-            if ("liked".equals(playlistId)) {
-                loaded.addAll(SongRepository.getLikedSongs(this));
-            } else if ("local".equals(playlistId)) {
-                loaded.addAll(SongRepository.getSongs());
-            } else {
-                Playlist p = PlaylistRepository.findById(this, playlistId);
-                if (p != null) {
-                    for (Integer id : p.getSongAudioResIds()) {
-                        Song s = SongRepository.findByAudioResId(id);
-                        if (s != null) loaded.add(s);
+        if ("liked".equals(playlistId)) {
+            songsInPlaylist.addAll(SongRepository.getLikedSongs(this));
+        } else if ("local".equals(playlistId)) {
+            songsInPlaylist.addAll(SongRepository.getSongs());
+        } else {
+            Playlist p = PlaylistRepository.findById(this, playlistId);
+            if (p != null) {
+                for (Integer id : p.getSongAudioResIds()) {
+                    Song s = SongRepository.findByAudioResId(id);
+                    if (s != null) {
+                        songsInPlaylist.add(s);
                     }
                 }
             }
-
-            runOnUiThread(() -> {
-                songsInPlaylist.clear();
-                songsInPlaylist.addAll(loaded);
-                updateMeta();
-                adapter.notifyDataSetChanged();
-            });
-        }).start();
+        }
+        updateMeta();
+        adapter.notifyDataSetChanged();
     }
     public void updateMeta() {
         long totalMs = 0;
