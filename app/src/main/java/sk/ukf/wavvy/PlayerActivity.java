@@ -287,6 +287,32 @@ public class PlayerActivity extends AppCompatActivity implements PlaybackManager
                 showSongInfo();
             });
             popupWindow.showAsDropDown(btnMore, -245, 0);
+            LinearLayout actionDelete = popupView.findViewById(R.id.actionDeleteSong);
+
+            if (song.getUriString() != null) {
+                actionDelete.setVisibility(View.VISIBLE);
+            } else {
+                actionDelete.setVisibility(View.GONE);
+            }
+
+            actionDelete.setOnClickListener(v1 -> {
+                View dialogView = getLayoutInflater().inflate(R.layout.dialog_delete_song, null);
+                TextView tvMsg = dialogView.findViewById(R.id.tvMsg);
+                TextView btnDelete = dialogView.findViewById(R.id.btnDelete);
+                TextView btnCancel = dialogView.findViewById(R.id.btnCancel);
+                tvMsg.setText("Do you really want to delete „" + song.getTitle() + "“?");
+                android.app.Dialog dialog = WavvyDialogs.showCenteredCardDialog(this, this, dialogView);
+
+                btnDelete.setOnClickListener(v2 -> {
+                    SongRepository.deleteLocalSong(this, song.getAudioResId());
+                    sendBroadcast(new Intent("songs_updated"));
+                    pm.playNext(true);
+                    android.widget.Toast.makeText(this, "Deleted", android.widget.Toast.LENGTH_SHORT).show();
+                    dialog.dismiss();
+                });
+                btnCancel.setOnClickListener(v2 -> dialog.dismiss());
+                popupWindow.dismiss();
+            });
         });
 
         btnPlayPause.setOnClickListener(v -> {

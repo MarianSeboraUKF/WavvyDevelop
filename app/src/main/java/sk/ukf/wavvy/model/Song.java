@@ -11,6 +11,7 @@ public class Song implements java.io.Serializable {
     private final int coverResId;
     private final int audioResId;
     private long durationMs;
+    private String uriString;
 
     public Song(String title, String mainArtist, String featArtist, String album, String albumArtist, String producedBy, int trackNumber, int coverResId, int audioResId) {
         this.title = title;
@@ -23,6 +24,7 @@ public class Song implements java.io.Serializable {
         this.coverResId = coverResId;
         this.audioResId = audioResId;
         this.durationMs = 0;
+        this.uriString = null;
     }
 
     public String getTitle() {
@@ -67,5 +69,11 @@ public class Song implements java.io.Serializable {
     }
     public void setDurationMs(long durationMs) {
         this.durationMs = durationMs;
+    }
+    public String getUriString() {
+        return uriString;
+    }
+    public void setUriString(String uriString) {
+        this.uriString = uriString;
     }
 }

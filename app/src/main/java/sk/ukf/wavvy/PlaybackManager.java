@@ -147,7 +147,14 @@ public class PlaybackManager {
         queueIndex = idx;
         currentAudioResId = activeQueue[queueIndex];
 
-        MediaItem item = MediaItem.fromUri("android.resource://" + appContext.getPackageName() + "/" + currentAudioResId);
+        Song s = SongRepository.findByAudioResId(currentAudioResId);
+        MediaItem item;
+        if (s != null && s.getUriString() != null) {
+            item = MediaItem.fromUri(s.getUriString());
+        } else {
+            item = MediaItem.fromUri("android.resource://" + appContext.getPackageName() + "/" + currentAudioResId);
+        }
+
         player.setMediaItem(item);
         player.prepare();
         long savedPos = NowPlayingRepository.getPosition(appContext);
@@ -388,42 +395,27 @@ public class PlaybackManager {
         if (activeQueue == null || activeQueue.length == 0) return;
         currentAudioResId = activeQueue[queueIndex];
         lastCountedAudioId = -1;
+        Song s = SongRepository.findByAudioResId(currentAudioResId);
+        MediaItem item;
 
-        MediaItem item = MediaItem.fromUri("android.resource://" + appContext.getPackageName() + "/" + currentAudioResId);
+        if (s != null && s.getUriString() != null) {
+            item = MediaItem.fromUri(s.getUriString()); // 🔥 IMPORT SONG
+        } else {
+            item = MediaItem.fromUri("android.resource://" + appContext.getPackageName() + "/" + currentAudioResId); // 🔥 NORMAL SONG
+        }
         player.setMediaItem(item);
         player.prepare();
 
-        NowPlayingRepository.saveNowPlaying(
-                appContext,
-                currentAudioResId,
-                activeQueue,
-                queueIndex
-        );
-
+        NowPlayingRepository.saveNowPlaying(appContext, currentAudioResId, activeQueue, queueIndex);
         if (autoPlay) {
             RecentlyPlayedRepository.add(appContext, currentAudioResId);
         }
-
         notifyNowPlaying();
 
         if (autoPlay) {
             player.play();
         }
         updateNotification();
-    }
-    public void release() {
-        if (player != null) {
-            player.stop();
-            player.clearMediaItems();
-            player.release();
-        }
-        notificationManager.cancel();
-
-        if (mediaSession != null) {
-            mediaSession.setActive(false);
-            mediaSession.release();
-        }
-        instance = null;
     }
     private void onTrackEnded() {
         if (repeatMode == RepeatMode.ONE) {

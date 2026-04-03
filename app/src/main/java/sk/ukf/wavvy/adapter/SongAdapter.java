@@ -22,6 +22,8 @@ import sk.ukf.wavvy.PlaybackManager;
 import sk.ukf.wavvy.PlaylistDetailActivity;
 import sk.ukf.wavvy.PlaylistRepository;
 import sk.ukf.wavvy.R;
+import sk.ukf.wavvy.SongRepository;
+import sk.ukf.wavvy.WavvyDialogs;
 import sk.ukf.wavvy.model.Playlist;
 import sk.ukf.wavvy.model.Song;
 import android.widget.LinearLayout;
@@ -116,10 +118,17 @@ public class SongAdapter extends RecyclerView.Adapter<SongAdapter.SongViewHolder
 
                 LinearLayout favAction = popupView.findViewById(R.id.actionAddFavorite);
                 LinearLayout removeFromPlaylist = popupView.findViewById(R.id.actionRemoveFromPlaylist);
+                LinearLayout actionDelete = popupView.findViewById(R.id.actionDeleteSong);
                 ImageView favIcon = (ImageView) favAction.getChildAt(0);
                 TextView favText = (TextView) favAction.getChildAt(1);
                 String songId = String.valueOf(song.getAudioResId());
                 boolean liked = LikedSongsRepository.isLiked(ctx, songId);
+
+                if (song.getUriString() != null) {
+                    actionDelete.setVisibility(View.VISIBLE);
+                } else {
+                    actionDelete.setVisibility(View.GONE);
+                }
 
                 if (liked) {
                     favIcon.setImageResource(R.drawable.ic_liked);
@@ -130,6 +139,34 @@ public class SongAdapter extends RecyclerView.Adapter<SongAdapter.SongViewHolder
                     favIcon.setColorFilter(ContextCompat.getColor(ctx, R.color.textPrimary));
                     favText.setText("Add to favorites");
                 }
+
+                actionDelete.setOnClickListener(v1 -> {
+                    android.content.Context context = holder.itemView.getContext();
+                    View dialogView = LayoutInflater.from(context).inflate(R.layout.dialog_delete_song, null);
+                    TextView tvMsg = dialogView.findViewById(R.id.tvMsg);
+                    TextView btnDelete = dialogView.findViewById(R.id.btnDelete);
+                    TextView btnCancel = dialogView.findViewById(R.id.btnCancel);
+                    tvMsg.setText("Do you really want to delete „" + song.getTitle() + "“?");
+                    android.app.Dialog dialog = WavvyDialogs.showCenteredCardDialog(context, (android.app.Activity) context, dialogView);
+
+                    btnDelete.setOnClickListener(v2 -> {
+                        SongRepository.deleteLocalSong(context, song.getAudioResId());
+
+                        int pos = holder.getBindingAdapterPosition();
+                        if (pos != RecyclerView.NO_POSITION) {
+                            songs.remove(pos);
+                            notifyItemRemoved(pos);
+                            if (context instanceof PlaylistDetailActivity) {
+                                ((PlaylistDetailActivity) context).updateMeta();
+                                ((PlaylistDetailActivity) context).updateCover();
+                            }
+                        }
+                        android.widget.Toast.makeText(context, "Deleted", android.widget.Toast.LENGTH_SHORT).show();
+                        dialog.dismiss();
+                    });
+                    btnCancel.setOnClickListener(v2 -> dialog.dismiss());
+                    popupWindow.dismiss();
+                });
 
                 favAction.setOnClickListener(v1 -> {
                     LikedSongsRepository.toggleLike(ctx, songId);

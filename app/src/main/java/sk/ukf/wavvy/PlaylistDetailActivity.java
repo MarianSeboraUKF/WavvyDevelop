@@ -1,6 +1,7 @@
 package sk.ukf.wavvy;
 
 import android.content.Intent;
+import android.database.Cursor;
 import android.graphics.drawable.ColorDrawable;
 import android.os.Bundle;
 import android.view.View;
@@ -142,6 +143,13 @@ public class PlaylistDetailActivity extends AppCompatActivity implements Playbac
         });
         btnSort.setOnClickListener(v -> showSortPopup(v));
 
+        btnImport.setOnClickListener(v -> {
+            Intent pickIntent = new Intent(Intent.ACTION_OPEN_DOCUMENT);
+            pickIntent.setType("audio/*");
+            pickIntent.addCategory(Intent.CATEGORY_OPENABLE);
+            startActivityForResult(pickIntent, 1001);
+        });
+
         if (playlistId != null) {
             ViewGroup.LayoutParams params = coverIcon.getLayoutParams();
 
@@ -209,6 +217,7 @@ public class PlaylistDetailActivity extends AppCompatActivity implements Playbac
         btnMiniPrev.setOnClickListener(v -> {
             if (pm.getPlayer() != null && pm.getPlayer().getCurrentPosition() > 3000) {
                 pm.getPlayer().seekTo(0);
+                pm.getPlayer().play();
             } else {
                 pm.playPrev(true);
             }
@@ -308,6 +317,65 @@ public class PlaylistDetailActivity extends AppCompatActivity implements Playbac
         float disabledAlpha = 0.35f;
         btnMiniPrev.setAlpha(prevEnabled ? 1f : disabledAlpha);
         btnMiniNext.setAlpha(nextEnabled ? 1f : disabledAlpha);
+    }
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+        super.onActivityResult(requestCode, resultCode, data);
+        if (requestCode == 1001 && resultCode == RESULT_OK) {
+            if (data != null && data.getData() != null) {
+                try {
+                    getContentResolver().takePersistableUriPermission(data.getData(), Intent.FLAG_GRANT_READ_URI_PERMISSION);
+                } catch (Exception ignored) {}
+                importSong(data.getData());
+            }
+        }
+    }
+    private void importSong(android.net.Uri uri) {
+        android.media.MediaMetadataRetriever mmr = new android.media.MediaMetadataRetriever();
+        try {
+            mmr.setDataSource(this, uri);
+            String title = mmr.extractMetadata(android.media.MediaMetadataRetriever.METADATA_KEY_TITLE);
+            String artist = mmr.extractMetadata(android.media.MediaMetadataRetriever.METADATA_KEY_ARTIST);
+            String album = mmr.extractMetadata(android.media.MediaMetadataRetriever.METADATA_KEY_ALBUM);
+
+            if (title == null || title.isEmpty()) {
+                Cursor cursor = getContentResolver().query(uri, null, null, null, null);
+                if (cursor != null) {
+                    int nameIndex = cursor.getColumnIndex(android.provider.OpenableColumns.DISPLAY_NAME);
+                    if (nameIndex != -1 && cursor.moveToFirst()) {
+                        title = cursor.getString(nameIndex);
+                    }
+                    cursor.close();
+                }
+            }
+            if (title == null || title.isEmpty()) {
+                title = "Unknown";
+            }
+            if (title.endsWith(".mp3")) {
+                title = title.replace(".mp3", "");
+            }
+
+            if (artist == null) artist = "Unknown";
+            if (album == null) album = "Unknown";
+            int id = uri.toString().hashCode();
+
+            Song newSong = new Song(title, artist, "", album, artist, "-", 0, R.drawable.default_cover, id);
+            newSong.setUriString(uri.toString());
+            SongRepository.addLocalSong(newSong);
+            sendBroadcast(new Intent("songs_updated"));
+
+            String dur = mmr.extractMetadata(android.media.MediaMetadataRetriever.METADATA_KEY_DURATION);
+            if (dur != null) { newSong.setDurationMs(Long.parseLong(dur)); }
+
+            SongRepository.saveLocalSongs(this);
+
+            loadSongs();
+            Toast.makeText(this, "Imported: " + title, Toast.LENGTH_SHORT).show();
+        } catch (Exception e) {
+            Toast.makeText(this, "Import failed", Toast.LENGTH_SHORT).show();
+        } finally {
+            try { mmr.release(); } catch (Exception ignored) {}
+        }
     }
     private void openPlayerFromNowPlaying() {
         int[] q = NowPlayingRepository.getQueueIds(this);
@@ -492,8 +560,10 @@ public class PlaylistDetailActivity extends AppCompatActivity implements Playbac
         if ("liked".equals(playlistId)) {}
         else if ("local".equals(playlistId)) {
             actionImport.setVisibility(View.VISIBLE);
+            btnImport.setOnClickListener(v -> openFilePicker());
             actionImport.setOnClickListener(v -> {
                 popup.dismiss();
+                openFilePicker();
             });
         } else {
             actionEdit.setVisibility(View.VISIBLE);
@@ -575,6 +645,12 @@ public class PlaylistDetailActivity extends AppCompatActivity implements Playbac
         tvLength.setText(formatDuration(totalMs));
         android.app.Dialog dialog = WavvyDialogs.showCenteredCardDialog(this, this, dialogView);
         btnClose.setOnClickListener(v -> dialog.dismiss());
+    }
+    private void openFilePicker() {
+        Intent pickIntent = new Intent(Intent.ACTION_OPEN_DOCUMENT);
+        pickIntent.setType("audio/*");
+        pickIntent.addCategory(Intent.CATEGORY_OPENABLE);
+        startActivityForResult(pickIntent, 1001);
     }
     public void updateCover() {
         if ("liked".equals(playlistId)) return;

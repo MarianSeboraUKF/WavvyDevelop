@@ -41,7 +41,7 @@ public class MainActivity extends AppCompatActivity implements PlaybackManager.L
         androidx.core.splashscreen.SplashScreen.installSplashScreen(this);
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
-
+        SongRepository.loadLocalSongs(this);
         if (android.os.Build.VERSION.SDK_INT >= 33) {
             requestPermissions(new String[]{"android.permission.POST_NOTIFICATIONS"}, 1);
         }

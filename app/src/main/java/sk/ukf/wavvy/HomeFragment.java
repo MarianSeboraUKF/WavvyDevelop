@@ -1,5 +1,8 @@
 package sk.ukf.wavvy;
 
+import android.content.BroadcastReceiver;
+import android.content.Context;
+import android.content.IntentFilter;
 import android.os.Bundle;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -34,6 +37,7 @@ public class HomeFragment extends Fragment implements PlaybackManager.Listener {
     private ImageView ivContinueCover;
     private TextView tvContinueTitle;
     private TextView tvContinueArtist;
+    private BroadcastReceiver receiver;
 
     @Nullable
     @Override
@@ -139,6 +143,25 @@ public class HomeFragment extends Fragment implements PlaybackManager.Listener {
         for (Song s : allSongs) {
             GradientPreloader.preload(requireContext(), s.getCoverResId());
         }
+
+        receiver = new BroadcastReceiver() {
+            @Override
+            public void onReceive(Context context, Intent intent) {
+                adapter = new SongAdapter(
+                        SongRepository.getSongs(),
+                        false,
+                        false,
+                        song -> PlayerLauncher.openQueue(requireContext(), SongRepository.getSongs(), song)
+                );
+                RecyclerView rvSongs = getView().findViewById(R.id.rvSongs);
+                rvSongs.setAdapter(adapter);
+            }
+        };
+        requireContext().registerReceiver(
+                receiver,
+                new IntentFilter("songs_updated"),
+                Context.RECEIVER_NOT_EXPORTED
+        );
         return view;
     }
     private void updateContinueCard() {
@@ -169,6 +192,12 @@ public class HomeFragment extends Fragment implements PlaybackManager.Listener {
         recentSongs.clear();
         recentSongs.addAll(SongRepository.getRecentlyPlayedSongs(requireContext()));
         recentAdapter.notifyDataSetChanged();
+    }
+
+    @Override
+    public void onDestroy() {
+        super.onDestroy();
+        requireContext().unregisterReceiver(receiver);
     }
 
     @Override
