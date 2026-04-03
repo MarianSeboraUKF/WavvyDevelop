@@ -67,14 +67,10 @@ public class SongAdapter extends RecyclerView.Adapter<SongAdapter.SongViewHolder
             holder.tvAlbum.setText(applyHighlight(album, highlightQuery, holder));
             holder.tvAlbum.setVisibility(View.VISIBLE);
         }
-        if (song.isOnline()) {
-            holder.ivCover.setImageResource(R.drawable.default_cover);
-        } else {
-            holder.ivCover.setImageResource(song.getCoverResId());
-        }
+        holder.ivCover.setImageResource(song.getCoverResId());
 
         int currentId = PlaybackManager.get(holder.itemView.getContext()).getCurrentAudioResId();
-        boolean isPlaying = !song.isOnline() && song.getAudioResId() == currentId;
+        boolean isPlaying = song.getAudioResId() == currentId;
 
         if (isPlaying) {
             holder.viewNowPlayingStripe.setVisibility(View.VISIBLE);

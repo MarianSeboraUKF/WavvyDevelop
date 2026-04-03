@@ -85,65 +85,39 @@ public class HomeFragment extends Fragment implements PlaybackManager.Listener {
         );
         rvRecent.setAdapter(recentAdapter);
 
-        SongRepository.getAllSongs(requireContext(), allSongs -> {
-            SongRepository.preloadDurations(requireContext());
+        ArrayList<Song> allSongs = SongRepository.getSongs();
+        SongRepository.preloadDurations(requireContext());
 
-            adapter = new SongAdapter(
-                    allSongs,
-                    false,
-                    false,
-                    song -> {
-                        if (song.isOnline()) {
-                            android.widget.Toast.makeText(requireContext(), "Online not supported yet", android.widget.Toast.LENGTH_SHORT).show();
-                            return;
-                        }
-                        PlayerLauncher.openQueue(requireContext(), allSongs, song);
-                    }
-            );
-            rvSongs.setAdapter(adapter);
-
-            for (Song s : allSongs) {
-                if (!s.isOnline()) {
-                    GradientPreloader.preload(requireContext(), s.getCoverResId());
-                }
+        btnPlayAll.setOnClickListener(v -> {
+            int[] ids = new int[allSongs.size()];
+            for (int i = 0; i < allSongs.size(); i++) {
+                ids[i] = allSongs.get(i).getAudioResId();
             }
+            pm.setShuffle(false);
+            pm.playQueue(ids, 0, true);
+        });
 
-            btnPlayAll.setOnClickListener(v -> {
-                ArrayList<Song> playable = new ArrayList<>();
-                for (Song s : allSongs) {
-                    if (!s.isOnline()) {
-                        playable.add(s);
-                    }
-                }
-                int[] ids = new int[playable.size()];
-                for (int i = 0; i < playable.size(); i++) {
-                    ids[i] = playable.get(i).getAudioResId();
-                }
-                pm.setShuffle(false);
-                pm.playQueue(ids, 0, true);
-            });
-
-            btnShuffleAll.setOnClickListener(v -> {
-                ArrayList<Song> playable = new ArrayList<>();
-                for (Song s : allSongs) {
-                    if (!s.isOnline()) {
-                        playable.add(s);
-                    }
-                }
-                int[] ids = new int[playable.size()];
-                for (int i = 0; i < playable.size(); i++) {
-                    ids[i] = playable.get(i).getAudioResId();
-                }
-                int randomIndex = new java.util.Random().nextInt(ids.length);
-                pm.setShuffle(true);
-                pm.playQueue(ids, randomIndex, true);
-            });
+        btnShuffleAll.setOnClickListener(v -> {
+            int[] ids = new int[allSongs.size()];
+            for (int i = 0; i < allSongs.size(); i++) {
+                ids[i] = allSongs.get(i).getAudioResId();
+            }
+            int randomIndex = new java.util.Random().nextInt(ids.length);
+            pm.setShuffle(true);
+            pm.playQueue(ids, randomIndex, true);
         });
 
         mostPlayed = SongRepository.getMostPlayedSongs(requireContext());
         mostPlayedAdapter = new SmallSongAdapter(
                 mostPlayed,
                 song -> PlayerLauncher.openQueue(requireContext(), mostPlayed, song)
+        );
+
+        adapter = new SongAdapter(
+                allSongs,
+                false,
+                false,
+                song -> PlayerLauncher.openQueue(requireContext(), allSongs, song)
         );
 
         rvMostPlayed.setAdapter(mostPlayedAdapter);
@@ -161,6 +135,10 @@ public class HomeFragment extends Fragment implements PlaybackManager.Listener {
             requireActivity().overridePendingTransition(R.anim.slide_in_right_fast, R.anim.slide_out_left_fast);
         });
         rvAlbums.setAdapter(albumAdapter);
+
+        for (Song s : allSongs) {
+            GradientPreloader.preload(requireContext(), s.getCoverResId());
+        }
         return view;
     }
     private void updateContinueCard() {
@@ -178,11 +156,7 @@ public class HomeFragment extends Fragment implements PlaybackManager.Listener {
             return;
         }
         cardContinue.setVisibility(View.VISIBLE);
-        if (s.isOnline()) {
-            ivContinueCover.setImageResource(R.drawable.default_cover);
-        } else {
-            ivContinueCover.setImageResource(s.getCoverResId());
-        }
+        ivContinueCover.setImageResource(s.getCoverResId());
         tvContinueTitle.setText(s.getTitle());
         tvContinueArtist.setText(s.getArtist());
     }
@@ -217,23 +191,21 @@ public class HomeFragment extends Fragment implements PlaybackManager.Listener {
         updateContinueCard();
 
         if (adapter != null) {
-            SongRepository.getAllSongs(requireContext(), songs -> {
-                int newIndex = -1;
-                int oldIndex = -1;
-                for (int i = 0; i < songs.size(); i++) {
-                    if (songs.get(i).getAudioResId() == audioResId) {
-                        newIndex = i;
-                    }
-                    if (songs.get(i).getAudioResId() == lastPlayingAudioId) {
-                        oldIndex = i;
-                    }
+            ArrayList<Song> songs = SongRepository.getSongs();
+            int newIndex = -1;
+            int oldIndex = -1;
+
+            for (int i = 0; i < songs.size(); i++) {
+                if (songs.get(i).getAudioResId() == audioResId) {
+                    newIndex = i;
                 }
-                if (oldIndex >= 0) adapter.notifyItemChanged(oldIndex);
-                if (newIndex >= 0) adapter.notifyItemChanged(newIndex);
-                if (audioResId != 0) {
-                    lastPlayingAudioId = audioResId;
+                if (songs.get(i).getAudioResId() == lastPlayingAudioId) {
+                    oldIndex = i;
                 }
-            });
+            }
+            if (oldIndex >= 0) adapter.notifyItemChanged(oldIndex);
+            if (newIndex >= 0) adapter.notifyItemChanged(newIndex);
+            lastPlayingAudioId = audioResId;
         }
 
         recentSongs.clear();

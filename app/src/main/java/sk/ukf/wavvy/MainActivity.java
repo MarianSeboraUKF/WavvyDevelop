@@ -46,8 +46,6 @@ public class MainActivity extends AppCompatActivity implements PlaybackManager.L
             requestPermissions(new String[]{"android.permission.POST_NOTIFICATIONS"}, 1);
         }
 
-        SongRepository.getAllSongs(this, songs -> {Toast.makeText(this, "Loaded: " + songs.size() + " songs", Toast.LENGTH_SHORT).show();});
-
         WindowCompat.setDecorFitsSystemWindows(getWindow(), false);
         getWindow().setStatusBarColor(android.graphics.Color.TRANSPARENT);
         getWindow().setNavigationBarColor(android.graphics.Color.TRANSPARENT);
