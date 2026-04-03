@@ -94,8 +94,20 @@ public class LibraryFragment extends Fragment {
         snapHelper.attachToRecyclerView(rvSongsPager);
         rvSongsPager.setOverScrollMode(View.OVER_SCROLL_NEVER);
 
-        songPagerAdapter = new SongHorizontalAdapter(new ArrayList<>(),
-                song -> PlayerLauncher.openQueue(requireContext(), new ArrayList<>(), song)
+        songPagerAdapter = new SongHorizontalAdapter(
+                new ArrayList<>(),
+                song -> {
+                    ArrayList<Song> likedSongs = new ArrayList<>();
+
+                    for (Song s : SongRepository.getSongs()) {
+                        String id = String.valueOf(s.getAudioResId());
+                        if (LikedSongsRepository.isLiked(requireContext(), id)) {
+                            likedSongs.add(s);
+                        }
+                    }
+                    PlayerLauncher.openQueue(requireContext(), likedSongs, song);
+                    rvSongsPager.post(() -> songPagerAdapter.notifyDataSetChanged());
+                }
         );
         rvSongsPager.setAdapter(songPagerAdapter);
         setupSongs();
