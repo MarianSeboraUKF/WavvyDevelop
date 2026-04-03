@@ -389,17 +389,18 @@ public class PlaybackManager {
         currentAudioResId = activeQueue[queueIndex];
         lastCountedAudioId = -1;
 
-        MediaItem item = MediaItem.fromUri("android.resource://" + appContext.getPackageName() + "/" + currentAudioResId);
+        Song song = SongRepository.findByAudioResId(currentAudioResId);
+        MediaItem item;
+        if (song != null && song.isOnline()) {
+            item = MediaItem.fromUri(song.getAudioUrl());
+        } else {
+            item = MediaItem.fromUri("android.resource://" + appContext.getPackageName() + "/" + currentAudioResId);
+        }
 
         player.setMediaItem(item);
         player.prepare();
 
-        NowPlayingRepository.saveNowPlaying(
-                appContext,
-                currentAudioResId,
-                activeQueue,
-                queueIndex
-        );
+        NowPlayingRepository.saveNowPlaying(appContext, currentAudioResId, activeQueue, queueIndex);
 
         if (autoPlay) {
             RecentlyPlayedRepository.add(appContext, currentAudioResId);

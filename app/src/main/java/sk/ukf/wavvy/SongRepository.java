@@ -137,4 +137,70 @@ public class SongRepository {
             }
         }
     }
+    public interface OnSongsLoadedListener {
+        void onLoaded(ArrayList<Song> songs);
+    }
+    public static void loadSongsFromFirebase(OnSongsLoadedListener listener) {
+        com.google.firebase.firestore.FirebaseFirestore db =
+                com.google.firebase.firestore.FirebaseFirestore.getInstance();
+
+        db.collection("songs")
+                .get()
+                .addOnSuccessListener(queryDocumentSnapshots -> {
+                    ArrayList<Song> songs = new ArrayList<>();
+
+                    for (com.google.firebase.firestore.QueryDocumentSnapshot doc : queryDocumentSnapshots) {
+                        String title = doc.getString("title");
+                        String artist = doc.getString("artist");
+                        String album = doc.getString("album");
+                        String audioUrl = doc.getString("audioUrl");
+                        String coverUrl = doc.getString("coverUrl");
+
+                        if (title == null) title = "Unknown";
+                        if (artist == null) artist = "Unknown";
+                        if (album == null) album = "";
+                        if (audioUrl == null) continue;
+                        if (coverUrl == null) coverUrl = "";
+                        Song song = new Song(title, artist, "", album, artist, "", 1, coverUrl, audioUrl);
+                        songs.add(song);
+                    }
+                    listener.onLoaded(songs);
+                })
+                .addOnFailureListener(e -> {
+                    android.util.Log.e("Firebase", "Error loading songs", e);
+                    listener.onLoaded(new ArrayList<>());
+                });
+    }
+    public static boolean isOnline(Context context) {
+        android.net.ConnectivityManager cm = (android.net.ConnectivityManager) context.getSystemService(Context.CONNECTIVITY_SERVICE);
+        if (cm == null) return false;
+
+        android.net.Network network = cm.getActiveNetwork();
+        if (network == null) return false;
+
+        android.net.NetworkCapabilities capabilities = cm.getNetworkCapabilities(network);
+        return capabilities != null &&
+                (capabilities.hasTransport(android.net.NetworkCapabilities.TRANSPORT_WIFI) || capabilities.hasTransport(android.net.NetworkCapabilities.TRANSPORT_CELLULAR));
+    }
+    public static void getAllSongs(Context ctx, OnSongsLoadedListener listener) {
+        ArrayList<Song> localSongs = new ArrayList<>(getSongs());
+        System.out.println("ONLINE: " + isOnline(ctx));
+        if (!isOnline(ctx)) {
+            listener.onLoaded(localSongs);
+            return;
+        }
+
+        loadSongsFromFirebase(firebaseSongs -> {
+            ArrayList<Song> all = new ArrayList<>(localSongs);
+            java.util.HashSet<String> titles = new java.util.HashSet<>();
+
+            for (Song s : localSongs) {
+                titles.add(s.getTitle());
+            }
+            for (Song s : firebaseSongs) {
+                all.add(s);
+            }
+            listener.onLoaded(all);
+        });
+    }
 }

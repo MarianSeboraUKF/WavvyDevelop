@@ -49,6 +49,7 @@ public class LibraryFragment extends Fragment {
     private AlbumAdapter albumAdapter;
     private ArrayList<Album> albumsList;
     private SongHorizontalAdapter songPagerAdapter;
+    private PlaybackManager.Listener playbackListener;
 
     public LibraryFragment() {}
 
@@ -65,15 +66,21 @@ public class LibraryFragment extends Fragment {
         systemPlaylists = new ArrayList<>();
         Playlist liked = new Playlist("liked", "Liked songs", true);
         Playlist local = new Playlist("local", "Local songs", true);
-
-        for (Song s : SongRepository.getSongs()) {
-            local.addSong(s.getAudioResId());
-        }
-
-        systemPlaylists.add(liked);
-        systemPlaylists.add(local);
         systemAdapter = new SystemPlaylistAdapter(systemPlaylists, this::openPlaylist);
         rvSystem.setAdapter(systemAdapter);
+
+        SongRepository.getAllSongs(requireContext(), songs -> {
+            local.getSongAudioResIds().clear();
+            for (Song s : songs) {
+                if (!s.isOnline()) {
+                    local.addSong(s.getAudioResId());
+                }
+            }
+            systemPlaylists.clear();
+            systemPlaylists.add(liked);
+            systemPlaylists.add(local);
+            systemAdapter.notifyDataSetChanged();
+        });
 
         rvAlbums = view.findViewById(R.id.rvAlbums);
         rvAlbums.setLayoutManager(new LinearLayoutManager(requireContext(), LinearLayoutManager.HORIZONTAL, false));
@@ -95,7 +102,19 @@ public class LibraryFragment extends Fragment {
         rvSongsPager.setOverScrollMode(View.OVER_SCROLL_NEVER);
 
         songPagerAdapter = new SongHorizontalAdapter(new ArrayList<>(),
-                song -> PlayerLauncher.openQueue(requireContext(), new ArrayList<>(), song)
+                song -> {
+                    SongRepository.getAllSongs(requireContext(), allSongs -> {
+                        ArrayList<Song> likedSongs = new ArrayList<>();
+                        for (Song s : allSongs) {
+                            if (s.isOnline()) continue;
+                            String id = String.valueOf(s.getAudioResId());
+                            if (LikedSongsRepository.isLiked(requireContext(), id)) {
+                                likedSongs.add(s);
+                            }
+                        }
+                        PlayerLauncher.openQueue(requireContext(), likedSongs, song);
+                    });
+                }
         );
         rvSongsPager.setAdapter(songPagerAdapter);
         setupSongs();
@@ -156,7 +175,6 @@ public class LibraryFragment extends Fragment {
                     requireActivity().overridePendingTransition(R.anim.slide_in_right_fast, R.anim.slide_out_left_fast);
                 }
         );
-
         rvAlbums.setAdapter(albumAdapter);
         libraryReceiver = new BroadcastReceiver() {
             @Override
@@ -167,28 +185,26 @@ public class LibraryFragment extends Fragment {
         return view;
     }
     private void setupSongs() {
-        ArrayList<Song> likedSongs = new ArrayList<>();
+        SongRepository.getAllSongs(requireContext(), allSongs -> {
+            ArrayList<Song> likedSongs = new ArrayList<>();
 
-        for (Song s : SongRepository.getSongs()) {
-            String id = String.valueOf(s.getAudioResId());
-            if (LikedSongsRepository.isLiked(requireContext(), id)) {
-                likedSongs.add(s);
+            for (Song s : allSongs) {
+                if (s.isOnline()) continue;
+                String id = String.valueOf(s.getAudioResId());
+                if (LikedSongsRepository.isLiked(requireContext(), id)) {
+                    likedSongs.add(s);
+                }
             }
-        }
-
-        List<List<Song>> pages = new ArrayList<>();
-
-        for (int i = 0; i < likedSongs.size(); i += 3) {
-
-            List<Song> page = new ArrayList<>(
-                    likedSongs.subList(i, Math.min(i + 3, likedSongs.size()))
-            );
-            while (page.size() < 3) {
-                page.add(null);
+            List<List<Song>> pages = new ArrayList<>();
+            for (int i = 0; i < likedSongs.size(); i += 3) {
+                List<Song> page = new ArrayList<>(likedSongs.subList(i, Math.min(i + 3, likedSongs.size())));
+                while (page.size() < 3) {
+                    page.add(null);
+                }
+                pages.add(page);
             }
-            pages.add(page);
-        }
-        songPagerAdapter.updateData(pages);
+            songPagerAdapter.updateData(pages);
+        });
     }
 
     @Override
@@ -198,6 +214,20 @@ public class LibraryFragment extends Fragment {
         filter.addAction(LikedSongsRepository.ACTION_LIKED_CHANGED);
         filter.addAction("playlist_updated");
         requireContext().registerReceiver(libraryReceiver, filter, Context.RECEIVER_NOT_EXPORTED);
+
+        playbackListener = new PlaybackManager.Listener() {
+            @Override
+            public void onNowPlayingChanged(int audioResId, int[] queueIds, int queueIndex) {
+                if (songPagerAdapter != null) {
+                    songPagerAdapter.notifyDataSetChanged();
+                }
+            }
+            @Override
+            public void onIsPlayingChanged(boolean isPlaying) {}
+            @Override
+            public void onProgress(long positionMs, long durationMs) {}
+        };
+        PlaybackManager.get(requireContext()).addListener(playbackListener);
     }
 
     @Override
@@ -206,6 +236,10 @@ public class LibraryFragment extends Fragment {
         try {
             requireContext().unregisterReceiver(libraryReceiver);
         } catch (Exception ignored) {}
+
+        if (playbackListener != null) {
+            PlaybackManager.get(requireContext()).removeListener(playbackListener);
+        }
     }
 
     @Override
@@ -224,14 +258,17 @@ public class LibraryFragment extends Fragment {
         Playlist liked = new Playlist("liked", "Liked songs", true);
         Playlist local = new Playlist("local", "Local songs", true);
 
-        for (Song s : SongRepository.getSongs()) {
-            local.addSong(s.getAudioResId());
-        }
-
-        systemPlaylists.add(liked);
-        systemPlaylists.add(local);
-        systemAdapter.notifyDataSetChanged();
-
+        SongRepository.getAllSongs(requireContext(), songs -> {
+            for (Song s : songs) {
+                if (!s.isOnline()) {
+                    local.addSong(s.getAudioResId());
+                }
+            }
+            systemPlaylists.clear();
+            systemPlaylists.add(liked);
+            systemPlaylists.add(local);
+            systemAdapter.notifyDataSetChanged();
+        });
         ArrayList<Playlist> sorted = new ArrayList<>(PlaylistRepository.getPlaylists(requireContext()));
 
         Collections.sort(sorted, (a, b) -> {

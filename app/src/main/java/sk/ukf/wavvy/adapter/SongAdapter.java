@@ -3,7 +3,6 @@ package sk.ukf.wavvy.adapter;
 import android.text.SpannableString;
 import android.text.Spanned;
 import android.text.style.ForegroundColorSpan;
-import android.view.Gravity;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -68,10 +67,14 @@ public class SongAdapter extends RecyclerView.Adapter<SongAdapter.SongViewHolder
             holder.tvAlbum.setText(applyHighlight(album, highlightQuery, holder));
             holder.tvAlbum.setVisibility(View.VISIBLE);
         }
-        holder.ivCover.setImageResource(song.getCoverResId());
+        if (song.isOnline()) {
+            holder.ivCover.setImageResource(R.drawable.default_cover);
+        } else {
+            holder.ivCover.setImageResource(song.getCoverResId());
+        }
 
         int currentId = PlaybackManager.get(holder.itemView.getContext()).getCurrentAudioResId();
-        boolean isPlaying = song.getAudioResId() == currentId;
+        boolean isPlaying = !song.isOnline() && song.getAudioResId() == currentId;
 
         if (isPlaying) {
             holder.viewNowPlayingStripe.setVisibility(View.VISIBLE);
@@ -242,7 +245,35 @@ public class SongAdapter extends RecyclerView.Adapter<SongAdapter.SongViewHolder
                     btnClose.setOnClickListener(v2 -> dialog.dismiss());
                     dialog.show();
                 });
-                popupWindow.showAsDropDown(holder.btnSongMenu, 0, 0, Gravity.END);
+
+                View anchor = holder.btnSongMenu;
+                popupView.measure(View.MeasureSpec.UNSPECIFIED, View.MeasureSpec.UNSPECIFIED);
+
+                int popupHeight = popupView.getMeasuredHeight();
+                int popupWidth = popupView.getMeasuredWidth();
+                int[] location = new int[2];
+                anchor.getLocationOnScreen(location);
+
+                int anchorX = location[0];
+                int anchorY = location[1];
+                int screenHeight = anchor.getResources().getDisplayMetrics().heightPixels;
+                int screenWidth = anchor.getResources().getDisplayMetrics().widthPixels;
+
+                int spaceBelow = screenHeight - (anchorY + anchor.getHeight());
+                int spaceAbove = anchorY;
+
+                int margin = (int) (4 * anchor.getResources().getDisplayMetrics().density); // optional
+                int xOffset = screenWidth - (anchorX + popupWidth) - margin;
+                int yOffset = (int) (4 * anchor.getResources().getDisplayMetrics().density);
+
+                popupWindow.setAnimationStyle(android.R.style.Animation_Dialog);
+                popupWindow.setClippingEnabled(false);
+
+                if (spaceBelow < popupHeight && spaceAbove > popupHeight) {
+                    popupWindow.showAsDropDown(anchor, xOffset, -anchor.getHeight() - popupHeight - yOffset);
+                } else {
+                    popupWindow.showAsDropDown(anchor, xOffset, yOffset);
+                }
             });
         }
         if (holder.dragHandle != null) {
