@@ -1,9 +1,11 @@
 package sk.ukf.wavvy;
 
 import android.content.Intent;
+import android.database.Cursor;
 import android.graphics.Color;
 import android.graphics.Rect;
 import android.graphics.drawable.ColorDrawable;
+import android.net.Uri;
 import android.os.Bundle;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -34,6 +36,7 @@ import sk.ukf.wavvy.model.Song;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.IntentFilter;
+import android.widget.Toast;
 import androidx.recyclerview.widget.PagerSnapHelper;
 
 public class LibraryFragment extends Fragment {
@@ -93,6 +96,14 @@ public class LibraryFragment extends Fragment {
         snapHelper = new PagerSnapHelper();
         snapHelper.attachToRecyclerView(rvSongsPager);
         rvSongsPager.setOverScrollMode(View.OVER_SCROLL_NEVER);
+
+        ImageView btnAdd = view.findViewById(R.id.btnAdd);
+        btnAdd.setOnClickListener(v -> {
+            Intent pickIntent = new Intent(Intent.ACTION_OPEN_DOCUMENT);
+            pickIntent.setType("audio/*");
+            pickIntent.addCategory(Intent.CATEGORY_OPENABLE);
+            startActivityForResult(pickIntent, 1001);
+        });
 
         songPagerAdapter = new SongHorizontalAdapter(
                 new ArrayList<>(),
@@ -191,7 +202,6 @@ public class LibraryFragment extends Fragment {
         List<List<Song>> pages = new ArrayList<>();
 
         for (int i = 0; i < likedSongs.size(); i += 3) {
-
             List<Song> page = new ArrayList<>(
                     likedSongs.subList(i, Math.min(i + 3, likedSongs.size()))
             );
@@ -286,6 +296,71 @@ public class LibraryFragment extends Fragment {
         intent.putExtra(PlaylistDetailActivity.EXTRA_PLAYLIST_NAME, playlist.getName());
         startActivity(intent);
         requireActivity().overridePendingTransition(R.anim.slide_in_right_fast, R.anim.slide_out_left_fast);
+    }
+    @Override
+    public void onActivityResult(int requestCode, int resultCode, @Nullable Intent data) {
+        super.onActivityResult(requestCode, resultCode, data);
+
+        if (requestCode == 1001 && resultCode == requireActivity().RESULT_OK) {
+            if (data != null && data.getData() != null) {
+                Uri uri = data.getData();
+                try {
+                    requireContext().getContentResolver().takePersistableUriPermission(
+                            uri,
+                            Intent.FLAG_GRANT_READ_URI_PERMISSION
+                    );
+                } catch (Exception ignored) {}
+                importSong(uri);
+            }
+        }
+    }
+    private void importSong(android.net.Uri uri) {
+        android.media.MediaMetadataRetriever mmr = new android.media.MediaMetadataRetriever();
+        try {
+            mmr.setDataSource(requireContext(), uri);
+            String title = mmr.extractMetadata(android.media.MediaMetadataRetriever.METADATA_KEY_TITLE);
+            String artist = mmr.extractMetadata(android.media.MediaMetadataRetriever.METADATA_KEY_ARTIST);
+            String album = mmr.extractMetadata(android.media.MediaMetadataRetriever.METADATA_KEY_ALBUM);
+
+            if (title == null || title.isEmpty()) {
+                Cursor cursor = requireContext().getContentResolver().query(uri, null, null, null, null);
+                if (cursor != null) {
+                    int nameIndex = cursor.getColumnIndex(android.provider.OpenableColumns.DISPLAY_NAME);
+                    if (nameIndex != -1 && cursor.moveToFirst()) {
+                        title = cursor.getString(nameIndex);
+                    }
+                    cursor.close();
+                }
+            }
+            if (title == null || title.isEmpty()) {
+                title = "Unknown";
+            }
+            if (title.endsWith(".mp3")) {
+                title = title.replace(".mp3", "");
+            }
+
+            if (artist == null) artist = "Unknown";
+            if (album == null) album = "Unknown";
+            int id = uri.toString().hashCode();
+
+            Song newSong = new Song(title, artist, "", album, artist, "-", 0, R.drawable.default_cover, id);
+            newSong.setUriString(uri.toString());
+            SongRepository.addLocalSong(newSong);
+
+            String dur = mmr.extractMetadata(android.media.MediaMetadataRetriever.METADATA_KEY_DURATION);
+            if (dur != null) { newSong.setDurationMs(Long.parseLong(dur)); }
+
+            SongRepository.saveLocalSongs(requireContext());
+            Intent intent = new Intent("songs_updated");
+            intent.setPackage(requireContext().getPackageName());
+            requireContext().sendBroadcast(intent);
+            reload();
+            Toast.makeText(requireContext(), "Imported: " + title, Toast.LENGTH_SHORT).show();
+        } catch (Exception e) {
+            Toast.makeText(requireContext(), "Import failed", Toast.LENGTH_SHORT).show();
+        } finally {
+            try { mmr.release(); } catch (Exception ignored) {}
+        }
     }
     private void showCreateDialog() {
         View card = LayoutInflater.from(requireContext()).inflate(R.layout.dialog_create_playlist, null);

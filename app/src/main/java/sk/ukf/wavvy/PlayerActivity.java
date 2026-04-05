@@ -7,6 +7,8 @@ import android.os.Bundle;
 import android.view.View;
 import android.view.MotionEvent;
 import android.view.animation.DecelerateInterpolator;
+import android.widget.Button;
+import android.widget.EditText;
 import android.widget.ImageButton;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
@@ -15,6 +17,8 @@ import android.widget.TextView;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.drawable.GradientDrawable;
+import android.widget.Toast;
+import androidx.appcompat.app.AlertDialog;
 import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowInsetsCompat;
 import androidx.localbroadcastmanager.content.LocalBroadcastManager;
@@ -262,6 +266,92 @@ public class PlayerActivity extends AppCompatActivity implements PlaybackManager
             });
             popupWindow.showAsDropDown(btnMore, -245, 0);
             LinearLayout actionDelete = popupView.findViewById(R.id.actionDeleteSong);
+
+            LinearLayout actionEdit = popupView.findViewById(R.id.actionEditSong);
+            if (song.getUriString() != null) {
+                actionEdit.setVisibility(View.VISIBLE);
+                actionEdit.setOnClickListener(v1 -> {
+                    popupWindow.dismiss();
+                    View dialogView = getLayoutInflater().inflate(R.layout.dialog_edit_song, null);
+
+                    EditText etTitle = dialogView.findViewById(R.id.etTitle);
+                    EditText etArtist = dialogView.findViewById(R.id.etArtist);
+                    EditText etFeatArtist = dialogView.findViewById(R.id.etFeatArtist);
+                    EditText etAlbumArtist = dialogView.findViewById(R.id.etAlbumArtist);
+                    EditText etAlbum = dialogView.findViewById(R.id.etAlbum);
+                    EditText etTrack = dialogView.findViewById(R.id.etTrack);
+                    EditText etProducer = dialogView.findViewById(R.id.etProducer);
+                    ImageView ivCover = dialogView.findViewById(R.id.ivCoverEdit);
+                    Button btnSave = dialogView.findViewById(R.id.btnSave);
+
+                    etTitle.setText(song.getTitle());
+                    etArtist.setText(song.getMainArtist());
+                    etFeatArtist.setText(song.getFeatArtist());
+                    etAlbumArtist.setText(song.getAlbumArtist());
+                    etAlbum.setText(song.getAlbum());
+                    etTrack.setText(String.valueOf(song.getTrackNumber()));
+                    etProducer.setText(song.getProducedBy());
+
+                    if (song.getCoverUri() != null) {
+                        ivCover.setImageURI(android.net.Uri.parse(song.getCoverUri()));
+                    } else {
+                        ivCover.setImageResource(song.getCoverResId());
+                    }
+
+                    final String[] selectedCover = {song.getCoverUri()};
+
+                    ivCover.setOnClickListener(v2 -> {
+                        Intent intent = new Intent(Intent.ACTION_OPEN_DOCUMENT);
+                        intent.setType("image/*");
+                        startActivityForResult(intent, 9999);
+
+                        SongEditingHolder.callback = uri -> {
+                            selectedCover[0] = uri;
+                            ivCover.setImageURI(android.net.Uri.parse(uri));
+                        };
+                    });
+
+                    AlertDialog dialog = new AlertDialog.Builder(this).setView(dialogView).create();
+
+                    if (dialog.getWindow() != null) {
+                        dialog.getWindow().setBackgroundDrawableResource(android.R.color.transparent);
+                    }
+
+                    btnSave.setOnClickListener(v2 -> {
+                        int trackNumber;
+                        try {
+                            trackNumber = Integer.parseInt(etTrack.getText().toString());
+                        } catch (Exception e) {
+                            trackNumber = 0;
+                        }
+                        SongRepository.updateLocalSong(
+                                this,
+                                song.getAudioResId(),
+                                etTitle.getText().toString().trim(),
+                                etArtist.getText().toString().trim(),
+                                etFeatArtist.getText().toString().trim(),
+                                etAlbumArtist.getText().toString().trim(),
+                                etAlbum.getText().toString().trim(),
+                                etProducer.getText().toString().trim(),
+                                selectedCover[0],
+                                trackNumber
+                        );
+                        Toast.makeText(this, "Song updated", Toast.LENGTH_SHORT).show();
+
+                        if (song.getAudioResId() == PlaybackManager.get(this).getCurrentAudioResId()) {
+                            PlaybackManager.get(this).refreshCurrentSong();
+                        }
+                        sendBroadcast(new Intent("songs_updated"));
+                        dialog.dismiss();
+                    });
+                    TextView btnCancel = dialogView.findViewById(R.id.btnCancel);
+                    btnCancel.setOnClickListener(v2 -> dialog.dismiss());
+                    dialog.show();
+                });
+
+            } else {
+                actionEdit.setVisibility(View.GONE);
+            }
 
             if (song.getUriString() != null) {
                 actionDelete.setVisibility(View.VISIBLE);

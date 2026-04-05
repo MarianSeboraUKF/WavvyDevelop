@@ -54,7 +54,6 @@ public class PlaylistDetailActivity extends AppCompatActivity implements Playbac
     private ImageView coverIcon;
     private TextView btnPlay;
     private TextView btnShuffle;
-    private TextView btnImport;
     private TextView btnSort;
     private String currentSort = "TITLE_AZ";
     private Collator collator;
@@ -93,7 +92,6 @@ public class PlaylistDetailActivity extends AppCompatActivity implements Playbac
         coverIcon = findViewById(R.id.playlistCoverIcon);
         btnPlay = findViewById(R.id.btnPlay);
         btnShuffle = findViewById(R.id.btnShuffle);
-        btnImport = findViewById(R.id.btnImport);
         btnSort = findViewById(R.id.btnSort);
         ImageButton btnBack = findViewById(R.id.btnBack);
         ImageButton btnMenu = findViewById(R.id.btnMenu);
@@ -118,7 +116,6 @@ public class PlaylistDetailActivity extends AppCompatActivity implements Playbac
         tvPlaylistTitle.setText(playlistName);
         boolean isSystem = "liked".equals(playlistId) || "local".equals(playlistId);
         btnSort.setVisibility(isSystem ? View.GONE : View.VISIBLE);
-        btnImport.setVisibility("local".equals(playlistId) ? View.VISIBLE : View.GONE);
         btnPlay.setOnClickListener(v -> {
             if (songsInPlaylist.isEmpty()) return;
             PlayerLauncher.openQueue(
@@ -142,13 +139,6 @@ public class PlaylistDetailActivity extends AppCompatActivity implements Playbac
             pm.setShuffle(true);
         });
         btnSort.setOnClickListener(v -> showSortPopup(v));
-
-        btnImport.setOnClickListener(v -> {
-            Intent pickIntent = new Intent(Intent.ACTION_OPEN_DOCUMENT);
-            pickIntent.setType("audio/*");
-            pickIntent.addCategory(Intent.CATEGORY_OPENABLE);
-            startActivityForResult(pickIntent, 1001);
-        });
 
         if (playlistId != null) {
             ViewGroup.LayoutParams params = coverIcon.getLayoutParams();
@@ -564,7 +554,6 @@ public class PlaylistDetailActivity extends AppCompatActivity implements Playbac
         if ("liked".equals(playlistId)) {}
         else if ("local".equals(playlistId)) {
             actionImport.setVisibility(View.VISIBLE);
-            btnImport.setOnClickListener(v -> openFilePicker());
             actionImport.setOnClickListener(v -> {
                 popup.dismiss();
                 openFilePicker();

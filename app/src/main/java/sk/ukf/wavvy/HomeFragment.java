@@ -41,6 +41,8 @@ public class HomeFragment extends Fragment implements PlaybackManager.Listener {
     private ArrayList<Song> allSongs;
     private AlbumAdapter albumAdapter;
     private RecyclerView rvAlbums;
+    private boolean isExpanded = false;
+    private RecyclerView rvSongs;
 
     @Nullable
     @Override
@@ -77,7 +79,7 @@ public class HomeFragment extends Fragment implements PlaybackManager.Listener {
         pm = PlaybackManager.get(requireContext());
 
         rvMostPlayed = view.findViewById(R.id.rvMostPlayed);
-        RecyclerView rvSongs = view.findViewById(R.id.rvSongs);
+        rvSongs = view.findViewById(R.id.rvSongs);
 
         rvMostPlayed.setLayoutManager(new LinearLayoutManager(requireContext(), LinearLayoutManager.HORIZONTAL, false));
         rvSongs.setLayoutManager(new LinearLayoutManager(requireContext()));
@@ -117,14 +119,43 @@ public class HomeFragment extends Fragment implements PlaybackManager.Listener {
             pm.playQueue(ids, randomIndex, true);
         });
 
+        TextView btnViewMore = view.findViewById(R.id.btnViewMore);
+        rvSongs.setItemAnimator(new androidx.recyclerview.widget.DefaultItemAnimator());
+        btnViewMore.setOnClickListener(v -> {
+            if (!isExpanded) {
+                isExpanded = true;
+                int oldSize = adapter.getItemCount();
+                ArrayList<Song> fullList = new ArrayList<>(allSongs);
+                adapter.updateData(fullList);
+                adapter.notifyItemRangeInserted(oldSize, fullList.size() - oldSize);
+                btnViewMore.setText("Show less");
+                rvSongs.post(() -> rvSongs.smoothScrollToPosition(oldSize));
+            } else {
+                isExpanded = false;
+                int oldSize = adapter.getItemCount();
+                int newSize = Math.min(10, allSongs.size());
+                adapter.updateData(getDisplayedSongs());
+                adapter.notifyItemRangeRemoved(newSize, oldSize - newSize);
+                btnViewMore.setText("View more");
+                rvSongs.post(() -> rvSongs.smoothScrollToPosition(0));
+            }
+        });
+
         mostPlayed = SongRepository.getMostPlayedSongs(requireContext());
         mostPlayedAdapter = new SmallSongAdapter(
                 mostPlayed,
                 song -> PlayerLauncher.openQueue(requireContext(), mostPlayed, song)
         );
 
+        ArrayList<Song> allSongsFull = SongRepository.getSongs();
+        ArrayList<Song> previewSongs = new ArrayList<>();
+
+        for (int i = 0; i < Math.min(10, allSongsFull.size()); i++) {
+            previewSongs.add(allSongsFull.get(i));
+        }
+
         adapter = new SongAdapter(
-                SongRepository.getSongs(),
+                getDisplayedSongs(),
                 false,
                 false,
                 song -> PlayerLauncher.openQueue(requireContext(), allSongs, song)
@@ -179,6 +210,17 @@ public class HomeFragment extends Fragment implements PlaybackManager.Listener {
         }
         tvContinueTitle.setText(s.getTitle());
         tvContinueArtist.setText(s.getArtist());
+    }
+    private ArrayList<Song> getDisplayedSongs() {
+        if (isExpanded) {
+            return new ArrayList<>(allSongs);
+        } else {
+            ArrayList<Song> preview = new ArrayList<>();
+            for (int i = 0; i < Math.min(10, allSongs.size()); i++) {
+                preview.add(allSongs.get(i));
+            }
+            return preview;
+        }
     }
 
     @Override
@@ -253,7 +295,7 @@ public class HomeFragment extends Fragment implements PlaybackManager.Listener {
 
         allSongs = new ArrayList<>(updatedSongs);
         if (adapter != null) {
-            adapter.updateData(allSongs);
+            adapter.updateData(getDisplayedSongs());
         }
 
         if (albumAdapter != null) {
