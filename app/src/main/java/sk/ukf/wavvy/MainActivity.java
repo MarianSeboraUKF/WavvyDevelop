@@ -2,6 +2,7 @@ package sk.ukf.wavvy;
 
 import android.annotation.SuppressLint;
 import android.content.Intent;
+import android.content.pm.PackageManager;
 import android.os.Bundle;
 import android.view.MotionEvent;
 import android.view.View;
@@ -9,6 +10,7 @@ import android.view.ViewGroup;
 import android.widget.*;
 import android.os.Handler;
 import android.os.Looper;
+import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.constraintlayout.widget.ConstraintLayout;
 import androidx.core.graphics.Insets;
@@ -35,17 +37,16 @@ public class MainActivity extends AppCompatActivity implements PlaybackManager.L
     private static final int SWIPE_THRESHOLD = 140;
     private PlaybackManager pm;
     private int lastAnimatedAudioId = -1;
+    private static final int REQ_NOTIF = 1;
+    private static final int REQ_STORAGE = 2;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         androidx.core.splashscreen.SplashScreen.installSplashScreen(this);
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+        sendBroadcast(new Intent("songs_updated"));
         SongRepository.loadLocalSongs(this);
-        if (android.os.Build.VERSION.SDK_INT >= 33) {
-            requestPermissions(new String[]{"android.permission.POST_NOTIFICATIONS"}, 1);
-        }
-
         WindowCompat.setDecorFitsSystemWindows(getWindow(), false);
         getWindow().setStatusBarColor(android.graphics.Color.TRANSPARENT);
         getWindow().setNavigationBarColor(android.graphics.Color.TRANSPARENT);
@@ -56,11 +57,9 @@ public class MainActivity extends AppCompatActivity implements PlaybackManager.L
         pm = PlaybackManager.get(this);
 
         if (savedInstanceState == null) {
-
             homeFragment = new HomeFragment();
             searchFragment = new SearchFragment();
             playlistsFragment = new LibraryFragment();
-
             activeFragment = homeFragment;
 
             getSupportFragmentManager()
@@ -74,6 +73,7 @@ public class MainActivity extends AppCompatActivity implements PlaybackManager.L
         }
         setupBottomNavigation();
         setupMiniPlayer();
+        requestNotificationPermission();
 
         bottomNav.post(() -> {
             moveIndicator(0);
@@ -81,13 +81,10 @@ public class MainActivity extends AppCompatActivity implements PlaybackManager.L
         });
     }
     private void applyEdgeToEdge() {
-
         View bottomContainer = findViewById(R.id.bottomNavContainer);
-
         ViewCompat.setOnApplyWindowInsetsListener(
                 bottomContainer,
                 (v, insets) -> {
-
                     Insets bars = insets.getInsets(
                             WindowInsetsCompat.Type.navigationBars()
                     );
@@ -125,14 +122,12 @@ public class MainActivity extends AppCompatActivity implements PlaybackManager.L
                 animateLabels(index);
                 return true;
             }
-
             return false;
         });
         bottomNav.setSelectedItemId(R.id.nav_home);
     }
     private void switchFragment(Fragment target) {
         if (target == activeFragment) return;
-
         FragmentTransaction ft = getSupportFragmentManager().beginTransaction().setReorderingAllowed(true);
         ft.setCustomAnimations(android.R.anim.fade_in, android.R.anim.fade_out);
         ft.hide(activeFragment);
@@ -140,25 +135,50 @@ public class MainActivity extends AppCompatActivity implements PlaybackManager.L
         ft.commit();
         activeFragment = target;
     }
+    private void requestNotificationPermission() {
+        if (android.os.Build.VERSION.SDK_INT >= 33) {
+            if (checkSelfPermission(android.Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED) {
+                requestPermissions(new String[]{android.Manifest.permission.POST_NOTIFICATIONS}, REQ_NOTIF);
+            } else {
+                requestStoragePermission();
+            }
+        } else {
+            requestStoragePermission();
+        }
+    }
+    private void requestStoragePermission() {
+        if (android.os.Build.VERSION.SDK_INT >= 33) {
+            if (checkSelfPermission(android.Manifest.permission.READ_MEDIA_AUDIO) != PackageManager.PERMISSION_GRANTED) {
+                requestPermissions(new String[]{android.Manifest.permission.READ_MEDIA_AUDIO}, REQ_STORAGE);
+            }
+        } else {
+            if (checkSelfPermission(android.Manifest.permission.READ_EXTERNAL_STORAGE) != PackageManager.PERMISSION_GRANTED) {
+                requestPermissions(new String[]{android.Manifest.permission.READ_EXTERNAL_STORAGE}, REQ_STORAGE);
+            }
+        }
+    }
+
+    @Override
+    public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults);
+        if (requestCode == REQ_NOTIF) {
+            requestStoragePermission();
+        }
+    }
     private void preloadFragments() {
-
         new Handler(Looper.getMainLooper()).postDelayed(() -> {
-
             getSupportFragmentManager()
                     .beginTransaction()
                     .show(searchFragment)
                     .commitNow();
-
             getSupportFragmentManager()
                     .beginTransaction()
                     .hide(searchFragment)
                     .commitNow();
-
             getSupportFragmentManager()
                     .beginTransaction()
                     .show(playlistsFragment)
                     .commitNow();
-
             getSupportFragmentManager()
                     .beginTransaction()
                     .hide(playlistsFragment)
@@ -167,43 +187,26 @@ public class MainActivity extends AppCompatActivity implements PlaybackManager.L
         }, 120);
     }
     private void moveIndicator(int position) {
-
         bottomNav.post(() -> {
-
             ViewGroup menuView = (ViewGroup) bottomNav.getChildAt(0);
             if (menuView == null) return;
 
             View itemView = menuView.getChildAt(position);
             if (itemView == null) return;
 
-            float targetX =
-                    itemView.getLeft()
-                            + itemView.getWidth()/2f
-                            - navIndicator.getWidth()/2f;
+            float targetX = itemView.getLeft() + itemView.getWidth()/2f - navIndicator.getWidth()/2f;
 
-            navIndicator.animate()
-                    .translationX(targetX)
-                    .setDuration(320)
-                    .setInterpolator(new android.view.animation.DecelerateInterpolator())
-                    .start();
-        });
+            navIndicator.animate().translationX(targetX).setDuration(320).setInterpolator(new android.view.animation.DecelerateInterpolator()).start(); });
     }
     private void animateLabels(int selectedIndex) {
-
         ViewGroup menuView = (ViewGroup) bottomNav.getChildAt(0);
         if (menuView == null) return;
 
         for (int i = 0; i < menuView.getChildCount(); i++) {
-
             View item = menuView.getChildAt(i);
-
-            TextView label =
-                    item.findViewById(
-                            com.google.android.material.R.id.navigation_bar_item_small_label_view
-                    );
+            TextView label = item.findViewById(com.google.android.material.R.id.navigation_bar_item_small_label_view);
 
             if (label == null) continue;
-
             if (i == selectedIndex) {
                 label.animate().alpha(1f).scaleX(1.1f).scaleY(1.1f).setDuration(220).start();
             } else {
@@ -221,7 +224,6 @@ public class MainActivity extends AppCompatActivity implements PlaybackManager.L
         btnMiniPlay = findViewById(R.id.btnMiniPlay);
         btnMiniNext = findViewById(R.id.btnMiniNext);
         miniProgress = findViewById(R.id.miniProgress);
-
 
         miniPlayer.setOnTouchListener((v, event) -> {
             switch (event.getAction()) {
@@ -275,12 +277,9 @@ public class MainActivity extends AppCompatActivity implements PlaybackManager.L
             return false;
         });
         btnMiniPrev.setOnClickListener(v -> {
-
             haptic(v);
-
             PlaybackManager pm = PlaybackManager.get(this);
             long pos = pm.getPlayer().getCurrentPosition();
-
             if (pos > 3000) {
                 pm.getPlayer().seekTo(0);
             } else {
@@ -309,6 +308,23 @@ public class MainActivity extends AppCompatActivity implements PlaybackManager.L
             PlaybackManager.get(this).playNext(true);
         });
     }
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode, android.content.Intent data) {
+        super.onActivityResult(requestCode, resultCode, data);
+        if (requestCode == 9999 && resultCode == RESULT_OK && data != null) {
+            android.net.Uri uri = data.getData();
+            try {
+                getContentResolver().takePersistableUriPermission(
+                        uri,
+                        Intent.FLAG_GRANT_READ_URI_PERMISSION
+                );
+            } catch (Exception ignored) {}
+            if (SongEditingHolder.callback != null) {
+                SongEditingHolder.callback.onSelected(uri.toString());
+                SongEditingHolder.callback = null;
+            }
+        }
+    }
 
     @Override protected void onStart(){
         super.onStart();
@@ -330,7 +346,6 @@ public class MainActivity extends AppCompatActivity implements PlaybackManager.L
     public void onProgress(long pos, long dur) {
         if (dur <= 0) return;
         miniProgress.setMax((int) dur);
-
         miniProgress.animate()
                 .setDuration(200)
                 .withStartAction(() ->
@@ -343,41 +358,40 @@ public class MainActivity extends AppCompatActivity implements PlaybackManager.L
             miniPlayer.setVisibility(View.GONE);
             return;
         }
-
-        Song s = SongRepository.findByAudioResId(
-                NowPlayingRepository.getAudioResId(this));
-
+        Song s = SongRepository.findByAudioResId(NowPlayingRepository.getAudioResId(this));
         if(s==null)return;
         miniPlayer.setVisibility(View.VISIBLE);
-        int currentId = pm.getCurrentAudioResId();
 
-        if (currentId == lastAnimatedAudioId) {
-            return;
-        }
+        int currentId = pm.getCurrentAudioResId();
+        boolean isNewSong = currentId != lastAnimatedAudioId;
 
         tvMiniTitle.setText(s.getTitle());
         tvMiniArtist.setText(s.getArtist());
 
-        ivMiniCover.animate().cancel();
-        ivMiniCover.setAlpha(1f);
-        ivMiniCover.setTranslationX(0f);
-        ivMiniCover.setImageResource(s.getCoverResId());
-        ivMiniCover.setAlpha(0.85f);
-        ivMiniCover.animate()
-                .alpha(1f)
-                .setDuration(120)
-                .setInterpolator(new android.view.animation.DecelerateInterpolator())
-                .start();
-        lastAnimatedAudioId = currentId;
+        if (s.getCoverUri() != null) {
+            ivMiniCover.setImageURI(android.net.Uri.parse(s.getCoverUri()));
+        } else {
+            ivMiniCover.setImageResource(s.getCoverResId());
+        }
+
+        if (isNewSong) {
+            ivMiniCover.animate().cancel();
+            ivMiniCover.setAlpha(0.85f);
+            ivMiniCover.animate()
+                    .alpha(1f)
+                    .setDuration(120)
+                    .setInterpolator(new android.view.animation.DecelerateInterpolator())
+                    .start();
+
+            lastAnimatedAudioId = currentId;
+        }
     }
     private void haptic(View v){
         v.performHapticFeedback(android.view.HapticFeedbackConstants.VIRTUAL_KEY);
     }
     private void openPlayerFromNowPlaying(){
-
         PlaybackManager pm=PlaybackManager.get(this);
         int[] q=pm.getQueueIds();
-
         if(q==null||q.length==0)return;
 
         Intent i=new Intent(this,PlayerActivity.class);

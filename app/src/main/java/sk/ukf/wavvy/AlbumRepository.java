@@ -18,13 +18,7 @@ public class AlbumRepository {
             if (!map.containsKey(albumName)) {
                 ArrayList<Song> albumSongs = new ArrayList<>();
                 albumSongs.add(song);
-
-                map.put(albumName, new Album(
-                        albumName,
-                        albumArtist,
-                        song.getCoverResId(),
-                        albumSongs
-                ));
+                map.put(albumName, new Album(albumName, albumArtist, song.getCoverUri(), song.getCoverResId(), albumSongs));
             } else {
                 map.get(albumName).getSongs().add(song);
             }
@@ -32,9 +26,7 @@ public class AlbumRepository {
         ArrayList<Album> albums = new ArrayList<>(map.values());
 
         for (Album album : albums) {
-            Collections.sort(album.getSongs(), (a, b) ->
-                    Integer.compare(a.getTrackNumber(), b.getTrackNumber())
-            );
+            Collections.sort(album.getSongs(), (a, b) -> Integer.compare(a.getTrackNumber(), b.getTrackNumber()));
         }
         return albums;
     }

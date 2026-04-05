@@ -53,9 +53,7 @@ public class PlaybackManager {
                 long pos = player.getCurrentPosition();
                 long dur = player.getDuration();
                 if (dur < 0) dur = 0;
-
                 notifyProgress(pos, dur);
-
                 long now = System.currentTimeMillis();
                 if (player.isPlaying() && now - lastSave > 3000) {
                     NowPlayingRepository.savePosition(appContext, pos);
@@ -86,7 +84,6 @@ public class PlaybackManager {
             public void onIsPlayingChanged(boolean isPlaying) {
                 notifyIsPlaying(isPlaying);
                 updateNotification();
-
                 if (isPlaying && currentAudioResId != 0 && currentAudioResId != lastCountedAudioId) {
                     PlayCountRepository.increment(appContext, currentAudioResId);
                     lastCountedAudioId = currentAudioResId;
@@ -120,14 +117,7 @@ public class PlaybackManager {
                 .putBitmap(MediaMetadataCompat.METADATA_KEY_ALBUM_ART, cover)
                 .build();
         mediaSession.setMetadata(metadata);
-
-        notificationManager.showNotification(
-                song,
-                player.isPlaying(),
-                mediaSession,
-                player.getCurrentPosition(),
-                duration
-        );
+        notificationManager.showNotification(song, player.isPlaying(), mediaSession, player.getCurrentPosition(), duration);
     }
     private void restoreFromNowPlayingRepository() {
         if (!NowPlayingRepository.hasNowPlaying(appContext)) return;
@@ -173,9 +163,7 @@ public class PlaybackManager {
                 .apply();
     }
     private void loadPlaybackSettings() {
-        android.content.SharedPreferences sp =
-                appContext.getSharedPreferences(PREFS, Context.MODE_PRIVATE);
-
+        android.content.SharedPreferences sp = appContext.getSharedPreferences(PREFS, Context.MODE_PRIVATE);
         shuffleEnabled = sp.getBoolean(KEY_SHUFFLE, false);
 
         String r = sp.getString(KEY_REPEAT, RepeatMode.OFF.name());
@@ -268,12 +256,10 @@ public class PlaybackManager {
     }
     public void playQueue(int[] ids, int startIndex, boolean autoPlay) {
         if (ids == null || ids.length == 0) return;
-
         if (startIndex < 0) startIndex = 0;
         if (startIndex >= ids.length) startIndex = ids.length - 1;
 
         originalQueue = ids.clone();
-
         if (shuffleEnabled && ids.length > 1) {
             int keepId = ids[startIndex];
             activeQueue = buildShuffledQueueKeepingCurrent(originalQueue, keepId);
@@ -319,14 +305,12 @@ public class PlaybackManager {
         if (queueIndex < activeQueue.length - 1) {
             queueIndex++;
             loadCurrent(autoPlay);
-
             updateNotification();
             return true;
         }
         if (repeatMode == RepeatMode.ALL && activeQueue.length > 1) {
             queueIndex = 0;
             loadCurrent(autoPlay);
-
             updateNotification();
             return true;
         }
@@ -342,9 +326,7 @@ public class PlaybackManager {
         }
 
         shuffleEnabled = !shuffleEnabled;
-
         int keepId = currentAudioResId;
-
         if (shuffleEnabled) {
             activeQueue = buildShuffledQueueKeepingCurrent(originalQueue, keepId);
             queueIndex = 0;
@@ -399,9 +381,9 @@ public class PlaybackManager {
         MediaItem item;
 
         if (s != null && s.getUriString() != null) {
-            item = MediaItem.fromUri(s.getUriString()); // 🔥 IMPORT SONG
+            item = MediaItem.fromUri(s.getUriString());
         } else {
-            item = MediaItem.fromUri("android.resource://" + appContext.getPackageName() + "/" + currentAudioResId); // 🔥 NORMAL SONG
+            item = MediaItem.fromUri("android.resource://" + appContext.getPackageName() + "/" + currentAudioResId);
         }
         player.setMediaItem(item);
         player.prepare();
@@ -504,11 +486,14 @@ public class PlaybackManager {
     }
     public void playFromQueue(int position) {
         ensureQueueLoadedIfPossible();
-
         if (activeQueue == null || position < 0 || position >= activeQueue.length) return;
-
         queueIndex = position;
         loadCurrent(true);
+    }
+    public void refreshCurrentSong() {
+        if (currentAudioResId == 0) return;
+        notifyNowPlaying();
+        updateNotification();
     }
     public void moveQueueItem(int from, int to) {
         if (activeQueue == null) return;
@@ -534,13 +519,7 @@ public class PlaybackManager {
         } else if (from > queueIndex && to <= queueIndex) {
             queueIndex++;
         }
-
-        NowPlayingRepository.saveNowPlaying(
-                appContext,
-                currentAudioResId,
-                activeQueue,
-                queueIndex
-        );
+        NowPlayingRepository.saveNowPlaying(appContext, currentAudioResId, activeQueue, queueIndex);
         notifyNowPlaying();
     }
     public void insertNext(int audioResId) {
@@ -566,13 +545,7 @@ public class PlaybackManager {
         for (int i = 0; i < queue.size(); i++) {
             activeQueue[i] = queue.get(i);
         }
-
-        NowPlayingRepository.saveNowPlaying(
-                appContext,
-                currentAudioResId,
-                activeQueue,
-                queueIndex
-        );
+        NowPlayingRepository.saveNowPlaying(appContext, currentAudioResId, activeQueue, queueIndex);
         notifyNowPlaying();
     }
 }

@@ -9,6 +9,7 @@ import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
 import java.util.List;
 import sk.ukf.wavvy.R;
+import sk.ukf.wavvy.SongRepository;
 import sk.ukf.wavvy.model.Song;
 
 public class SmallSongAdapter extends RecyclerView.Adapter<SmallSongAdapter.ViewHolder> {
@@ -25,22 +26,25 @@ public class SmallSongAdapter extends RecyclerView.Adapter<SmallSongAdapter.View
     @NonNull
     @Override
     public ViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
-
-        View view = LayoutInflater.from(parent.getContext())
-                .inflate(R.layout.item_song_small, parent, false);
-
+        View view = LayoutInflater.from(parent.getContext()).inflate(R.layout.item_song_small, parent, false);
         return new ViewHolder(view);
     }
 
     @Override
     public void onBindViewHolder(@NonNull ViewHolder holder, int position) {
         Song song = songs.get(position);
+        Song fresh = SongRepository.findByAudioResId(song.getAudioResId());
 
-        holder.ivCover.setImageResource(song.getCoverResId());
-        holder.tvTitle.setText(song.getTitle());
+        final Song finalSong = (fresh != null) ? fresh : song;
+        if (finalSong.getCoverUri() != null) {
+            holder.ivCover.setImageURI(android.net.Uri.parse(finalSong.getCoverUri()));
+        } else {
+            holder.ivCover.setImageResource(finalSong.getCoverResId());
+        }
+        holder.tvTitle.setText(finalSong.getTitle());
 
         holder.itemView.setOnClickListener(v -> {
-            if (listener != null) listener.onSongClick(song);
+            if (listener != null) listener.onSongClick(finalSong);
         });
     }
 

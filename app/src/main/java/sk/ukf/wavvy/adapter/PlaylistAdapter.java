@@ -38,8 +38,8 @@ public class PlaylistAdapter extends RecyclerView.Adapter<PlaylistAdapter.Playli
         Playlist p = playlists.get(position);
         holder.ivOverlayIcon.setVisibility(View.GONE);
         holder.tvName.setText(p.getName());
-        int count = p.getSongAudioResIds().size();
 
+        int count = p.getSongAudioResIds().size();
         if (count == 0) {
             holder.tvCount.setText("Empty");
         } else if (count == 1) {
@@ -49,11 +49,13 @@ public class PlaylistAdapter extends RecyclerView.Adapter<PlaylistAdapter.Playli
         }
 
         if (!p.getSongAudioResIds().isEmpty()) {
-            Song firstSong = SongRepository.findByAudioResId(
-                    p.getSongAudioResIds().get(0)
-            );
+            Song firstSong = SongRepository.findByAudioResId(p.getSongAudioResIds().get(0));
             if (firstSong != null) {
-                holder.ivCover.setImageResource(firstSong.getCoverResId());
+                if (firstSong.getCoverUri() != null && !firstSong.getCoverUri().isEmpty()) {
+                    holder.ivCover.setImageURI(android.net.Uri.parse(firstSong.getCoverUri()));
+                } else {
+                    holder.ivCover.setImageResource(firstSong.getCoverResId());
+                }
             } else {
                 holder.ivCover.setImageResource(R.drawable.default_cover);
             }
@@ -70,7 +72,6 @@ public class PlaylistAdapter extends RecyclerView.Adapter<PlaylistAdapter.Playli
         if (p.getId().equals("liked")) {
             holder.ivCover.setImageResource(0);
             holder.ivCover.setBackgroundResource(R.drawable.bg_liked_gradient);
-
             holder.ivOverlayIcon.setVisibility(View.VISIBLE);
             holder.ivOverlayIcon.setImageResource(R.drawable.ic_liked);
         }
@@ -78,7 +79,6 @@ public class PlaylistAdapter extends RecyclerView.Adapter<PlaylistAdapter.Playli
         else if (p.getId().equals("local")) {
             holder.ivCover.setImageResource(0);
             holder.ivCover.setBackgroundResource(R.drawable.bg_local_gradient);
-
             holder.ivOverlayIcon.setVisibility(View.VISIBLE);
             holder.ivOverlayIcon.setImageResource(R.drawable.icon_local);
         }

@@ -1,5 +1,6 @@
 package sk.ukf.wavvy.adapter;
 
+import android.content.Intent;
 import android.text.SpannableString;
 import android.text.Spanned;
 import android.text.style.ForegroundColorSpan;
@@ -22,6 +23,7 @@ import sk.ukf.wavvy.PlaybackManager;
 import sk.ukf.wavvy.PlaylistDetailActivity;
 import sk.ukf.wavvy.PlaylistRepository;
 import sk.ukf.wavvy.R;
+import sk.ukf.wavvy.SongEditingHolder;
 import sk.ukf.wavvy.SongRepository;
 import sk.ukf.wavvy.WavvyDialogs;
 import sk.ukf.wavvy.model.Playlist;
@@ -57,19 +59,21 @@ public class SongAdapter extends RecyclerView.Adapter<SongAdapter.SongViewHolder
     @Override
     public void onBindViewHolder(@NonNull SongViewHolder holder, int position) {
         Song song = songs.get(position);
-
         holder.tvTitle.setText(applyHighlight(song.getTitle(), highlightQuery, holder));
         holder.tvArtist.setText(applyHighlight(song.getArtist(), highlightQuery, holder));
 
         String album = song.getAlbum();
-
         if (album == null || album.trim().isEmpty()) {
             holder.tvAlbum.setVisibility(View.GONE);
         } else {
             holder.tvAlbum.setText(applyHighlight(album, highlightQuery, holder));
             holder.tvAlbum.setVisibility(View.VISIBLE);
         }
-        holder.ivCover.setImageResource(song.getCoverResId());
+        if (song.getCoverUri() != null) {
+            holder.ivCover.setImageURI(android.net.Uri.parse(song.getCoverUri()));
+        } else {
+            holder.ivCover.setImageResource(song.getCoverResId());
+        }
 
         int currentId = PlaybackManager.get(holder.itemView.getContext()).getCurrentAudioResId();
         boolean isPlaying = song.getAudioResId() == currentId;
@@ -96,13 +100,11 @@ public class SongAdapter extends RecyclerView.Adapter<SongAdapter.SongViewHolder
         if (!isQueue && holder.btnSongMenu != null) {
             holder.btnSongMenu.setOnClickListener(v -> {
                 android.content.Context ctx = holder.itemView.getContext();
-
                 View popupView = LayoutInflater.from(ctx).inflate(R.layout.dialog_song_menu, null);
 
                 PopupWindow popupWindow = new PopupWindow(popupView, ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT, true);
                 popupWindow.setBackgroundDrawable(new ColorDrawable(android.graphics.Color.TRANSPARENT));
                 popupWindow.setElevation(16f);
-
                 popupView.findViewById(R.id.actionPlayNext).setOnClickListener(v1 -> {
                     PlaybackManager.get(ctx).insertNext(song.getAudioResId());
                     android.widget.Toast.makeText(ctx, "Added to queue", android.widget.Toast.LENGTH_SHORT).show();
@@ -119,6 +121,12 @@ public class SongAdapter extends RecyclerView.Adapter<SongAdapter.SongViewHolder
                 LinearLayout favAction = popupView.findViewById(R.id.actionAddFavorite);
                 LinearLayout removeFromPlaylist = popupView.findViewById(R.id.actionRemoveFromPlaylist);
                 LinearLayout actionDelete = popupView.findViewById(R.id.actionDeleteSong);
+                LinearLayout actionEdit = popupView.findViewById(R.id.actionEditSong);
+                if (song.getUriString() != null) {
+                    actionEdit.setVisibility(View.VISIBLE);
+                } else {
+                    actionEdit.setVisibility(View.GONE);
+                }
                 ImageView favIcon = (ImageView) favAction.getChildAt(0);
                 TextView favText = (TextView) favAction.getChildAt(1);
                 String songId = String.valueOf(song.getAudioResId());
@@ -139,6 +147,86 @@ public class SongAdapter extends RecyclerView.Adapter<SongAdapter.SongViewHolder
                     favIcon.setColorFilter(ContextCompat.getColor(ctx, R.color.textPrimary));
                     favText.setText("Add to favorites");
                 }
+
+                actionEdit.setOnClickListener(v1 -> {
+                    popupWindow.dismiss();
+                    android.content.Context context = holder.itemView.getContext();
+                    if (!(context instanceof android.app.Activity)) return;
+                    android.app.Activity activity = (android.app.Activity) context;
+
+                    View dialogView = LayoutInflater.from(activity).inflate(R.layout.dialog_edit_song, null);
+
+                    android.widget.EditText etTitle = dialogView.findViewById(R.id.etTitle);
+                    android.widget.EditText etArtist = dialogView.findViewById(R.id.etArtist);
+                    android.widget.EditText etFeatArtist = dialogView.findViewById(R.id.etFeatArtist);
+                    android.widget.EditText etAlbumArtist = dialogView.findViewById(R.id.etAlbumArtist);
+                    android.widget.EditText etAlbum = dialogView.findViewById(R.id.etAlbum);
+                    android.widget.EditText etTrack = dialogView.findViewById(R.id.etTrack);
+                    android.widget.EditText etProducer = dialogView.findViewById(R.id.etProducer);
+                    android.widget.ImageView ivCover = dialogView.findViewById(R.id.ivCoverEdit);
+                    android.widget.Button btnSave = dialogView.findViewById(R.id.btnSave);
+
+                    etTitle.setText(song.getTitle());
+                    etArtist.setText(song.getMainArtist());
+                    etFeatArtist.setText(song.getFeatArtist());
+                    etAlbumArtist.setText(song.getAlbumArtist());
+                    etAlbum.setText(song.getAlbum());
+                    etTrack.setText(String.valueOf(song.getTrackNumber()));
+                    etProducer.setText(song.getProducedBy());
+
+                    if (song.getCoverUri() != null) {
+                        ivCover.setImageURI(android.net.Uri.parse(song.getCoverUri()));
+                    } else {
+                        ivCover.setImageResource(song.getCoverResId());
+                    }
+
+                    final String[] selectedCover = {song.getCoverUri()};
+
+                    ivCover.setOnClickListener(v2 -> {
+                        android.content.Intent intent = new android.content.Intent(Intent.ACTION_OPEN_DOCUMENT);
+                        intent.setType("image/*");
+                        activity.startActivityForResult(intent, 9999);
+                        SongEditingHolder.callback = uri -> {
+                            selectedCover[0] = uri;
+                            ivCover.setImageURI(android.net.Uri.parse(uri));
+                        };
+                    });
+                    AlertDialog dialog = new AlertDialog.Builder(activity).setView(dialogView).create();
+
+                    if (dialog.getWindow() != null) {
+                        dialog.getWindow().setBackgroundDrawableResource(android.R.color.transparent);
+                    }
+
+                    final int[] trackHolder = {0};
+
+                    try {
+                        trackHolder[0] = Integer.parseInt(etTrack.getText().toString());
+                    } catch (Exception ignored) {}
+
+                    btnSave.setOnClickListener(v2 -> {
+                        SongRepository.updateLocalSong(
+                                activity,
+                                song.getAudioResId(),
+                                etTitle.getText().toString().trim(),
+                                etArtist.getText().toString().trim(),
+                                etFeatArtist.getText().toString().trim(),
+                                etAlbumArtist.getText().toString().trim(),
+                                etAlbum.getText().toString().trim(),
+                                etProducer.getText().toString().trim(),
+                                selectedCover[0],
+                                trackHolder[0]
+                        );
+                        android.widget.Toast.makeText(activity, "Song updated", android.widget.Toast.LENGTH_SHORT).show();
+                        if (song.getAudioResId() == PlaybackManager.get(activity).getCurrentAudioResId()) {
+                            PlaybackManager.get(activity).refreshCurrentSong();
+                        }
+                        activity.sendBroadcast(new Intent("songs_updated"));
+                        dialog.dismiss();
+                    });
+                    TextView btnCancel = dialogView.findViewById(R.id.btnCancel);
+                    btnCancel.setOnClickListener(vCancel -> dialog.dismiss());
+                    dialog.show();
+                });
 
                 actionDelete.setOnClickListener(v1 -> {
                     android.content.Context context = holder.itemView.getContext();
@@ -264,7 +352,11 @@ public class SongAdapter extends RecyclerView.Adapter<SongAdapter.SongViewHolder
                     TextView tvLength = dialogView.findViewById(R.id.tvSongInfoLength);
                     Button btnClose = dialogView.findViewById(R.id.btnCloseSongInfo);
 
-                    ivCover.setImageResource(song.getCoverResId());
+                    if (song.getCoverUri() != null) {
+                        ivCover.setImageURI(android.net.Uri.parse(song.getCoverUri()));
+                    } else {
+                        ivCover.setImageResource(song.getCoverResId());
+                    }
                     tvTitle.setText(song.getTitle());
                     tvArtist.setText(song.getArtist());
                     tvAlbum.setText(song.getAlbum());
@@ -335,6 +427,11 @@ public class SongAdapter extends RecyclerView.Adapter<SongAdapter.SongViewHolder
             index += query.length();
         }
         return spannable;
+    }
+    public void updateData(List<Song> newData) {
+        this.songs.clear();
+        this.songs.addAll(newData);
+        notifyDataSetChanged();
     }
 
     @Override

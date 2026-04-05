@@ -106,7 +106,11 @@ public class AlbumDetailActivity extends AppCompatActivity implements PlaybackMa
 
         tvAlbumTitle.setText(album.getTitle());
         tvAlbumArtist.setText(album.getArtist());
-        ivAlbumCover.setImageResource(album.getCoverResId());
+        if (album.getCoverUri() != null && !album.getCoverUri().isEmpty()) {
+            ivAlbumCover.setImageURI(android.net.Uri.parse(album.getCoverUri()));
+        } else {
+            ivAlbumCover.setImageResource(album.getCoverResId());
+        }
         songsInAlbum = album.getSongs();
 
         boolean isSaved = SavedAlbumsRepository.isSaved(this, album.getTitle());
@@ -149,8 +153,7 @@ public class AlbumDetailActivity extends AppCompatActivity implements PlaybackMa
         });
 
         btnAlbumMore.setOnClickListener(v -> {
-            View popupView = getLayoutInflater()
-                    .inflate(R.layout.dialog_album_menu, null);
+            View popupView = getLayoutInflater().inflate(R.layout.dialog_album_menu, null);
 
             android.widget.PopupWindow popupWindow = new android.widget.PopupWindow(
                     popupView,
@@ -164,7 +167,6 @@ public class AlbumDetailActivity extends AppCompatActivity implements PlaybackMa
                             android.graphics.Color.TRANSPARENT
                     )
             );
-
             popupWindow.setElevation(16f);
 
             LinearLayout libraryAction = popupView.findViewById(R.id.actionAddLibrary);
@@ -254,7 +256,7 @@ public class AlbumDetailActivity extends AppCompatActivity implements PlaybackMa
                 song -> PlayerLauncher.openQueue(this, songsInAlbum, song)
         );
         rvAlbumSongs.setAdapter(adapter);
-        applyGradient(album.getCoverResId());
+        applyGradient(album);
         updateMiniPlayerUi();
     }
 
@@ -309,7 +311,11 @@ public class AlbumDetailActivity extends AppCompatActivity implements PlaybackMa
         }
 
         miniPlayer.setVisibility(View.VISIBLE);
-        ivMiniCover.setImageResource(s.getCoverResId());
+        if (s.getCoverUri() != null && !s.getCoverUri().isEmpty()) {
+            ivMiniCover.setImageURI(android.net.Uri.parse(s.getCoverUri()));
+        } else {
+            ivMiniCover.setImageResource(s.getCoverResId());
+        }
         tvMiniTitle.setText(s.getTitle());
         tvMiniArtist.setText(s.getArtist());
 
@@ -318,18 +324,20 @@ public class AlbumDetailActivity extends AppCompatActivity implements PlaybackMa
         );
     }
     private void showAlbumInfo(Album album) {
-        View dialogView = getLayoutInflater()
-                .inflate(R.layout.dialog_album_info, null);
+        View dialogView = getLayoutInflater().inflate(R.layout.dialog_album_info, null);
 
         ImageView ivCover = dialogView.findViewById(R.id.ivAlbumInfoCover);
         TextView tvTitle = dialogView.findViewById(R.id.tvAlbumInfoTitle);
         TextView tvArtist = dialogView.findViewById(R.id.tvAlbumInfoArtist);
         TextView tvSongs = dialogView.findViewById(R.id.tvAlbumInfoSongs);
         TextView tvLength = dialogView.findViewById(R.id.tvAlbumInfoLength);
-        android.widget.Button btnClose =
-                dialogView.findViewById(R.id.btnCloseAlbumInfo);
+        android.widget.Button btnClose = dialogView.findViewById(R.id.btnCloseAlbumInfo);
 
-        ivCover.setImageResource(album.getCoverResId());
+        if (album.getCoverUri() != null && !album.getCoverUri().isEmpty()) {
+            ivCover.setImageURI(android.net.Uri.parse(album.getCoverUri()));
+        } else {
+            ivCover.setImageResource(album.getCoverResId());
+        }
         tvTitle.setText(album.getTitle());
         tvArtist.setText(album.getArtist());
         tvSongs.setText(album.getSongs().size() + " songs");
@@ -355,31 +363,31 @@ public class AlbumDetailActivity extends AppCompatActivity implements PlaybackMa
         btnClose.setOnClickListener(v -> dialog.dismiss());
         dialog.show();
     }
-    private void applyGradient(int coverResId) {
+    private void applyGradient(Album album) {
         View root = findViewById(R.id.albumRoot);
-        Bitmap bitmap = BitmapFactory.decodeResource(getResources(), coverResId);
+        Bitmap bitmap = null;
+
+        try {
+            if (album.getCoverUri() != null && !album.getCoverUri().isEmpty()) {
+                java.io.InputStream is = getContentResolver().openInputStream(android.net.Uri.parse(album.getCoverUri()));
+                bitmap = BitmapFactory.decodeStream(is);
+            } else {
+                bitmap = BitmapFactory.decodeResource(getResources(), album.getCoverResId());
+            }
+        } catch (Exception ignored) {}
 
         if (bitmap == null) return;
+
         Palette.from(bitmap).generate(palette -> {
-
-            int base = palette.getDarkMutedColor(
-                    palette.getMutedColor(
-                            ContextCompat.getColor(this, R.color.bg)
-                    )
-            );
-
+            int base = palette.getDarkMutedColor(palette.getMutedColor(ContextCompat.getColor(this, R.color.bg)));
             int red = android.graphics.Color.red(base);
             int green = android.graphics.Color.green(base);
             int blue = android.graphics.Color.blue(base);
 
-            boolean tooGray =
-                    Math.abs(red - green) < 18 &&
-                            Math.abs(green - blue) < 18;
+            boolean tooGray = Math.abs(red - green) < 18 && Math.abs(green - blue) < 18;
 
             if (tooGray) {
-                base = palette.getVibrantColor(
-                        palette.getMutedColor(base)
-                );
+                base = palette.getVibrantColor(palette.getMutedColor(base));
             }
 
             int softened = android.graphics.Color.argb(
@@ -389,22 +397,10 @@ public class AlbumDetailActivity extends AppCompatActivity implements PlaybackMa
                     (int)(android.graphics.Color.blue(base) * 0.78)
             );
 
-            int almostBlack = android.graphics.Color.argb(
-                    255,
-                    20,
-                    22,
-                    28
-            );
+            int almostBlack = android.graphics.Color.argb(255, 20, 22, 28);
 
-            GradientDrawable gd = new GradientDrawable(
-                    GradientDrawable.Orientation.TOP_BOTTOM,
-                    new int[]{
-                            softened,
-                            almostBlack,
-                            android.graphics.Color.BLACK
-                    }
+            GradientDrawable gd = new GradientDrawable(GradientDrawable.Orientation.TOP_BOTTOM, new int[]{ softened, almostBlack, android.graphics.Color.BLACK }
             );
-
             root.setBackground(gd);
         });
     }

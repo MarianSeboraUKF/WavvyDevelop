@@ -28,9 +28,12 @@ public class PickPlaylistViewHolder extends RecyclerView.ViewHolder {
         if (!p.getSongAudioResIds().isEmpty()) {
             int firstSongId = p.getSongAudioResIds().get(0);
             Song song = SongRepository.findByAudioResId(firstSongId);
-
             if (song != null) {
-                ivCover.setImageResource(song.getCoverResId());
+                if (song.getCoverUri() != null && !song.getCoverUri().isEmpty()) {
+                    ivCover.setImageURI(android.net.Uri.parse(song.getCoverUri()));
+                } else {
+                    ivCover.setImageResource(song.getCoverResId());
+                }
             } else {
                 ivCover.setImageResource(R.drawable.default_cover);
             }

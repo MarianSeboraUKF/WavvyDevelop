@@ -1,14 +1,15 @@
 package sk.ukf.wavvy.model;
 
 public class Song implements java.io.Serializable {
-    private final String title;
-    private final String mainArtist;
-    private final String featArtist;
-    private final String album;
-    private final String albumArtist;
-    private final String producedBy;
-    private final int trackNumber;
+    private String title;
+    private String mainArtist;
+    private String featArtist;
+    private String album;
+    private String albumArtist;
+    private String producedBy;
+    private int trackNumber;
     private final int coverResId;
+    private String coverUri;
     private final int audioResId;
     private long durationMs;
     private String uriString;
@@ -44,6 +45,15 @@ public class Song implements java.io.Serializable {
         return mainArtist + ", " + featArtist;
     }
 
+    public void setTitle(String title) { this.title = title; }
+    public void setMainArtist(String mainArtist) { this.mainArtist = mainArtist; }
+    public void setFeatArtist(String featArtist) { this.featArtist = featArtist; }
+    public void setAlbumArtist(String albumArtist) { this.albumArtist = albumArtist; }
+
+    public void setAlbum(String album) { this.album = album; }
+    public void setProducedBy(String producedBy) { this.producedBy = producedBy; }
+    public void setTrackNumber(int trackNumber) { this.trackNumber = trackNumber; }
+
     public String getAlbum() {
         return album;
     }
@@ -70,10 +80,11 @@ public class Song implements java.io.Serializable {
     public void setDurationMs(long durationMs) {
         this.durationMs = durationMs;
     }
-    public String getUriString() {
-        return uriString;
-    }
+    public String getUriString() { return uriString; }
     public void setUriString(String uriString) {
         this.uriString = uriString;
     }
+
+    public String getCoverUri() { return coverUri; }
+    public void setCoverUri(String coverUri) { this.coverUri = coverUri; }
 }

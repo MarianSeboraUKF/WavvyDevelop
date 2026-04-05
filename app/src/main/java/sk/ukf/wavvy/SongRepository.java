@@ -1,6 +1,7 @@
 package sk.ukf.wavvy;
 
 import android.content.Context;
+import android.content.Intent;
 import java.util.ArrayList;
 import sk.ukf.wavvy.model.Song;
 
@@ -11,7 +12,6 @@ public class SongRepository {
     public static ArrayList<Song> getSongs() {
         if (cached == null) {
             cached = new ArrayList<>();
-
             cached.add(new Song("BERI 3", "RAYYY P", "Vašo Patejdl, Majkyyy", "kto.som.?", "RAYYY P", "Majkyyy", 3, R.drawable.kto_som_cover, R.raw.beri_3));
             cached.add(new Song("NEPÝTAM SA", "RAYYY P", "Majkyyy", "kto.som.?", "RAYYY P", "Majkyyy", 10, R.drawable.kto_som_cover, R.raw.nepytam_sa));
             cached.add(new Song("Bouřka", "Lboy Bsc", "", "Bouřka", "Lboy Bsc", "Black Eagle Beats", 1, R.drawable.bourka_cover, R.raw.bourka));
@@ -45,13 +45,12 @@ public class SongRepository {
             cached.add(new Song("Nebylo souzený", "Robin Zoot", "Chawo", "Majitel", "Robin Zoot", "Spack DS", 4, R.drawable.majitel_cover, R.raw.nebylo_souzeny));
             cached.add(new Song("Good Energy", "Beachcrimes", "", "Good Energy", "Beachcrimes", "Ryan McMahon", 1, R.drawable.good_energy_cover, R.raw.good_energy));
         }
-        ArrayList<Song> all = new ArrayList<>(cached);
-        all.addAll(localSongs);
-        return all;
+        ArrayList<Song> result = new ArrayList<>(cached);
+        result.addAll(localSongs);
+        return result;
     }
     public static Song findByAudioResId(int audioResId) {
         ArrayList<Song> songs = getSongs();
-
         for (Song s : songs) {
             if (s.getAudioResId() == audioResId) return s;
         }
@@ -67,7 +66,6 @@ public class SongRepository {
         allSongs.sort((a, b) -> {
             int countA = PlayCountRepository.getCount(ctx, a.getAudioResId());
             int countB = PlayCountRepository.getCount(ctx, b.getAudioResId());
-
             return Integer.compare(countB, countA);
         });
 
@@ -79,10 +77,8 @@ public class SongRepository {
     public static ArrayList<Song> getRecentlyPlayedSongs(Context ctx) {
         ArrayList<Integer> ids = RecentlyPlayedRepository.get(ctx);
         ArrayList<Song> songs = new ArrayList<>();
-
         for (Integer id : ids) {
             Song s = findByAudioResId(id);
-
             if (s != null) {
                 songs.add(s);
             }
@@ -93,16 +89,13 @@ public class SongRepository {
         ArrayList<Song> result = new ArrayList<>();
         ArrayList<String> liked = new ArrayList<>(LikedSongsRepository.getLikedSongs(ctx));
         java.util.Collections.reverse(liked);
-
         for (String id : liked) {
             try {
                 int audioId = Integer.parseInt(id);
                 Song s = findByAudioResId(audioId);
-
                 if (s != null) {
                     result.add(s);
                 }
-
             } catch (Exception ignored) {}
         }
         return result;
@@ -123,7 +116,14 @@ public class SongRepository {
                 String uri = o.getString("uri");
                 long duration = o.getLong("duration");
                 int id = uri.toString().hashCode();
-                Song s = new Song(title, artist, "", album, artist, "-", 0, R.drawable.default_cover, id);
+                String coverUri = o.optString("coverUri", null);
+                if ("null".equals(coverUri)) coverUri = null;
+                String feat = o.optString("featArtist", "");
+                String albumArtist = o.optString("albumArtist", artist);
+                String producer = o.optString("producer", "-");
+                int track = o.optInt("trackNumber", 0);
+                Song s = new Song(title, artist, feat, album, albumArtist, producer, track, R.drawable.default_cover, id);
+                s.setCoverUri(coverUri);
                 s.setUriString(uri);
                 s.setDurationMs(duration);
                 localSongs.add(s);
@@ -133,15 +133,19 @@ public class SongRepository {
     public static void saveLocalSongs(Context ctx) {
         android.content.SharedPreferences sp = ctx.getSharedPreferences("wavvy_local", Context.MODE_PRIVATE);
         org.json.JSONArray arr = new org.json.JSONArray();
-
         try {
             for (Song s : localSongs) {
                 org.json.JSONObject o = new org.json.JSONObject();
                 o.put("title", s.getTitle());
-                o.put("artist", s.getArtist());
+                o.put("artist", s.getMainArtist());
                 o.put("album", s.getAlbum());
                 o.put("uri", s.getUriString());
                 o.put("duration", s.getDurationMs());
+                o.put("coverUri", s.getCoverUri());
+                o.put("albumArtist", s.getAlbumArtist());
+                o.put("featArtist", s.getFeatArtist());
+                o.put("producer", s.getProducedBy());
+                o.put("trackNumber", s.getTrackNumber());
                 arr.put(o);
             }
         } catch (Exception ignored) {}
@@ -155,33 +159,40 @@ public class SongRepository {
             pm.getPlayer().stop();
         }
     }
+    public static void updateLocalSong(Context ctx, int audioResId, String title, String artist, String feat, String albumartist, String album, String producer, String coverUri, int trackNumber) {
+        for (Song s : localSongs) {
+            if (s.getAudioResId() == audioResId && s.getUriString() != null) {
+                s.setTitle(title.isEmpty() ? "Unknown" : title);
+                s.setMainArtist(artist.isEmpty() ? "Unknown" : artist);
+                s.setFeatArtist(feat);
+                s.setAlbumArtist(albumartist.isEmpty() ? s.getMainArtist() : albumartist);
+                s.setAlbum(album.isEmpty() ? "Unknown" : album);
+                s.setProducedBy(producer.isEmpty() ? "-" : producer);
+                s.setTrackNumber(trackNumber);
+
+                if (coverUri != null) {
+                    s.setCoverUri(coverUri);
+                }
+                saveLocalSongs(ctx);
+                ctx.sendBroadcast(new Intent("songs_updated"));
+                break;
+            }
+        }
+    }
     public static void preloadDurations(Context ctx) {
         for (Song s : getSongs()) {
             if (s.getDurationMs() > 0) continue;
             android.media.MediaMetadataRetriever mmr = new android.media.MediaMetadataRetriever();
 
             try {
-                android.content.res.AssetFileDescriptor afd =
-                        ctx.getResources().openRawResourceFd(s.getAudioResId());
-
+                android.content.res.AssetFileDescriptor afd = ctx.getResources().openRawResourceFd(s.getAudioResId());
                 if (afd == null) continue;
-
-                mmr.setDataSource(
-                        afd.getFileDescriptor(),
-                        afd.getStartOffset(),
-                        afd.getLength()
-                );
-
-                String dur = mmr.extractMetadata(
-                        android.media.MediaMetadataRetriever.METADATA_KEY_DURATION
-                );
-
+                mmr.setDataSource(afd.getFileDescriptor(), afd.getStartOffset(), afd.getLength());
+                String dur = mmr.extractMetadata(android.media.MediaMetadataRetriever.METADATA_KEY_DURATION);
                 afd.close();
-
                 if (dur != null) {
                     s.setDurationMs(Long.parseLong(dur));
                 }
-
             } catch (Exception ignored) {}
             finally {
                 try {

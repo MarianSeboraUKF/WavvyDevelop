@@ -174,24 +174,15 @@ public class PlayerActivity extends AppCompatActivity implements PlaybackManager
 
         btnMore.setOnClickListener(v -> {
             Song song = SongRepository.findByAudioResId(pm.getCurrentAudioResId());
-
             if (song == null) return;
-            View popupView = getLayoutInflater()
-                    .inflate(R.layout.dialog_player_menu, null);
-
+            View popupView = getLayoutInflater().inflate(R.layout.dialog_player_menu, null);
             android.widget.PopupWindow popupWindow = new android.widget.PopupWindow(
                     popupView,
                     android.view.ViewGroup.LayoutParams.WRAP_CONTENT,
                     android.view.ViewGroup.LayoutParams.WRAP_CONTENT,
                     true
             );
-
-            popupWindow.setBackgroundDrawable(
-                    new android.graphics.drawable.ColorDrawable(
-                            android.graphics.Color.TRANSPARENT
-                    )
-            );
-
+            popupWindow.setBackgroundDrawable(new android.graphics.drawable.ColorDrawable(android.graphics.Color.TRANSPARENT));
             popupWindow.setElevation(16f);
 
             LinearLayout favAction = popupView.findViewById(R.id.actionAddToFavorites);
@@ -216,39 +207,22 @@ public class PlayerActivity extends AppCompatActivity implements PlaybackManager
                 LocalBroadcastManager.getInstance(this).sendBroadcast(new Intent("LIKED_UPDATED"));
 
                 boolean newLiked = LikedSongsRepository.isLiked(this, songId);
-
                 if (newLiked) {
                     btnFavourite.setImageResource(R.drawable.ic_liked);
-
-                    android.widget.Toast.makeText(
-                            this,
-                            "Added to favorites",
-                            android.widget.Toast.LENGTH_SHORT
-                    ).show();
+                    android.widget.Toast.makeText(this, "Added to favorites", android.widget.Toast.LENGTH_SHORT).show();
                 } else {
                     btnFavourite.setImageResource(R.drawable.ic_like);
-
-                    android.widget.Toast.makeText(
-                            this,
-                            "Removed from favorites",
-                            android.widget.Toast.LENGTH_SHORT
-                    ).show();
+                    android.widget.Toast.makeText(this, "Removed from favorites", android.widget.Toast.LENGTH_SHORT).show();
                 }
                 popupWindow.dismiss();
             });
 
             popupView.findViewById(R.id.actionAddPlaylist).setOnClickListener(v1 -> {
                 popupWindow.dismiss();
-
-                java.util.ArrayList<Playlist> playlists =
-                        PlaylistRepository.getPlaylists(this);
+                java.util.ArrayList<Playlist> playlists = PlaylistRepository.getPlaylists(this);
 
                 if (playlists.isEmpty()) {
-                    android.widget.Toast.makeText(
-                            this,
-                            "No playlists yet",
-                            android.widget.Toast.LENGTH_SHORT
-                    ).show();
+                    android.widget.Toast.makeText(this, "No playlists yet", android.widget.Toast.LENGTH_SHORT).show();
                     return;
                 }
 
@@ -505,13 +479,11 @@ public class PlayerActivity extends AppCompatActivity implements PlaybackManager
 
         seekBar.setProgress((int) positionMs);
         tvCurrentTime.setText(formatTime(positionMs));
-
         long remaining = durationMs - positionMs;
         long elapsedSinceTrackChange = System.currentTimeMillis() - lastTrackChangeTime;
 
         if (elapsedSinceTrackChange < 1200) {
             Song current = SongRepository.findByAudioResId(pm.getCurrentAudioResId());
-
             if (current != null) {
                 animateBottomText("Now playing", current.getTitle());
             }
@@ -521,17 +493,14 @@ public class PlayerActivity extends AppCompatActivity implements PlaybackManager
         if (remaining <= 10000) {
             int[] q = pm.getQueueIds();
             int idx = pm.getQueueIndex();
-
             if (q != null && idx < q.length - 1) {
                 Song nextSong = SongRepository.findByAudioResId(q[idx + 1]);
-
                 if (nextSong != null) {
                     animateBottomText("Next up", nextSong.getTitle());
                 }
             }
         } else {
             Song current = SongRepository.findByAudioResId(pm.getCurrentAudioResId());
-
             if (current != null) {
                 animateBottomText("Now playing", current.getTitle());
             }
@@ -539,11 +508,8 @@ public class PlayerActivity extends AppCompatActivity implements PlaybackManager
     }
     private void showSongInfo() {
         Song song = SongRepository.findByAudioResId(pm.getCurrentAudioResId());
-
         if (song == null) return;
-
-        View dialogView = getLayoutInflater()
-                .inflate(R.layout.dialog_song_info, null);
+        View dialogView = getLayoutInflater().inflate(R.layout.dialog_song_info, null);
 
         ImageView ivCover = dialogView.findViewById(R.id.ivSongInfoCover);
         TextView tvTitle = dialogView.findViewById(R.id.tvSongInfoTitle);
@@ -553,7 +519,12 @@ public class PlayerActivity extends AppCompatActivity implements PlaybackManager
         TextView tvLength = dialogView.findViewById(R.id.tvSongInfoLength);
         android.widget.Button btnClose = dialogView.findViewById(R.id.btnCloseSongInfo);
         ivCover.setImageDrawable(null);
-        ivCover.post(() -> ivCover.setImageResource(song.getCoverResId()));
+
+        if (song.getCoverUri() != null) {
+            ivCover.setImageURI(android.net.Uri.parse(song.getCoverUri()));
+        } else {
+            ivCover.setImageResource(song.getCoverResId());
+        }
         tvTitle.setText(song.getTitle());
         tvArtist.setText(song.getArtist());
         tvAlbum.setText(song.getAlbum());
@@ -562,9 +533,7 @@ public class PlayerActivity extends AppCompatActivity implements PlaybackManager
         androidx.appcompat.app.AlertDialog dialog = new androidx.appcompat.app.AlertDialog.Builder(this).setView(dialogView).create();
 
         if (dialog.getWindow() != null) {
-            dialog.getWindow().setBackgroundDrawableResource(
-                    android.R.color.transparent
-            );
+            dialog.getWindow().setBackgroundDrawableResource(android.R.color.transparent);
         }
         btnClose.setOnClickListener(v -> dialog.dismiss());
         dialog.show();
@@ -586,7 +555,6 @@ public class PlayerActivity extends AppCompatActivity implements PlaybackManager
             animateBottomText("Now playing", s.getTitle());
 
             String album = s.getAlbum();
-
             if (album != null && !album.trim().isEmpty()) {
                 tvSongAlbum.setText(album);
                 tvSongAlbum.setVisibility(View.VISIBLE);
@@ -597,19 +565,24 @@ public class PlayerActivity extends AppCompatActivity implements PlaybackManager
 
             if (isNewSong) {
                 lastAnimatedAudioId = audioResId;
-
                 ivCover.animate().cancel();
-                ivCover.setImageResource(s.getCoverResId());
+                if (s.getCoverUri() != null) {
+                    ivCover.setImageURI(android.net.Uri.parse(s.getCoverUri()));
+                } else {
+                    ivCover.setImageResource(s.getCoverResId());
+                }
                 ivCover.setAlpha(1f);
-
             } else {
-                ivCover.setImageResource(s.getCoverResId());
+                if (s.getCoverUri() != null) {
+                    ivCover.setImageURI(android.net.Uri.parse(s.getCoverUri()));
+                } else {
+                    ivCover.setImageResource(s.getCoverResId());
+                }
             }
-            applyDynamicGradient(s.getCoverResId());
+            applyDynamicGradient(s);
         }
         if (s != null) {
             String songId = String.valueOf(s.getAudioResId());
-
             if (LikedSongsRepository.isLiked(this, songId)) {
                 btnFavourite.setImageResource(R.drawable.ic_liked);
             } else {
@@ -628,17 +601,13 @@ public class PlayerActivity extends AppCompatActivity implements PlaybackManager
     private void updateNavButtons() {
         int[] q = pm.getQueueIds();
         int idx = pm.getQueueIndex();
-
         boolean hasQueue = q != null && q.length > 1;
         boolean isRepeatOne = pm.getRepeatMode() == PlaybackManager.RepeatMode.ONE;
         boolean prevEnabled = hasQueue && (idx > 0 || isRepeatOne || pm.getRepeatMode() == PlaybackManager.RepeatMode.ALL);
         boolean nextEnabled = hasQueue && (idx < q.length - 1 || pm.getRepeatMode() == PlaybackManager.RepeatMode.ALL);
-
         btnPrev.setEnabled(prevEnabled);
         btnNext.setEnabled(nextEnabled);
-
         float disabledAlpha = 0.35f;
-
         btnPrev.setAlpha(prevEnabled ? 1f : disabledAlpha);
         btnNext.setAlpha(nextEnabled ? 1f : disabledAlpha);
     }
@@ -648,7 +617,6 @@ public class PlayerActivity extends AppCompatActivity implements PlaybackManager
     }
     private void updateRepeatUi() {
         PlaybackManager.RepeatMode rm = pm.getRepeatMode();
-
         if (rm == PlaybackManager.RepeatMode.OFF) {
             btnRepeat.setImageResource(R.drawable.ic_repeat);
             tintOff(btnRepeat);
@@ -664,7 +632,6 @@ public class PlayerActivity extends AppCompatActivity implements PlaybackManager
     }
     private void updatePlaybackStatusText() {
         if (tvPlaybackStatus == null) return;
-
         String shuffle = pm.isShuffleEnabled() ? "Shuffle ON" : "Shuffle OFF";
         PlaybackManager.RepeatMode rm = pm.getRepeatMode();
         String repeat;
@@ -684,71 +651,53 @@ public class PlayerActivity extends AppCompatActivity implements PlaybackManager
         int white = ContextCompat.getColor(this, R.color.textPrimary);
 
         spannable.setSpan(
-                new android.text.style.ForegroundColorSpan(
-                        pm.isShuffleEnabled() ? white : gray
-                ),
+                new android.text.style.ForegroundColorSpan(pm.isShuffleEnabled() ? white : gray),
                 0,
                 shuffle.length(),
                 android.text.Spannable.SPAN_EXCLUSIVE_EXCLUSIVE
         );
 
         spannable.setSpan(
-                new android.text.style.ForegroundColorSpan(
-                        rm == PlaybackManager.RepeatMode.OFF ? gray : white
-                ),
+                new android.text.style.ForegroundColorSpan(rm == PlaybackManager.RepeatMode.OFF ? gray : white),
                 shuffle.length() + 3,
                 fullText.length(),
                 android.text.Spannable.SPAN_EXCLUSIVE_EXCLUSIVE
         );
         tvPlaybackStatus.setText(spannable);
     }
-    private void applyDynamicGradient(int coverResId) {
+    private void applyDynamicGradient(Song song) {
         View root = findViewById(R.id.playerRoot);
-        Bitmap bitmap = BitmapFactory.decodeResource(getResources(), coverResId);
+        Bitmap bitmap = null;
+        try {
+            if (song.getCoverUri() != null && !song.getCoverUri().isEmpty()) {
+                java.io.InputStream is = getContentResolver().openInputStream(android.net.Uri.parse(song.getCoverUri()));
+                bitmap = BitmapFactory.decodeStream(is);
+            } else {
+                bitmap = BitmapFactory.decodeResource(getResources(), song.getCoverResId());
+            }
+        } catch (Exception ignored) {}
         if (bitmap == null) return;
 
         Palette.from(bitmap).generate(palette -> {
-            int base = palette.getDarkMutedColor(
-                    palette.getMutedColor(
-                            ContextCompat.getColor(this, R.color.bg)
-                    )
-            );
-
+            int base = palette.getDarkMutedColor(palette.getMutedColor(ContextCompat.getColor(this, R.color.bg)));
             int red = android.graphics.Color.red(base);
             int green = android.graphics.Color.green(base);
             int blue = android.graphics.Color.blue(base);
 
-            boolean tooGray =
-                    Math.abs(red - green) < 18 &&
-                            Math.abs(green - blue) < 18;
-
+            boolean tooGray = Math.abs(red - green) < 18 && Math.abs(green - blue) < 18;
             if (tooGray) {
-                base = palette.getVibrantColor(
-                        palette.getMutedColor(base)
-                );
+                base = palette.getVibrantColor(palette.getMutedColor(base));
             }
 
-            int vivid = android.graphics.Color.argb(
+            int softened = android.graphics.Color.argb(
                     255,
-                    (int)(android.graphics.Color.red(base) * 0.88),
-                    (int)(android.graphics.Color.green(base) * 0.88),
-                    (int)(android.graphics.Color.blue(base) * 0.88)
+                    (int)(android.graphics.Color.red(base) * 0.78),
+                    (int)(android.graphics.Color.green(base) * 0.78),
+                    (int)(android.graphics.Color.blue(base) * 0.78)
             );
 
-            int almostBlack = android.graphics.Color.argb(
-                    255,
-                    20,
-                    22,
-                    28
-            );
-
-            GradientDrawable gd = new GradientDrawable(
-                    GradientDrawable.Orientation.TOP_BOTTOM,
-                    new int[]{
-                            vivid,
-                            almostBlack,
-                            android.graphics.Color.BLACK
-                    }
+            int almostBlack = android.graphics.Color.argb(255, 20, 22, 28);
+            GradientDrawable gd = new GradientDrawable(GradientDrawable.Orientation.TOP_BOTTOM, new int[]{softened, almostBlack, android.graphics.Color.BLACK}
             );
             root.setBackground(gd);
         });
@@ -774,7 +723,6 @@ public class PlayerActivity extends AppCompatActivity implements PlaybackManager
     private void animateBottomText(String label, String track) {
         String currentLabel = tvBottomLabel.getText().toString();
         String currentTrack = tvBottomTrack.getText().toString();
-
         boolean labelChanged = !currentLabel.equals(label);
         boolean trackChanged = !currentTrack.equals(track);
 

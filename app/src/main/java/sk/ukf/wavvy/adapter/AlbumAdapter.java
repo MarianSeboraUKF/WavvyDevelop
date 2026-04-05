@@ -37,7 +37,11 @@ public class AlbumAdapter extends RecyclerView.Adapter<AlbumAdapter.ViewHolder> 
     public void onBindViewHolder(@NonNull ViewHolder holder, int position) {
         Album album = albums.get(position);
 
-        holder.ivCover.setImageResource(album.getCoverResId());
+        if (album.getCoverUri() != null && !album.getCoverUri().isEmpty()) {
+            holder.ivCover.setImageURI(android.net.Uri.parse(album.getCoverUri()));
+        } else {
+            holder.ivCover.setImageResource(album.getCoverResId());
+        }
         String title = album.getTitle();
 
         if (!highlightQuery.isEmpty()) {
@@ -71,6 +75,11 @@ public class AlbumAdapter extends RecyclerView.Adapter<AlbumAdapter.ViewHolder> 
     @Override
     public int getItemCount() {
         return albums.size();
+    }
+    public void updateData(List<Album> newData) {
+        this.albums.clear();
+        this.albums.addAll(newData);
+        notifyDataSetChanged();
     }
     static class ViewHolder extends RecyclerView.ViewHolder {
         ImageView ivCover;

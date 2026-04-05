@@ -35,23 +35,22 @@ public class AlbumSongAdapter extends RecyclerView.Adapter<AlbumSongAdapter.View
     public void onBindViewHolder(@NonNull ViewHolder holder, int position) {
         Song song = songs.get(position);
 
-        int currentId = PlaybackManager
-                .get(holder.itemView.getContext())
-                .getCurrentAudioResId();
+        int currentId = PlaybackManager.get(holder.itemView.getContext()).getCurrentAudioResId();
 
-        holder.tvTrackNumber.setText(String.valueOf(song.getTrackNumber()));
+        int track = song.getTrackNumber();
+        if (track > 0) {
+            holder.tvTrackNumber.setText(String.valueOf(track));
+        } else {
+            holder.tvTrackNumber.setText(String.valueOf(position + 1));
+        }
         holder.tvSongTitle.setText(song.getTitle());
         holder.tvSongArtist.setText(song.getArtist());
         holder.tvSongDuration.setText(formatDuration(song.getDurationMs()));
 
         if (song.getAudioResId() == currentId) {
-            holder.tvSongTitle.setTextColor(
-                    holder.itemView.getContext().getColor(R.color.accent)
-            );
+            holder.tvSongTitle.setTextColor(holder.itemView.getContext().getColor(R.color.accent));
         } else {
-            holder.tvSongTitle.setTextColor(
-                    holder.itemView.getContext().getColor(R.color.textPrimary)
-            );
+            holder.tvSongTitle.setTextColor(holder.itemView.getContext().getColor(R.color.textPrimary));
         }
 
         holder.itemView.setOnClickListener(v -> {

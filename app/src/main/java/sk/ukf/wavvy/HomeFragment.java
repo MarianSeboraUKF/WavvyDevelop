@@ -37,7 +37,10 @@ public class HomeFragment extends Fragment implements PlaybackManager.Listener {
     private ImageView ivContinueCover;
     private TextView tvContinueTitle;
     private TextView tvContinueArtist;
-    private BroadcastReceiver receiver;
+    private BroadcastReceiver songsUpdatedReceiver;
+    private ArrayList<Song> allSongs;
+    private AlbumAdapter albumAdapter;
+    private RecyclerView rvAlbums;
 
     @Nullable
     @Override
@@ -89,22 +92,25 @@ public class HomeFragment extends Fragment implements PlaybackManager.Listener {
         );
         rvRecent.setAdapter(recentAdapter);
 
-        ArrayList<Song> allSongs = SongRepository.getSongs();
+        SongRepository.loadLocalSongs(requireContext());
+        allSongs = SongRepository.getSongs();
         SongRepository.preloadDurations(requireContext());
 
         btnPlayAll.setOnClickListener(v -> {
-            int[] ids = new int[allSongs.size()];
-            for (int i = 0; i < allSongs.size(); i++) {
-                ids[i] = allSongs.get(i).getAudioResId();
+            ArrayList<Song> currentSongs = SongRepository.getSongs();
+            int[] ids = new int[currentSongs.size()];
+            for (int i = 0; i < currentSongs.size(); i++) {
+                ids[i] = currentSongs.get(i).getAudioResId();
             }
             pm.setShuffle(false);
             pm.playQueue(ids, 0, true);
         });
 
         btnShuffleAll.setOnClickListener(v -> {
-            int[] ids = new int[allSongs.size()];
-            for (int i = 0; i < allSongs.size(); i++) {
-                ids[i] = allSongs.get(i).getAudioResId();
+            ArrayList<Song> currentSongs = SongRepository.getSongs();
+            int[] ids = new int[currentSongs.size()];
+            for (int i = 0; i < currentSongs.size(); i++) {
+                ids[i] = currentSongs.get(i).getAudioResId();
             }
             int randomIndex = new java.util.Random().nextInt(ids.length);
             pm.setShuffle(true);
@@ -118,21 +124,20 @@ public class HomeFragment extends Fragment implements PlaybackManager.Listener {
         );
 
         adapter = new SongAdapter(
-                allSongs,
+                SongRepository.getSongs(),
                 false,
                 false,
                 song -> PlayerLauncher.openQueue(requireContext(), allSongs, song)
         );
+        rvSongs.setAdapter(adapter);
 
         rvMostPlayed.setAdapter(mostPlayedAdapter);
-        rvSongs.setAdapter(adapter);
         rvSongs.setItemAnimator(null);
-        RecyclerView rvAlbums = view.findViewById(R.id.rvAlbums);
 
+        rvAlbums = view.findViewById(R.id.rvAlbums);
         rvAlbums.setLayoutManager(new LinearLayoutManager(requireContext(), LinearLayoutManager.HORIZONTAL, false));
         ArrayList<Album> albums = AlbumRepository.getAlbums();
-
-        AlbumAdapter albumAdapter = new AlbumAdapter(albums, album -> {
+        albumAdapter = new AlbumAdapter(albums, album -> {
             Intent i = new Intent(requireContext(), AlbumDetailActivity.class);
             i.putExtra("album_title", album.getTitle());
             startActivity(i);
@@ -144,24 +149,12 @@ public class HomeFragment extends Fragment implements PlaybackManager.Listener {
             GradientPreloader.preload(requireContext(), s.getCoverResId());
         }
 
-        receiver = new BroadcastReceiver() {
+        songsUpdatedReceiver = new BroadcastReceiver() {
             @Override
             public void onReceive(Context context, Intent intent) {
-                adapter = new SongAdapter(
-                        SongRepository.getSongs(),
-                        false,
-                        false,
-                        song -> PlayerLauncher.openQueue(requireContext(), SongRepository.getSongs(), song)
-                );
-                RecyclerView rvSongs = getView().findViewById(R.id.rvSongs);
-                rvSongs.setAdapter(adapter);
+                refreshHome();
             }
         };
-        requireContext().registerReceiver(
-                receiver,
-                new IntentFilter("songs_updated"),
-                Context.RECEIVER_NOT_EXPORTED
-        );
         return view;
     }
     private void updateContinueCard() {
@@ -179,7 +172,11 @@ public class HomeFragment extends Fragment implements PlaybackManager.Listener {
             return;
         }
         cardContinue.setVisibility(View.VISIBLE);
-        ivContinueCover.setImageResource(s.getCoverResId());
+        if (s.getCoverUri() != null) {
+            ivContinueCover.setImageURI(android.net.Uri.parse(s.getCoverUri()));
+        } else {
+            ivContinueCover.setImageResource(s.getCoverResId());
+        }
         tvContinueTitle.setText(s.getTitle());
         tvContinueArtist.setText(s.getArtist());
     }
@@ -188,6 +185,7 @@ public class HomeFragment extends Fragment implements PlaybackManager.Listener {
     public void onResume() {
         super.onResume();
         updateContinueCard();
+        refreshHome();
         mostPlayedAdapter.updateData(SongRepository.getMostPlayedSongs(requireContext()));
         recentSongs.clear();
         recentSongs.addAll(SongRepository.getRecentlyPlayedSongs(requireContext()));
@@ -197,12 +195,19 @@ public class HomeFragment extends Fragment implements PlaybackManager.Listener {
     @Override
     public void onDestroy() {
         super.onDestroy();
-        requireContext().unregisterReceiver(receiver);
+        try {
+            requireContext().unregisterReceiver(songsUpdatedReceiver);
+        } catch (Exception ignored) {}
     }
 
     @Override
     public void onStart() {
         super.onStart();
+        requireContext().registerReceiver(
+                songsUpdatedReceiver,
+                new IntentFilter("songs_updated"),
+                Context.RECEIVER_NOT_EXPORTED
+        );
         if (pm != null) {
             pm.addListener(this);
         }
@@ -211,6 +216,7 @@ public class HomeFragment extends Fragment implements PlaybackManager.Listener {
     @Override
     public void onStop() {
         super.onStop();
+        requireContext().unregisterReceiver(songsUpdatedReceiver);
         if (pm != null) {
             pm.removeListener(this);
         }
@@ -218,7 +224,6 @@ public class HomeFragment extends Fragment implements PlaybackManager.Listener {
     @Override
     public void onNowPlayingChanged(int audioResId, int[] queueIds, int queueIndex) {
         updateContinueCard();
-
         if (adapter != null) {
             ArrayList<Song> songs = SongRepository.getSongs();
             int newIndex = -1;
@@ -236,7 +241,24 @@ public class HomeFragment extends Fragment implements PlaybackManager.Listener {
             if (newIndex >= 0) adapter.notifyItemChanged(newIndex);
             lastPlayingAudioId = audioResId;
         }
+        recentSongs.clear();
+        recentSongs.addAll(SongRepository.getRecentlyPlayedSongs(requireContext()));
+        recentAdapter.notifyDataSetChanged();
+        mostPlayedAdapter.updateData(SongRepository.getMostPlayedSongs(requireContext()));
+    }
+    private void refreshHome() {
+        updateContinueCard();
+        SongRepository.loadLocalSongs(requireContext());
+        ArrayList<Song> updatedSongs = SongRepository.getSongs();
 
+        allSongs = new ArrayList<>(updatedSongs);
+        if (adapter != null) {
+            adapter.updateData(allSongs);
+        }
+
+        if (albumAdapter != null) {
+            albumAdapter.updateData(AlbumRepository.getAlbums());
+        }
         recentSongs.clear();
         recentSongs.addAll(SongRepository.getRecentlyPlayedSongs(requireContext()));
         recentAdapter.notifyDataSetChanged();
