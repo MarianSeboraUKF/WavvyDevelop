@@ -108,7 +108,7 @@
             android:scaleType="centerCrop"
             android:layerType="hardware"
             app:shapeAppearanceOverlay="@style/CoverShape"
-            android:src="@drawable/kto_som_cover"/>
+            android:src="@drawable/kto_som_album_cover"/>
     </com.google.android.material.card.MaterialCardView>
 
     <androidx.constraintlayout.widget.ConstraintLayout
