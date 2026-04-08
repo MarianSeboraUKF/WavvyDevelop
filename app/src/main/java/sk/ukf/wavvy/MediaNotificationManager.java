@@ -27,11 +27,7 @@ public class MediaNotificationManager {
     }
     private void createChannel() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            NotificationChannel channel = new NotificationChannel(
-                    CHANNEL_ID,
-                    "Playback",
-                    NotificationManager.IMPORTANCE_HIGH
-            );
+            NotificationChannel channel = new NotificationChannel(CHANNEL_ID, "Playback", NotificationManager.IMPORTANCE_HIGH);
             channel.setDescription("Music playback controls");
             notificationManager.createNotificationChannel(channel);
         }
@@ -39,13 +35,7 @@ public class MediaNotificationManager {
     public void showNotification(Song song, boolean isPlaying, MediaSessionCompat session, long position, long duration) {
         Bitmap original = BitmapFactory.decodeResource(context.getResources(), song.getCoverResId());
         int size = Math.min(original.getWidth(), original.getHeight());
-        Bitmap cover = Bitmap.createBitmap(
-                original,
-                (original.getWidth() - size) / 2,
-                (original.getHeight() - size) / 2,
-                size,
-                size
-        );
+        Bitmap cover = Bitmap.createBitmap(original, (original.getWidth() - size) / 2, (original.getHeight() - size) / 2, size, size);
 
         int color = 0xFF1DB954;
         Palette palette = Palette.from(cover).generate();
@@ -55,12 +45,7 @@ public class MediaNotificationManager {
 
         Intent openIntent = new Intent(context, PlayerActivity.class);
         openIntent.setFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP);
-        PendingIntent contentIntent = PendingIntent.getActivity(
-                context,
-                0,
-                openIntent,
-                PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE
-        );
+        PendingIntent contentIntent = PendingIntent.getActivity(context, 0, openIntent, PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE);
         PendingIntent playPauseIntent = getIntent("ACTION_PLAY_PAUSE");
         PendingIntent nextIntent = getIntent("ACTION_NEXT");
         PendingIntent prevIntent = getIntent("ACTION_PREV");
@@ -88,12 +73,7 @@ public class MediaNotificationManager {
     private PendingIntent getIntent(String action) {
         Intent intent = new Intent(context, NotificationReceiver.class);
         intent.setAction(action);
-        return PendingIntent.getBroadcast(
-                context,
-                action.hashCode(),
-                intent,
-                PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE
-        );
+        return PendingIntent.getBroadcast(context, action.hashCode(), intent, PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE);
     }
     public void cancel() {
         notificationManager.cancel(NOTIFICATION_ID);

@@ -30,7 +30,7 @@ public class MainActivity extends AppCompatActivity implements PlaybackManager.L
     private View navIndicator;
     private Fragment homeFragment;
     private Fragment searchFragment;
-    private Fragment playlistsFragment;
+    private Fragment libraryFragment;
     private Fragment activeFragment;
     private float startX;
     private float startY;
@@ -43,10 +43,13 @@ public class MainActivity extends AppCompatActivity implements PlaybackManager.L
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         androidx.core.splashscreen.SplashScreen.installSplashScreen(this);
+
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+
         sendBroadcast(new Intent("songs_updated"));
         SongRepository.loadLocalSongs(this);
+
         WindowCompat.setDecorFitsSystemWindows(getWindow(), false);
         getWindow().setStatusBarColor(android.graphics.Color.TRANSPARENT);
         getWindow().setNavigationBarColor(android.graphics.Color.TRANSPARENT);
@@ -59,12 +62,12 @@ public class MainActivity extends AppCompatActivity implements PlaybackManager.L
         if (savedInstanceState == null) {
             homeFragment = new HomeFragment();
             searchFragment = new SearchFragment();
-            playlistsFragment = new LibraryFragment();
+            libraryFragment = new LibraryFragment();
             activeFragment = homeFragment;
 
             getSupportFragmentManager()
                     .beginTransaction()
-                    .add(R.id.navHost, playlistsFragment, "playlists").hide(playlistsFragment)
+                    .add(R.id.navHost, libraryFragment, "playlists").hide(libraryFragment)
                     .add(R.id.navHost, searchFragment, "search").hide(searchFragment)
                     .add(R.id.navHost, homeFragment, "home")
                     .commit();
@@ -85,11 +88,8 @@ public class MainActivity extends AppCompatActivity implements PlaybackManager.L
         ViewCompat.setOnApplyWindowInsetsListener(
                 bottomContainer,
                 (v, insets) -> {
-                    Insets bars = insets.getInsets(
-                            WindowInsetsCompat.Type.navigationBars()
-                    );
-                    ViewGroup.MarginLayoutParams lp =
-                            (ViewGroup.MarginLayoutParams) v.getLayoutParams();
+                    Insets bars = insets.getInsets(WindowInsetsCompat.Type.navigationBars());
+                    ViewGroup.MarginLayoutParams lp = (ViewGroup.MarginLayoutParams) v.getLayoutParams();
                     v.setTranslationY(-dp(6));
                     return insets;
                 }
@@ -112,7 +112,7 @@ public class MainActivity extends AppCompatActivity implements PlaybackManager.L
                 index = 1;
             }
             else if (item.getItemId() == R.id.nav_playlists) {
-                target = playlistsFragment;
+                target = libraryFragment;
                 index = 2;
             }
 
@@ -129,10 +129,12 @@ public class MainActivity extends AppCompatActivity implements PlaybackManager.L
     private void switchFragment(Fragment target) {
         if (target == activeFragment) return;
         FragmentTransaction ft = getSupportFragmentManager().beginTransaction().setReorderingAllowed(true);
+
         ft.setCustomAnimations(android.R.anim.fade_in, android.R.anim.fade_out);
         ft.hide(activeFragment);
         ft.show(target);
         ft.commit();
+
         activeFragment = target;
     }
     private void requestNotificationPermission() {
@@ -167,23 +169,10 @@ public class MainActivity extends AppCompatActivity implements PlaybackManager.L
     }
     private void preloadFragments() {
         new Handler(Looper.getMainLooper()).postDelayed(() -> {
-            getSupportFragmentManager()
-                    .beginTransaction()
-                    .show(searchFragment)
-                    .commitNow();
-            getSupportFragmentManager()
-                    .beginTransaction()
-                    .hide(searchFragment)
-                    .commitNow();
-            getSupportFragmentManager()
-                    .beginTransaction()
-                    .show(playlistsFragment)
-                    .commitNow();
-            getSupportFragmentManager()
-                    .beginTransaction()
-                    .hide(playlistsFragment)
-                    .commitNow();
-
+            getSupportFragmentManager().beginTransaction().show(searchFragment).commitNow();
+            getSupportFragmentManager().beginTransaction().hide(searchFragment).commitNow();
+            getSupportFragmentManager().beginTransaction().show(libraryFragment).commitNow();
+            getSupportFragmentManager().beginTransaction().hide(libraryFragment).commitNow();
         }, 120);
     }
     private void moveIndicator(int position) {
@@ -195,7 +184,6 @@ public class MainActivity extends AppCompatActivity implements PlaybackManager.L
             if (itemView == null) return;
 
             float targetX = itemView.getLeft() + itemView.getWidth()/2f - navIndicator.getWidth()/2f;
-
             navIndicator.animate().translationX(targetX).setDuration(320).setInterpolator(new android.view.animation.DecelerateInterpolator()).start(); });
     }
     private void animateLabels(int selectedIndex) {
@@ -253,17 +241,9 @@ public class MainActivity extends AppCompatActivity implements PlaybackManager.L
 
                         for (View view : views) {
                             view.animate().cancel();
-                            view.animate()
-                                    .translationX(move)
-                                    .setDuration(120)
-                                    .setInterpolator(new android.view.animation.DecelerateInterpolator())
+                            view.animate().translationX(move).setDuration(120).setInterpolator(new android.view.animation.DecelerateInterpolator())
                                     .withEndAction(() ->
-                                            view.animate()
-                                                    .translationX(0f)
-                                                    .setDuration(140)
-                                                    .setInterpolator(new android.view.animation.DecelerateInterpolator())
-                                                    .start()
-                                    )
+                                            view.animate().translationX(0f).setDuration(140).setInterpolator(new android.view.animation.DecelerateInterpolator()).start())
                                     .start();
                         }
                         return true;
@@ -276,9 +256,10 @@ public class MainActivity extends AppCompatActivity implements PlaybackManager.L
             }
             return false;
         });
+
         btnMiniPrev.setOnClickListener(v -> {
-            haptic(v);
             PlaybackManager pm = PlaybackManager.get(this);
+
             long pos = pm.getPlayer().getCurrentPosition();
             if (pos > 3000) {
                 pm.getPlayer().seekTo(0);
@@ -288,23 +269,13 @@ public class MainActivity extends AppCompatActivity implements PlaybackManager.L
         });
 
         btnMiniPlay.setOnClickListener(v -> {
-            haptic(v);
-            v.animate()
-                    .scaleX(0.85f)
-                    .scaleY(0.85f)
-                    .setDuration(80)
-                    .withEndAction(() ->
-                            v.animate()
-                                    .scaleX(1f)
-                                    .scaleY(1f)
-                                    .setDuration(120)
-                                    .start()
-                    )
+            v.animate().scaleX(0.85f).scaleY(0.85f).setDuration(80)
+                    .withEndAction(() -> v.animate().scaleX(1f).scaleY(1f).setDuration(120).start())
                     .start();
             PlaybackManager.get(this).togglePlayPause();
         });
+
         btnMiniNext.setOnClickListener(v -> {
-            haptic(v);
             PlaybackManager.get(this).playNext(true);
         });
     }
@@ -314,10 +285,7 @@ public class MainActivity extends AppCompatActivity implements PlaybackManager.L
         if (requestCode == 9999 && resultCode == RESULT_OK && data != null) {
             android.net.Uri uri = data.getData();
             try {
-                getContentResolver().takePersistableUriPermission(
-                        uri,
-                        Intent.FLAG_GRANT_READ_URI_PERMISSION
-                );
+                getContentResolver().takePersistableUriPermission(uri, Intent.FLAG_GRANT_READ_URI_PERMISSION);
             } catch (Exception ignored) {}
             if (SongEditingHolder.callback != null) {
                 SongEditingHolder.callback.onSelected(uri.toString());
@@ -335,10 +303,7 @@ public class MainActivity extends AppCompatActivity implements PlaybackManager.L
         super.onStop();
         PlaybackManager.get(this).removeListener(this);
     }
-    @Override public void onIsPlayingChanged(boolean playing){
-        btnMiniPlay.setImageResource(
-                playing?R.drawable.ic_pause:R.drawable.ic_play);
-    }
+    @Override public void onIsPlayingChanged(boolean playing){ btnMiniPlay.setImageResource(playing?R.drawable.ic_pause:R.drawable.ic_play); }
     @Override public void onNowPlayingChanged(int a,int[]b,int c){
         updateMiniPlayer();
     }
@@ -346,18 +311,14 @@ public class MainActivity extends AppCompatActivity implements PlaybackManager.L
     public void onProgress(long pos, long dur) {
         if (dur <= 0) return;
         miniProgress.setMax((int) dur);
-        miniProgress.animate()
-                .setDuration(200)
-                .withStartAction(() ->
-                        miniProgress.setProgress((int) pos)
-                )
-                .start();
+        miniProgress.animate().setDuration(200).withStartAction(() -> miniProgress.setProgress((int) pos)).start();
     }
     private void updateMiniPlayer(){
         if(!NowPlayingRepository.hasNowPlaying(this)){
             miniPlayer.setVisibility(View.GONE);
             return;
         }
+
         Song s = SongRepository.findByAudioResId(NowPlayingRepository.getAudioResId(this));
         if(s==null)return;
         miniPlayer.setVisibility(View.VISIBLE);
@@ -377,24 +338,16 @@ public class MainActivity extends AppCompatActivity implements PlaybackManager.L
         if (isNewSong) {
             ivMiniCover.animate().cancel();
             ivMiniCover.setAlpha(0.85f);
-            ivMiniCover.animate()
-                    .alpha(1f)
-                    .setDuration(120)
-                    .setInterpolator(new android.view.animation.DecelerateInterpolator())
-                    .start();
-
+            ivMiniCover.animate().alpha(1f).setDuration(120).setInterpolator(new android.view.animation.DecelerateInterpolator()).start();
             lastAnimatedAudioId = currentId;
         }
-    }
-    private void haptic(View v){
-        v.performHapticFeedback(android.view.HapticFeedbackConstants.VIRTUAL_KEY);
     }
     private void openPlayerFromNowPlaying(){
         PlaybackManager pm=PlaybackManager.get(this);
         int[] q=pm.getQueueIds();
         if(q==null||q.length==0)return;
 
-        Intent i=new Intent(this,PlayerActivity.class);
+        Intent i = new Intent(this,PlayerActivity.class);
         i.putExtra(PlayerActivity.EXTRA_QUEUE_AUDIO_IDS,q);
         i.putExtra(PlayerActivity.EXTRA_QUEUE_INDEX,pm.getQueueIndex());
         i.putExtra(PlayerActivity.EXTRA_OPEN_EXISTING,true);

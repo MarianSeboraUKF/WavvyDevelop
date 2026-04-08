@@ -14,12 +14,10 @@ public class PlayerLauncher {
 
         for (int i = 0; i < songs.size(); i++) {
             ids[i] = songs.get(i).getAudioResId();
-
             if (songs.get(i).getAudioResId() == clicked.getAudioResId()) {
                 index = i;
             }
         }
-
         PlaybackManager pm = PlaybackManager.get(ctx);
         pm.playQueue(ids, index, true);
     }
@@ -29,10 +27,7 @@ public class PlayerLauncher {
         ctx.startActivity(intent);
 
         if (ctx instanceof Activity) {
-            ((Activity) ctx).overridePendingTransition(
-                    R.anim.slide_in_right_fast,
-                    R.anim.slide_out_left_fast
-            );
+            ((Activity) ctx).overridePendingTransition(R.anim.slide_in_right_fast, R.anim.slide_out_left_fast);
         }
     }
 }

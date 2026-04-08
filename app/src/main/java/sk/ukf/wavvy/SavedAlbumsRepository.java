@@ -11,22 +11,16 @@ public class SavedAlbumsRepository {
 
     public static void add(Context context, String albumTitle) {
         SharedPreferences prefs = context.getSharedPreferences(PREFS, Context.MODE_PRIVATE);
+        Set<String> albums = new HashSet<>(prefs.getStringSet(KEY, new HashSet<>()));
 
-        Set<String> albums = new HashSet<>(
-                prefs.getStringSet(KEY, new HashSet<>())
-        );
         albums.add(albumTitle);
         prefs.edit().putStringSet(KEY, albums).apply();
     }
     public static void remove(Context context, String albumTitle) {
         SharedPreferences prefs = context.getSharedPreferences(PREFS, Context.MODE_PRIVATE);
-
-        Set<String> albums = new HashSet<>(
-                prefs.getStringSet(KEY, new HashSet<>())
-        );
+        Set<String> albums = new HashSet<>(prefs.getStringSet(KEY, new HashSet<>()));
 
         albums.remove(albumTitle);
-
         prefs.edit().putStringSet(KEY, albums).apply();
     }
     public static boolean isSaved(Context context, String albumTitle) {

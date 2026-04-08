@@ -76,22 +76,16 @@ public class HomeFragment extends Fragment implements PlaybackManager.Listener {
             }
             PlayerLauncher.openExisting(requireContext());
         });
-        pm = PlaybackManager.get(requireContext());
 
+        pm = PlaybackManager.get(requireContext());
         rvMostPlayed = view.findViewById(R.id.rvMostPlayed);
         rvSongs = view.findViewById(R.id.rvSongs);
-
         rvMostPlayed.setLayoutManager(new LinearLayoutManager(requireContext(), LinearLayoutManager.HORIZONTAL, false));
         rvSongs.setLayoutManager(new LinearLayoutManager(requireContext()));
-
         rvRecent = view.findViewById(R.id.rvRecent);
         rvRecent.setLayoutManager(new LinearLayoutManager(requireContext(), LinearLayoutManager.HORIZONTAL, false));
         recentSongs = SongRepository.getRecentlyPlayedSongs(requireContext());
-
-        recentAdapter = new SmallSongAdapter(
-                recentSongs,
-                song -> PlayerLauncher.openQueue(requireContext(), recentSongs, song)
-        );
+        recentAdapter = new SmallSongAdapter(recentSongs, song -> PlayerLauncher.openQueue(requireContext(), recentSongs, song));
         rvRecent.setAdapter(recentAdapter);
 
         SongRepository.loadLocalSongs(requireContext());
@@ -118,7 +112,6 @@ public class HomeFragment extends Fragment implements PlaybackManager.Listener {
             pm.setShuffle(true);
             pm.playQueue(ids, randomIndex, true);
         });
-
         TextView btnViewMore = view.findViewById(R.id.btnViewMore);
         rvSongs.setItemAnimator(new androidx.recyclerview.widget.DefaultItemAnimator());
 
@@ -143,10 +136,7 @@ public class HomeFragment extends Fragment implements PlaybackManager.Listener {
         rvSongs.setItemAnimator(new androidx.recyclerview.widget.DefaultItemAnimator());
 
         mostPlayed = SongRepository.getMostPlayedSongs(requireContext());
-        mostPlayedAdapter = new SmallSongAdapter(
-                mostPlayed,
-                song -> PlayerLauncher.openQueue(requireContext(), mostPlayed, song)
-        );
+        mostPlayedAdapter = new SmallSongAdapter(mostPlayed, song -> PlayerLauncher.openQueue(requireContext(), mostPlayed, song));
 
         ArrayList<Song> allSongsFull = SongRepository.getSongs();
         ArrayList<Song> previewSongs = new ArrayList<>();
@@ -155,18 +145,12 @@ public class HomeFragment extends Fragment implements PlaybackManager.Listener {
             previewSongs.add(allSongsFull.get(i));
         }
 
-        adapter = new SongAdapter(
-                getDisplayedSongs(),
-                false,
-                false,
-                song -> PlayerLauncher.openQueue(requireContext(), allSongs, song)
-        );
+        adapter = new SongAdapter(getDisplayedSongs(), false, false, song -> PlayerLauncher.openQueue(requireContext(), allSongs, song));
         rvSongs.setAdapter(adapter);
-
         rvMostPlayed.setAdapter(mostPlayedAdapter);
-
         rvAlbums = view.findViewById(R.id.rvAlbums);
         rvAlbums.setLayoutManager(new LinearLayoutManager(requireContext(), LinearLayoutManager.HORIZONTAL, false));
+
         ArrayList<Album> albums = AlbumRepository.getAlbums();
         albumAdapter = new AlbumAdapter(albums, album -> {
             Intent i = new Intent(requireContext(), AlbumDetailActivity.class);
@@ -245,11 +229,7 @@ public class HomeFragment extends Fragment implements PlaybackManager.Listener {
     @Override
     public void onStart() {
         super.onStart();
-        requireContext().registerReceiver(
-                songsUpdatedReceiver,
-                new IntentFilter("songs_updated"),
-                Context.RECEIVER_NOT_EXPORTED
-        );
+        requireContext().registerReceiver(songsUpdatedReceiver, new IntentFilter("songs_updated"), Context.RECEIVER_NOT_EXPORTED);
         if (pm != null) {
             pm.addListener(this);
         }

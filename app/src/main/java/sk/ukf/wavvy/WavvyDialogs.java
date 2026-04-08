@@ -20,25 +20,17 @@ public class WavvyDialogs {
         return (int) (dm.widthPixels * 0.90f);
     }
     public static Dialog showCenteredCardDialog(Context ctx, Activity activity, View cardView) {
-
         FrameLayout host = new FrameLayout(ctx);
-        host.setLayoutParams(new FrameLayout.LayoutParams(
-                FrameLayout.LayoutParams.MATCH_PARENT,
-                FrameLayout.LayoutParams.MATCH_PARENT
-        ));
+        host.setLayoutParams(new FrameLayout.LayoutParams(FrameLayout.LayoutParams.MATCH_PARENT, FrameLayout.LayoutParams.MATCH_PARENT));
 
-        FrameLayout.LayoutParams lp = new FrameLayout.LayoutParams(
-                dialogWidthPx(activity),
-                FrameLayout.LayoutParams.WRAP_CONTENT
-        );
+        FrameLayout.LayoutParams lp = new FrameLayout.LayoutParams(dialogWidthPx(activity), FrameLayout.LayoutParams.WRAP_CONTENT);
         lp.gravity = Gravity.CENTER;
 
         host.addView(cardView, lp);
         Dialog dialog = new Dialog(ctx, R.style.WavvyFullscreenDialog);
         host.setOnClickListener(v -> dialog.dismiss());
 
-        cardView.setOnClickListener(v -> {
-        });
+        cardView.setOnClickListener(v -> {});
 
         dialog.setContentView(host);
         dialog.setCancelable(true);
@@ -46,33 +38,19 @@ public class WavvyDialogs {
         dialog.show();
 
         Window window = dialog.getWindow();
-
         if (window != null) {
             window.setStatusBarColor(android.graphics.Color.TRANSPARENT);
             View decor = window.getDecorView();
-            decor.setSystemUiVisibility(
-                    decor.getSystemUiVisibility() & ~View.SYSTEM_UI_FLAG_LIGHT_STATUS_BAR
-            );
+            decor.setSystemUiVisibility(decor.getSystemUiVisibility() & ~View.SYSTEM_UI_FLAG_LIGHT_STATUS_BAR);
             WindowCompat.setDecorFitsSystemWindows(window, false);
         }
 
         Window w = dialog.getWindow();
         if (w != null) {
             w.setBackgroundDrawable(new ColorDrawable(Color.TRANSPARENT));
-            w.setLayout(
-                    WindowManager.LayoutParams.MATCH_PARENT,
-                    WindowManager.LayoutParams.MATCH_PARENT
-            );
-
+            w.setLayout(WindowManager.LayoutParams.MATCH_PARENT, WindowManager.LayoutParams.MATCH_PARENT);
             w.setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_ADJUST_NOTHING);
-
-            w.getDecorView().post(() -> {
-                WindowManager.LayoutParams p = w.getAttributes();
-                p.gravity = Gravity.CENTER;
-                p.y = 0;
-                w.setAttributes(p);
-                host.requestLayout();
-            });
+            w.getDecorView().post(() -> {WindowManager.LayoutParams p = w.getAttributes();p.gravity = Gravity.CENTER;p.y = 0;w.setAttributes(p);host.requestLayout();});
         }
         return dialog;
     }

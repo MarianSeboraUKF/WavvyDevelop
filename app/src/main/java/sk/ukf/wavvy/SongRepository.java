@@ -18,7 +18,6 @@ public class SongRepository {
             cached.add(new Song("Čikitas 2", "Lboy Bsc", "Freez247", "Čikitas 2", "Lboy Bsc", "Anyvibe", 1, R.drawable.cikitas_2_cover, R.raw.cikitas_2));
             cached.add(new Song("Plaza", "Lboy Bsc", "", "Plaza", "Lboy Bsc", "-", 1, R.drawable.plaza_cover, R.raw.plaza));
             cached.add(new Song("DO OČÍ", "RAYYY P", "Majkyyy", "kto.som.?", "RAYYY P", "Majkyyy", 1, R.drawable.kto_som_album_cover, R.raw.do_oci));
-            cached.add(new Song("Forever rich", "Hard Rico", "", "Secret Eyes", "Hard Rico", "DEMO24", 11, R.drawable.forever_rich_cover, R.raw.forever_rich));
             cached.add(new Song("INTRO", "RAYYY P", "Majkyyy", "kto.som.?", "RAYYY P", "Majkyyy", 2, R.drawable.kto_som_album_cover, R.raw.intro));
             cached.add(new Song("Parabola", "Chawo", "Erik Tresor", "Glitch ve systému", "Chawo", "Mikaelbeatz", 8, R.drawable.glitch_ve_systemu_cover, R.raw.parabola));
             cached.add(new Song("E85", "Don Toliver", "", "OCTANE", "Don Toliver", "206derek, Aaron Paris, Dillon Brophy, Jess Jackson, Jaasu, Travis Scott", 1, R.drawable.octane_cover, R.raw.e85));
@@ -39,7 +38,7 @@ public class SongRepository {
             cached.add(new Song("BERI 2", "RAYYY P", "", "R A Y . $ A V E D . M E", "RAYYY P", "Segway Beats, JacobD", 3, R.drawable.kto_som_ep_cover, R.raw.beri_2));
             cached.add(new Song("ALLRIGHT", "RAYYY P", "ICOиO, Patez", "kto.som.?", "RAYYY P", "-", 15, R.drawable.kto_som_album_cover, R.raw.allright));
             cached.add(new Song("OUTRO", "RAYYY P", "", "kto.som.?", "RAYYY P", "-", 16, R.drawable.kto_som_album_cover, R.raw.outro));
-            cached.add(new Song("BOO - Bonus", "RAYYY P", "dum13o", "R A Y . $ A V E D . M E", "RAYYY P", "RAYYY P, Relon", 4, R.drawable.kto_som_ep_cover, R.raw.boo));
+            cached.add(new Song("BOO - Bonus Track", "RAYYY P", "dum13o", "R A Y . $ A V E D . M E", "RAYYY P", "RAYYY P, Relon", 4, R.drawable.kto_som_ep_cover, R.raw.boo));
         }
         ArrayList<Song> result = new ArrayList<>(cached);
         result.addAll(localSongs);
@@ -73,6 +72,7 @@ public class SongRepository {
     public static ArrayList<Song> getRecentlyPlayedSongs(Context ctx) {
         ArrayList<Integer> ids = RecentlyPlayedRepository.get(ctx);
         ArrayList<Song> songs = new ArrayList<>();
+
         for (Integer id : ids) {
             Song s = findByAudioResId(id);
             if (s != null) {
@@ -104,13 +104,16 @@ public class SongRepository {
         try {
             org.json.JSONArray arr = new org.json.JSONArray(json);
             localSongs.clear();
+
             for (int i = 0; i < arr.length(); i++) {
                 org.json.JSONObject o = arr.getJSONObject(i);
+
                 String title = o.getString("title");
                 String artist = o.getString("artist");
                 String album = o.getString("album");
                 String uri = o.getString("uri");
                 long duration = o.getLong("duration");
+
                 int id = uri.toString().hashCode();
                 String coverUri = o.optString("coverUri", null);
                 if ("null".equals(coverUri)) coverUri = null;
@@ -118,7 +121,9 @@ public class SongRepository {
                 String albumArtist = o.optString("albumArtist", artist);
                 String producer = o.optString("producer", "-");
                 int track = o.optInt("trackNumber", 0);
+
                 Song s = new Song(title, artist, feat, album, albumArtist, producer, track, R.drawable.default_cover, id);
+
                 s.setCoverUri(coverUri);
                 s.setUriString(uri);
                 s.setDurationMs(duration);
@@ -183,9 +188,11 @@ public class SongRepository {
             try {
                 android.content.res.AssetFileDescriptor afd = ctx.getResources().openRawResourceFd(s.getAudioResId());
                 if (afd == null) continue;
+
                 mmr.setDataSource(afd.getFileDescriptor(), afd.getStartOffset(), afd.getLength());
                 String dur = mmr.extractMetadata(android.media.MediaMetadataRetriever.METADATA_KEY_DURATION);
                 afd.close();
+
                 if (dur != null) {
                     s.setDurationMs(Long.parseLong(dur));
                 }

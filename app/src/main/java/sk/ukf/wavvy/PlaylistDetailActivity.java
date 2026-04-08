@@ -63,6 +63,7 @@ public class PlaylistDetailActivity extends AppCompatActivity implements Playbac
     protected void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_playlist_detail);
+
         WindowCompat.setDecorFitsSystemWindows(getWindow(), false);
         getWindow().setStatusBarColor(android.graphics.Color.TRANSPARENT);
         getWindow().setNavigationBarColor(android.graphics.Color.TRANSPARENT);
@@ -118,24 +119,16 @@ public class PlaylistDetailActivity extends AppCompatActivity implements Playbac
         btnSort.setVisibility(isSystem ? View.GONE : View.VISIBLE);
         btnPlay.setOnClickListener(v -> {
             if (songsInPlaylist.isEmpty()) return;
-            PlayerLauncher.openQueue(
-                    PlaylistDetailActivity.this,
-                    songsInPlaylist,
-                    songsInPlaylist.get(0)
-            );
+            PlayerLauncher.openQueue(PlaylistDetailActivity.this, songsInPlaylist, songsInPlaylist.get(0));
             pm.setShuffle(false);
         });
 
         btnShuffle.setOnClickListener(v -> {
             if (songsInPlaylist.isEmpty()) return;
+
             int randomIndex = new java.util.Random().nextInt(songsInPlaylist.size());
             Song randomSong = songsInPlaylist.get(randomIndex);
-
-            PlayerLauncher.openQueue(
-                    PlaylistDetailActivity.this,
-                    songsInPlaylist,
-                    randomSong
-            );
+            PlayerLauncher.openQueue(PlaylistDetailActivity.this, songsInPlaylist, randomSong);
             pm.setShuffle(true);
         });
         btnSort.setOnClickListener(v -> showSortPopup(v));
@@ -183,16 +176,7 @@ public class PlaylistDetailActivity extends AppCompatActivity implements Playbac
         rvPlaylistSongs.setLayoutManager(new LinearLayoutManager(this));
         songsInPlaylist = new ArrayList<>();
 
-        adapter = new SongAdapter(
-                songsInPlaylist,
-                false,
-                isSystem,
-                song -> PlayerLauncher.openQueue(
-                        PlaylistDetailActivity.this,
-                        songsInPlaylist,
-                        song
-                )
-        );
+        adapter = new SongAdapter(songsInPlaylist, false, isSystem, song -> PlayerLauncher.openQueue(PlaylistDetailActivity.this, songsInPlaylist, song));
         rvPlaylistSongs.setAdapter(adapter);
         miniPlayer = findViewById(R.id.miniPlayer);
         ivMiniCover = findViewById(R.id.ivMiniCover);
@@ -217,8 +201,7 @@ public class PlaylistDetailActivity extends AppCompatActivity implements Playbac
 
         songsUpdatedReceiver = new BroadcastReceiver() {
             @Override
-            public void onReceive(Context context, Intent intent) {
-                loadSongs();
+            public void onReceive(Context context, Intent intent) {loadSongs();
             }
         };
         loadSongs();
@@ -301,6 +284,7 @@ public class PlaylistDetailActivity extends AppCompatActivity implements Playbac
         }
 
         miniPlayer.setVisibility(View.VISIBLE);
+
         if (s.getCoverUri() != null && !s.getCoverUri().isEmpty()) {
             ivMiniCover.setImageURI(android.net.Uri.parse(s.getCoverUri()));
         } else {
@@ -312,9 +296,11 @@ public class PlaylistDetailActivity extends AppCompatActivity implements Playbac
 
         int[] q = pm.getQueueIds();
         int idx = pm.getQueueIndex();
+
         boolean hasQueue = q != null && q.length > 1;
         boolean prevEnabled = hasQueue && (idx > 0 || pm.getRepeatMode() == PlaybackManager.RepeatMode.ALL);
         boolean nextEnabled = hasQueue && (idx < q.length - 1 || pm.getRepeatMode() == PlaybackManager.RepeatMode.ALL);
+
         btnMiniPrev.setEnabled(prevEnabled);
         btnMiniNext.setEnabled(nextEnabled);
         float disabledAlpha = 0.35f;
@@ -405,40 +391,34 @@ public class PlaylistDetailActivity extends AppCompatActivity implements Playbac
 
         actionTitleAZ.setOnClickListener(v -> {
             currentSort = "TITLE_AZ";
-            songsInPlaylist.sort((a, b) ->
-                    collator.compare(a.getTitle(), b.getTitle())
-            );
+            songsInPlaylist.sort((a, b) -> collator.compare(a.getTitle(), b.getTitle()));
             afterSort(popup);
         });
 
         actionTitleZA.setOnClickListener(v -> {
             currentSort = "TITLE_ZA";
-            songsInPlaylist.sort((a, b) ->
-                    collator.compare(b.getTitle(), a.getTitle())
-            );
+            songsInPlaylist.sort((a, b) -> collator.compare(b.getTitle(), a.getTitle()));
             afterSort(popup);
         });
 
         actionArtistAZ.setOnClickListener(v -> {
             currentSort = "ARTIST_AZ";
-            songsInPlaylist.sort((a, b) ->
-                    collator.compare(a.getArtist(), b.getArtist())
-            );
+            songsInPlaylist.sort((a, b) -> collator.compare(a.getArtist(), b.getArtist()));
             afterSort(popup);
         });
 
         actionArtistZA.setOnClickListener(v -> {
             currentSort = "ARTIST_ZA";
-            songsInPlaylist.sort((a, b) ->
-                    collator.compare(b.getArtist(), a.getArtist())
-            );
+            songsInPlaylist.sort((a, b) -> collator.compare(b.getArtist(), a.getArtist()));
             afterSort(popup);
         });
         popupView.measure(View.MeasureSpec.UNSPECIFIED, View.MeasureSpec.UNSPECIFIED);
+
         int popupWidth = popupView.getMeasuredWidth();
         int anchorWidth = anchor.getWidth();
         int offsetX = (anchorWidth / 2) - (popupWidth / 2);
         int offsetY = 8;
+
         updateSortUI(popupView);
         popup.showAsDropDown(anchor, offsetX, offsetY);
     }
@@ -447,6 +427,7 @@ public class PlaylistDetailActivity extends AppCompatActivity implements Playbac
         View actionTitleZA = popupView.findViewById(R.id.actionTitleZA);
         View actionArtistAZ = popupView.findViewById(R.id.actionArtistAZ);
         View actionArtistZA = popupView.findViewById(R.id.actionArtistZA);
+
         actionTitleAZ.setSelected(false);
         actionTitleZA.setSelected(false);
         actionArtistAZ.setSelected(false);
@@ -520,15 +501,16 @@ public class PlaylistDetailActivity extends AppCompatActivity implements Playbac
     }
     private void showRenameDialog() {
         View card = getLayoutInflater().inflate(R.layout.dialog_rename_playlist, null);
+
         EditText etName = card.findViewById(R.id.etName);
         View btnRename = card.findViewById(R.id.btnRename);
         View btnCancel = card.findViewById(R.id.btnCancel);
         etName.setText(playlistName);
+
         android.app.Dialog dialog = WavvyDialogs.showCenteredCardDialog(this, this, card);
 
         btnRename.setOnClickListener(v -> {
             String newName = etName.getText().toString().trim();
-
             if (!newName.isEmpty()) {
                 PlaylistRepository.renamePlaylist(this, playlistId, newName);
                 playlistName = newName;
@@ -540,13 +522,16 @@ public class PlaylistDetailActivity extends AppCompatActivity implements Playbac
     }
     private void showPlaylistMenu(View anchor) {
         View popupView = getLayoutInflater().inflate(R.layout.dialog_playlist_menu, null);
+
         final PopupWindow popup = new PopupWindow(popupView, ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT, true);
         popup.setBackgroundDrawable(new ColorDrawable(android.graphics.Color.TRANSPARENT));
         popup.setElevation(12f);
+
         View actionInfo = popupView.findViewById(R.id.actionInfo);
         View actionImport = popupView.findViewById(R.id.actionImport);
         View actionEdit = popupView.findViewById(R.id.actionEdit);
         View actionDelete = popupView.findViewById(R.id.actionDelete);
+
         actionImport.setVisibility(View.GONE);
         actionEdit.setVisibility(View.GONE);
         actionDelete.setVisibility(View.GONE);
@@ -579,7 +564,9 @@ public class PlaylistDetailActivity extends AppCompatActivity implements Playbac
     private void showPlaylistInfo() {
         View dialogView = getLayoutInflater().inflate(R.layout.dialog_playlist_info, null);
         View coverBg = dialogView.findViewById(R.id.playlistCoverBg);
+
         ImageView coverIcon = dialogView.findViewById(R.id.playlistCoverIcon);
+
         TextView tvTitle = dialogView.findViewById(R.id.tvPlaylistTitle);
         TextView tvCount = dialogView.findViewById(R.id.tvPlaylistCount);
         TextView tvLength = dialogView.findViewById(R.id.tvPlaylistLength);
@@ -591,7 +578,9 @@ public class PlaylistDetailActivity extends AppCompatActivity implements Playbac
             params.width = 350;
             params.height = 350;
             coverIcon.setLayoutParams(params);
+
             ((FrameLayout.LayoutParams) coverIcon.getLayoutParams()).gravity = android.view.Gravity.CENTER;
+
             coverIcon.setScaleType(ImageView.ScaleType.CENTER_CROP);
             coverBg.setBackgroundResource(R.drawable.bg_liked_gradient);
             coverIcon.setImageResource(R.drawable.ic_liked);
@@ -602,7 +591,9 @@ public class PlaylistDetailActivity extends AppCompatActivity implements Playbac
             params.width = 350;
             params.height = 350;
             coverIcon.setLayoutParams(params);
+
             ((FrameLayout.LayoutParams) coverIcon.getLayoutParams()).gravity = android.view.Gravity.CENTER;
+
             coverIcon.setScaleType(ImageView.ScaleType.CENTER_CROP);
             coverBg.setBackgroundResource(R.drawable.bg_local_gradient);
             coverIcon.setImageResource(R.drawable.icon_local);
@@ -614,7 +605,9 @@ public class PlaylistDetailActivity extends AppCompatActivity implements Playbac
             params.width = ViewGroup.LayoutParams.MATCH_PARENT;
             params.height = ViewGroup.LayoutParams.MATCH_PARENT;
             coverIcon.setLayoutParams(params);
+
             ((FrameLayout.LayoutParams) coverIcon.getLayoutParams()).gravity = android.view.Gravity.CENTER;
+
             coverIcon.setScaleType(ImageView.ScaleType.CENTER_CROP);
             coverIcon.clearColorFilter();
 

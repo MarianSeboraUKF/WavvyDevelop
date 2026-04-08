@@ -47,10 +47,7 @@ public class SearchFragment extends Fragment implements PlaybackManager.Listener
     public SearchFragment() {}
     @Nullable
     @Override
-    public View onCreateView(@NonNull LayoutInflater inflater,
-                             @Nullable ViewGroup container,
-                             @Nullable Bundle savedInstanceState) {
-
+    public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
         View view = inflater.inflate(R.layout.fragment_search, container, false);
 
         tvSectionTitle = view.findViewById(R.id.tvSectionTitle);
@@ -67,27 +64,17 @@ public class SearchFragment extends Fragment implements PlaybackManager.Listener
         recyclerView.setLayoutManager(new LinearLayoutManager(requireContext()));
         recyclerView.setItemViewCacheSize(12);
         recyclerView.setHasFixedSize(true);
-
         recyclerView.setItemAnimator(null);
 
         rvAlbums = view.findViewById(R.id.rvAlbums);
-        rvAlbums.setLayoutManager(
-                new LinearLayoutManager(
-                        requireContext(),
-                        LinearLayoutManager.HORIZONTAL,
-                        false
-                )
-        );
+        rvAlbums.setLayoutManager(new LinearLayoutManager(requireContext(), LinearLayoutManager.HORIZONTAL, false));
         filteredAlbums = new ArrayList<>();
 
         albumAdapter = new sk.ukf.wavvy.adapter.AlbumAdapter(
                 filteredAlbums,
                 album -> {
-                    android.content.Intent intent =
-                            new android.content.Intent(requireContext(), AlbumDetailActivity.class);
-
+                    android.content.Intent intent = new android.content.Intent(requireContext(), AlbumDetailActivity.class);
                     intent.putExtra("album_title", album.getTitle());
-
                     startActivity(intent);
                 }
         );
@@ -104,17 +91,7 @@ public class SearchFragment extends Fragment implements PlaybackManager.Listener
 
         filteredSongs = new ArrayList<>(topSongs);
 
-        adapter = new SongAdapter(
-                filteredSongs,
-                false,
-                false,
-                song -> PlayerLauncher.openQueue(
-                        requireContext(),
-                        filteredSongs,
-                        song
-                )
-        );
-
+        adapter = new SongAdapter(filteredSongs, false, false, song -> PlayerLauncher.openQueue(requireContext(), filteredSongs, song));
         recyclerView.setAdapter(adapter);
 
         view.post(this::prewarmRecycler);
@@ -122,8 +99,7 @@ public class SearchFragment extends Fragment implements PlaybackManager.Listener
         searchView = view.findViewById(R.id.searchView);
         searchView.setQueryHint("Search songs, artists or albums...");
 
-        android.widget.EditText searchText =
-                searchView.findViewById(androidx.appcompat.R.id.search_src_text);
+        android.widget.EditText searchText = searchView.findViewById(androidx.appcompat.R.id.search_src_text);
 
         searchText.setTextColor(ContextCompat.getColor(requireContext(), R.color.textPrimary));
         searchText.setHintTextColor(ContextCompat.getColor(requireContext(), R.color.textSecondary));
@@ -171,14 +147,8 @@ public class SearchFragment extends Fragment implements PlaybackManager.Listener
         RecyclerView.Adapter adapter = recyclerView.getAdapter();
 
         int warmCount = Math.min(4, adapter.getItemCount());
-
         for (int i = 0; i < warmCount; i++) {
-            RecyclerView.ViewHolder vh =
-                    adapter.createViewHolder(
-                            recyclerView,
-                            adapter.getItemViewType(i)
-                    );
-
+            RecyclerView.ViewHolder vh = adapter.createViewHolder(recyclerView, adapter.getItemViewType(i));
             adapter.bindViewHolder(vh, i);
         }
     }
@@ -196,20 +166,16 @@ public class SearchFragment extends Fragment implements PlaybackManager.Listener
     }
     @Override
     public void onNowPlayingChanged(int audioResId, int[] queueIds, int queueIndex) {
-
         if (adapter == null) return;
 
         int newIndex = -1;
         int oldIndex = -1;
 
         for (int i = 0; i < filteredSongs.size(); i++) {
-
             int id = filteredSongs.get(i).getAudioResId();
-
             if (id == audioResId) newIndex = i;
             if (id == lastPlayingId) oldIndex = i;
         }
-
         if (oldIndex >= 0) adapter.notifyItemChanged(oldIndex);
         if (newIndex >= 0) adapter.notifyItemChanged(newIndex);
 
@@ -223,7 +189,6 @@ public class SearchFragment extends Fragment implements PlaybackManager.Listener
     @Override
     public void onResume() {
         super.onResume();
-
         recomputeTopSongs();
         String currentQuery = "";
 
@@ -265,13 +230,11 @@ public class SearchFragment extends Fragment implements PlaybackManager.Listener
         }
     }
     private void filter(String text) {
-
         if (!text.isEmpty()) {
             lastSearch = text;
         }
 
         String q = norm(text);
-
         filteredSongs.clear();
         filteredAlbums.clear();
 
@@ -299,7 +262,6 @@ public class SearchFragment extends Fragment implements PlaybackManager.Listener
         ArrayList<Song> albumMatches = new ArrayList<>();
 
         for (Song s : allSongs) {
-
             String title = norm(s.getTitle());
             String artist = norm(s.getArtist());
             String album = norm(s.getAlbum());
@@ -312,13 +274,11 @@ public class SearchFragment extends Fragment implements PlaybackManager.Listener
                 albumMatches.add(s);
             }
         }
-
         filteredSongs.addAll(titleMatches);
         filteredSongs.addAll(artistMatches);
         filteredSongs.addAll(albumMatches);
 
         for (sk.ukf.wavvy.model.Album a : allAlbums) {
-
             String albumName = norm(a.getTitle());
             String artist = norm(a.getArtist());
 
@@ -360,11 +320,11 @@ public class SearchFragment extends Fragment implements PlaybackManager.Listener
 
         tvEmpty.setVisibility(View.GONE);
         recyclerView.setVisibility(View.VISIBLE);
-
         tvSectionSubtitle.setVisibility(View.VISIBLE);
         tvAlbumsLabel.setVisibility(View.GONE);
         tvSongsLabel.setVisibility(View.GONE);
         rvAlbums.setVisibility(View.GONE);
+
         adapter.setHighlightQuery("");
         albumAdapter.setHighlightQuery("");
 

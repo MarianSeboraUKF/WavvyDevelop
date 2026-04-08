@@ -125,9 +125,7 @@ public class LibraryFragment extends Fragment {
 
         rvSongsPager.addItemDecoration(new RecyclerView.ItemDecoration() {
             @Override
-            public void getItemOffsets(@NonNull android.graphics.Rect outRect, @NonNull View view, RecyclerView parent, RecyclerView.State state) {
-                outRect.right = 24;
-            }
+            public void getItemOffsets(@NonNull android.graphics.Rect outRect, @NonNull View view, RecyclerView parent, RecyclerView.State state) { outRect.right = 24; }
         });
         playlists = new ArrayList<>();
         playlists.addAll(PlaylistRepository.getPlaylists(requireContext()));
@@ -148,9 +146,7 @@ public class LibraryFragment extends Fragment {
 
         albumsList = new ArrayList<>();
 
-        Set<String> savedAlbums = requireContext()
-                .getSharedPreferences("saved_albums", Context.MODE_PRIVATE)
-                .getStringSet("album_titles", new HashSet<>());
+        Set<String> savedAlbums = requireContext().getSharedPreferences("saved_albums", Context.MODE_PRIVATE).getStringSet("album_titles", new HashSet<>());
 
         if (savedAlbums == null) savedAlbums = new HashSet<>();
 
@@ -162,11 +158,8 @@ public class LibraryFragment extends Fragment {
         }
 
         Collections.sort(albumsList, (a, b) -> {
-            String t1 = Normalizer.normalize(a.getTitle(), Normalizer.Form.NFD)
-                    .replaceAll("\\p{InCombiningDiacriticalMarks}+", "");
-            String t2 = Normalizer.normalize(b.getTitle(), Normalizer.Form.NFD)
-                    .replaceAll("\\p{InCombiningDiacriticalMarks}+", "");
-
+            String t1 = Normalizer.normalize(a.getTitle(), Normalizer.Form.NFD).replaceAll("\\p{InCombiningDiacriticalMarks}+", "");
+            String t2 = Normalizer.normalize(b.getTitle(), Normalizer.Form.NFD).replaceAll("\\p{InCombiningDiacriticalMarks}+", "");
             return t1.compareToIgnoreCase(t2);
         });
 
@@ -179,7 +172,6 @@ public class LibraryFragment extends Fragment {
                     requireActivity().overridePendingTransition(R.anim.slide_in_right_fast, R.anim.slide_out_left_fast);
                 }
         );
-
         rvAlbums.setAdapter(albumAdapter);
         libraryReceiver = new BroadcastReceiver() {
             @Override
@@ -202,9 +194,7 @@ public class LibraryFragment extends Fragment {
         List<List<Song>> pages = new ArrayList<>();
 
         for (int i = 0; i < likedSongs.size(); i += 3) {
-            List<Song> page = new ArrayList<>(
-                    likedSongs.subList(i, Math.min(i + 3, likedSongs.size()))
-            );
+            List<Song> page = new ArrayList<>(likedSongs.subList(i, Math.min(i + 3, likedSongs.size())));
             while (page.size() < 3) {
                 page.add(null);
             }
@@ -267,9 +257,7 @@ public class LibraryFragment extends Fragment {
         rvSongsPager.scrollToPosition(songsScrollPosition);
 
         albumsList.clear();
-        Set<String> savedAlbums = requireContext()
-                .getSharedPreferences("saved_albums", Context.MODE_PRIVATE)
-                .getStringSet("album_titles", new HashSet<>());
+        Set<String> savedAlbums = requireContext().getSharedPreferences("saved_albums", Context.MODE_PRIVATE).getStringSet("album_titles", new HashSet<>());
 
         if (savedAlbums == null) savedAlbums = new HashSet<>();
 
@@ -281,10 +269,8 @@ public class LibraryFragment extends Fragment {
         }
 
         Collections.sort(albumsList, (a, b) -> {
-            String t1 = Normalizer.normalize(a.getTitle(), Normalizer.Form.NFD)
-                    .replaceAll("\\p{InCombiningDiacriticalMarks}+", "");
-            String t2 = Normalizer.normalize(b.getTitle(), Normalizer.Form.NFD)
-                    .replaceAll("\\p{InCombiningDiacriticalMarks}+", "");
+            String t1 = Normalizer.normalize(a.getTitle(), Normalizer.Form.NFD).replaceAll("\\p{InCombiningDiacriticalMarks}+", "");
+            String t2 = Normalizer.normalize(b.getTitle(), Normalizer.Form.NFD).replaceAll("\\p{InCombiningDiacriticalMarks}+", "");
             return t1.compareToIgnoreCase(t2);
         });
 
@@ -300,15 +286,11 @@ public class LibraryFragment extends Fragment {
     @Override
     public void onActivityResult(int requestCode, int resultCode, @Nullable Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
-
         if (requestCode == 1001 && resultCode == requireActivity().RESULT_OK) {
             if (data != null && data.getData() != null) {
                 Uri uri = data.getData();
                 try {
-                    requireContext().getContentResolver().takePersistableUriPermission(
-                            uri,
-                            Intent.FLAG_GRANT_READ_URI_PERMISSION
-                    );
+                    requireContext().getContentResolver().takePersistableUriPermission(uri, Intent.FLAG_GRANT_READ_URI_PERMISSION);
                 } catch (Exception ignored) {}
                 importSong(uri);
             }
@@ -351,9 +333,11 @@ public class LibraryFragment extends Fragment {
             if (dur != null) { newSong.setDurationMs(Long.parseLong(dur)); }
 
             SongRepository.saveLocalSongs(requireContext());
+
             Intent intent = new Intent("songs_updated");
             intent.setPackage(requireContext().getPackageName());
             requireContext().sendBroadcast(intent);
+
             reload();
             Toast.makeText(requireContext(), "Imported: " + title, Toast.LENGTH_SHORT).show();
         } catch (Exception e) {
@@ -398,11 +382,12 @@ public class LibraryFragment extends Fragment {
         if (playlist.getId().equals("liked")) {
         } else if (playlist.getId().equals("local")) {
             actionImport.setVisibility(View.VISIBLE);
-            actionImport.setOnClickListener(v -> {popup.dismiss();});
+            actionImport.setOnClickListener(v -> { popup.dismiss(); });
         } else {
             actionEdit.setVisibility(View.VISIBLE);
             actionDelete.setVisibility(View.VISIBLE);
-            actionEdit.setOnClickListener(v -> {popup.dismiss();
+            actionEdit.setOnClickListener(v -> {
+                popup.dismiss();
                 showRenameDialog(playlist);
             });
             actionDelete.setOnClickListener(v -> {
@@ -410,13 +395,15 @@ public class LibraryFragment extends Fragment {
                 showDeleteDialog(playlist);
             });
         }
-        actionInfo.setOnClickListener(v -> {popup.dismiss();showPlaylistInfoDialog(playlist);});
+        actionInfo.setOnClickListener(v -> { popup.dismiss();showPlaylistInfoDialog(playlist); });
         popup.showAsDropDown(anchor);
     }
     private void showRenameDialog(Playlist playlist) {
         View card = LayoutInflater.from(requireContext()).inflate(R.layout.dialog_rename_playlist, null);
+
         EditText etName = card.findViewById(R.id.etName);
         etName.setText(playlist.getName());
+
         android.app.Dialog dialog = WavvyDialogs.showCenteredCardDialog(requireContext(), requireActivity(), card);
 
         card.findViewById(R.id.btnRename).setOnClickListener(v -> {

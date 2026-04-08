@@ -102,10 +102,8 @@ public class PlayerActivity extends AppCompatActivity implements PlaybackManager
                     return true;
 
                 case MotionEvent.ACTION_UP:
-
                     float endY = event.getY();
                     float endX = event.getX();
-
                     float deltaY = endY - startY;
                     float deltaX = endX - startX;
 
@@ -144,7 +142,6 @@ public class PlayerActivity extends AppCompatActivity implements PlaybackManager
 
         btnFavourite.setOnClickListener(v -> {
             Song song = SongRepository.findByAudioResId(pm.getCurrentAudioResId());
-
             if (song == null) return;
 
             String songId = String.valueOf(song.getAudioResId());
@@ -380,13 +377,11 @@ public class PlayerActivity extends AppCompatActivity implements PlaybackManager
         });
 
         btnPlayPause.setOnClickListener(v -> {
-            haptic(v);
             v.animate().scaleX(0.85f).scaleY(0.85f).setDuration(80).withEndAction(() -> v.animate().scaleX(1f).scaleY(1f).setDuration(120).start()).start();
             pm.togglePlayPause();
         });
 
         btnNext.setOnClickListener(v -> {
-            haptic(v);
             if (pm.getRepeatMode() == PlaybackManager.RepeatMode.ONE) {
                 if (player != null) {
                     player.seekTo(0);
@@ -397,7 +392,6 @@ public class PlayerActivity extends AppCompatActivity implements PlaybackManager
         });
 
         btnPrev.setOnClickListener(v -> {
-            haptic(v);
             if (player != null && player.getCurrentPosition() > 3000) {
                 player.seekTo(0);
                 return;
@@ -406,7 +400,6 @@ public class PlayerActivity extends AppCompatActivity implements PlaybackManager
         });
 
         btnShuffle.setOnClickListener(v -> {
-            haptic(v);
             pm.toggleShuffle();
             updateShuffleUi();
             updatePlaybackStatusText();
@@ -414,7 +407,6 @@ public class PlayerActivity extends AppCompatActivity implements PlaybackManager
         });
 
         btnRepeat.setOnClickListener(v -> {
-            haptic(v);
             pm.cycleRepeatMode();
             updateRepeatUi();
             updatePlaybackStatusText();
@@ -435,12 +427,7 @@ public class PlayerActivity extends AppCompatActivity implements PlaybackManager
             public void onStopTrackingTouch(SeekBar sb) {
                 isUserSeeking = false;
                 if (player != null) player.seekTo(sb.getProgress());
-                sb.postDelayed(() -> {
-                    ignorePlaybackChanges = false;
-                    boolean playing = player != null && player.isPlaying();
-                    lastIsPlaying = playing;
-                    animateCoverState(playing);
-                }, 200);
+                sb.postDelayed(() -> {ignorePlaybackChanges = false;boolean playing = player != null && player.isPlaying();lastIsPlaying = playing;animateCoverState(playing);}, 200);
             }
         });
         handleIntentPlayback();
@@ -455,9 +442,7 @@ public class PlayerActivity extends AppCompatActivity implements PlaybackManager
 
         bottomArea.setOnClickListener(v -> {
             if (getSupportFragmentManager().isStateSaved()) return;
-            if (getSupportFragmentManager().findFragmentByTag("queue") != null) {
-                return;
-            }
+            if (getSupportFragmentManager().findFragmentByTag("queue") != null) { return; }
             QueueBottomSheet sheet = new QueueBottomSheet();
             sheet.show(getSupportFragmentManager(), "queue");
         });
@@ -691,10 +676,12 @@ public class PlayerActivity extends AppCompatActivity implements PlaybackManager
     private void updateNavButtons() {
         int[] q = pm.getQueueIds();
         int idx = pm.getQueueIndex();
+
         boolean hasQueue = q != null && q.length > 1;
         boolean isRepeatOne = pm.getRepeatMode() == PlaybackManager.RepeatMode.ONE;
         boolean prevEnabled = hasQueue && (idx > 0 || isRepeatOne || pm.getRepeatMode() == PlaybackManager.RepeatMode.ALL);
         boolean nextEnabled = hasQueue && (idx < q.length - 1 || pm.getRepeatMode() == PlaybackManager.RepeatMode.ALL);
+
         btnPrev.setEnabled(prevEnabled);
         btnNext.setEnabled(nextEnabled);
         float disabledAlpha = 0.35f;
@@ -807,9 +794,6 @@ public class PlayerActivity extends AppCompatActivity implements PlaybackManager
 
         return String.format("%02d:%02d", minutes, seconds);
     }
-    private void haptic(View v) {
-        v.performHapticFeedback(android.view.HapticFeedbackConstants.VIRTUAL_KEY);
-    }
     private void animateBottomText(String label, String track) {
         String currentLabel = tvBottomLabel.getText().toString();
         String currentTrack = tvBottomTrack.getText().toString();
@@ -820,30 +804,12 @@ public class PlayerActivity extends AppCompatActivity implements PlaybackManager
             return;
         }
         if (labelChanged) {
-            tvBottomLabel.animate()
-                    .alpha(0f)
-                    .setDuration(180)
-                    .withEndAction(() -> {
-                        tvBottomLabel.setText(label);
-                        tvBottomLabel.animate()
-                                .alpha(1f)
-                                .setDuration(180)
-                                .start();
-                    })
-                    .start();
+            tvBottomLabel.animate().alpha(0f).setDuration(180)
+                    .withEndAction(() -> {tvBottomLabel.setText(label);tvBottomLabel.animate().alpha(1f).setDuration(180).start();}).start();
         }
         if (trackChanged) {
-            tvBottomTrack.animate()
-                    .alpha(0f)
-                    .setDuration(180)
-                    .withEndAction(() -> {
-                        tvBottomTrack.setText(track);
-                        tvBottomTrack.animate()
-                                .alpha(1f)
-                                .setDuration(180)
-                                .start();
-                    })
-                    .start();
+            tvBottomTrack.animate().alpha(0f).setDuration(180)
+                    .withEndAction(() -> {tvBottomTrack.setText(track);tvBottomTrack.animate().alpha(1f).setDuration(180).start();}).start();
         }
     }
 }

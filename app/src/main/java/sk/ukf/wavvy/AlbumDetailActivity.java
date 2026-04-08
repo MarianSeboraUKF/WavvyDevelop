@@ -51,11 +51,9 @@ public class AlbumDetailActivity extends AppCompatActivity implements PlaybackMa
     protected void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_album_detail);
-
         WindowCompat.setDecorFitsSystemWindows(getWindow(), false);
 
         View root = findViewById(R.id.albumRoot);
-
         ViewCompat.setOnApplyWindowInsetsListener(root, (v, insets) -> {
             int top = insets.getInsets(WindowInsetsCompat.Type.statusBars()).top;
             v.setPadding(0, top, 0, 0);
@@ -63,7 +61,6 @@ public class AlbumDetailActivity extends AppCompatActivity implements PlaybackMa
         });
 
         pm = PlaybackManager.get(this);
-
         tvAlbumTitle = findViewById(R.id.tvAlbumTitle);
         tvAlbumMeta = findViewById(R.id.tvAlbumMeta);
         ivAlbumCover = findViewById(R.id.ivAlbumCover);
@@ -84,10 +81,7 @@ public class AlbumDetailActivity extends AppCompatActivity implements PlaybackMa
 
         findViewById(R.id.btnBack).setOnClickListener(v -> {
             finish();
-            overridePendingTransition(
-                    R.anim.slide_in_left_fast,
-                    R.anim.slide_out_right_fast
-            );
+            overridePendingTransition(R.anim.slide_in_left_fast, R.anim.slide_out_right_fast);
         });
 
         miniPlayer.setOnClickListener(v -> PlayerLauncher.openExisting(this));
@@ -96,7 +90,6 @@ public class AlbumDetailActivity extends AppCompatActivity implements PlaybackMa
         btnMiniNext.setOnClickListener(v -> pm.playNext(true));
 
         String albumTitle = getIntent().getStringExtra("album_title");
-
         Album album = AlbumRepository.findByTitle(albumTitle);
 
         if (album == null) {
@@ -106,6 +99,7 @@ public class AlbumDetailActivity extends AppCompatActivity implements PlaybackMa
 
         tvAlbumTitle.setText(album.getTitle());
         tvAlbumArtist.setText(album.getArtist());
+
         if (album.getCoverUri() != null && !album.getCoverUri().isEmpty()) {
             ivAlbumCover.setImageURI(android.net.Uri.parse(album.getCoverUri()));
         } else {
@@ -132,23 +126,14 @@ public class AlbumDetailActivity extends AppCompatActivity implements PlaybackMa
 
                 SavedAlbumsRepository.add(this, album.getTitle());
 
-                android.widget.Toast.makeText(
-                        this,
-                        "Album added to library",
-                        android.widget.Toast.LENGTH_SHORT
-                ).show();
-
+                android.widget.Toast.makeText(this, "Album added to library", android.widget.Toast.LENGTH_SHORT).show();
             } else {
                 btnSaveAlbum.setImageResource(R.drawable.ic_bookmark_add);
                 btnSaveAlbum.setTag(false);
 
                 SavedAlbumsRepository.remove(this, album.getTitle());
 
-                android.widget.Toast.makeText(
-                        this,
-                        "Album removed from library",
-                        android.widget.Toast.LENGTH_SHORT
-                ).show();
+                android.widget.Toast.makeText(this, "Album removed from library", android.widget.Toast.LENGTH_SHORT).show();
             }
         });
 
@@ -162,11 +147,7 @@ public class AlbumDetailActivity extends AppCompatActivity implements PlaybackMa
                     true
             );
 
-            popupWindow.setBackgroundDrawable(
-                    new android.graphics.drawable.ColorDrawable(
-                            android.graphics.Color.TRANSPARENT
-                    )
-            );
+            popupWindow.setBackgroundDrawable(new android.graphics.drawable.ColorDrawable(android.graphics.Color.TRANSPARENT));
             popupWindow.setElevation(16f);
 
             LinearLayout libraryAction = popupView.findViewById(R.id.actionAddLibrary);
@@ -192,23 +173,12 @@ public class AlbumDetailActivity extends AppCompatActivity implements PlaybackMa
                     SavedAlbumsRepository.add(this, album.getTitle());
                     btnSaveAlbum.setImageResource(R.drawable.ic_bookmark_added);
                     btnSaveAlbum.setTag(true);
-
-                    android.widget.Toast.makeText(
-                            this,
-                            "Added to library",
-                            android.widget.Toast.LENGTH_SHORT
-                    ).show();
-
+                    android.widget.Toast.makeText(this, "Added to library", android.widget.Toast.LENGTH_SHORT).show();
                 } else {
                     SavedAlbumsRepository.remove(this, album.getTitle());
                     btnSaveAlbum.setImageResource(R.drawable.ic_bookmark_add);
                     btnSaveAlbum.setTag(false);
-
-                    android.widget.Toast.makeText(
-                            this,
-                            "Removed from library",
-                            android.widget.Toast.LENGTH_SHORT
-                    ).show();
+                    android.widget.Toast.makeText(this, "Removed from library", android.widget.Toast.LENGTH_SHORT).show();
                 }
                 popupWindow.dismiss();
             });
@@ -230,7 +200,6 @@ public class AlbumDetailActivity extends AppCompatActivity implements PlaybackMa
             if (!songsInAlbum.isEmpty()) {
                 ArrayList<Song> shuffled = new ArrayList<>(songsInAlbum);
                 Collections.shuffle(shuffled);
-
                 PlayerLauncher.openQueue(this, shuffled, shuffled.get(0));
             }
         });
@@ -274,7 +243,6 @@ public class AlbumDetailActivity extends AppCompatActivity implements PlaybackMa
     @Override
     public void onNowPlayingChanged(int audioResId, int[] queueIds, int queueIndex) {
         updateMiniPlayerUi();
-
         if (adapter != null) {
             adapter.notifyDataSetChanged();
         }
@@ -301,9 +269,7 @@ public class AlbumDetailActivity extends AppCompatActivity implements PlaybackMa
             return;
         }
 
-        Song s = SongRepository.findByAudioResId(
-                NowPlayingRepository.getAudioResId(this)
-        );
+        Song s = SongRepository.findByAudioResId(NowPlayingRepository.getAudioResId(this));
 
         if (s == null) {
             miniPlayer.setVisibility(View.GONE);
@@ -319,9 +285,7 @@ public class AlbumDetailActivity extends AppCompatActivity implements PlaybackMa
         tvMiniTitle.setText(s.getTitle());
         tvMiniArtist.setText(s.getArtist());
 
-        btnMiniPlay.setImageResource(
-                pm.isPlaying() ? R.drawable.ic_pause : R.drawable.ic_play
-        );
+        btnMiniPlay.setImageResource(pm.isPlaying() ? R.drawable.ic_pause : R.drawable.ic_play);
     }
     private void showAlbumInfo(Album album) {
         View dialogView = getLayoutInflater().inflate(R.layout.dialog_album_info, null);
@@ -343,22 +307,16 @@ public class AlbumDetailActivity extends AppCompatActivity implements PlaybackMa
         tvSongs.setText(album.getSongs().size() + " songs");
 
         long totalMs = 0;
-
         for (Song s : album.getSongs()) {
             totalMs += s.getDurationMs();
         }
 
         tvLength.setText(formatDuration(totalMs));
 
-        androidx.appcompat.app.AlertDialog dialog =
-                new androidx.appcompat.app.AlertDialog.Builder(this)
-                        .setView(dialogView)
-                        .create();
+        androidx.appcompat.app.AlertDialog dialog = new androidx.appcompat.app.AlertDialog.Builder(this).setView(dialogView).create();
 
         if (dialog.getWindow() != null) {
-            dialog.getWindow().setBackgroundDrawableResource(
-                    android.R.color.transparent
-            );
+            dialog.getWindow().setBackgroundDrawableResource(android.R.color.transparent);
         }
         btnClose.setOnClickListener(v -> dialog.dismiss());
         dialog.show();
@@ -399,8 +357,7 @@ public class AlbumDetailActivity extends AppCompatActivity implements PlaybackMa
 
             int almostBlack = android.graphics.Color.argb(255, 20, 22, 28);
 
-            GradientDrawable gd = new GradientDrawable(GradientDrawable.Orientation.TOP_BOTTOM, new int[]{ softened, almostBlack, android.graphics.Color.BLACK }
-            );
+            GradientDrawable gd = new GradientDrawable(GradientDrawable.Orientation.TOP_BOTTOM, new int[]{ softened, almostBlack, android.graphics.Color.BLACK });
             root.setBackground(gd);
         });
     }

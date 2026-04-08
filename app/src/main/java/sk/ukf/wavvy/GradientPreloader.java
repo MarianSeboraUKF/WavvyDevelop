@@ -11,17 +11,15 @@ public class GradientPreloader {
         if (GradientPrefs.has(ctx, coverResId)) return;
 
         new Thread(() -> {
-
             Bitmap bitmap = BitmapFactory.decodeResource(ctx.getResources(), coverResId);
             if (bitmap == null) return;
 
             Palette palette = Palette.from(bitmap).generate();
 
-            int dominant = palette.getDominantColor(
-                    ContextCompat.getColor(ctx, R.color.bg)
-            );
+            int dominant = palette.getDominantColor(ContextCompat.getColor(ctx, R.color.bg));
             int dark = palette.getDarkMutedColor(dominant);
             int vibrant = palette.getVibrantColor(dominant);
+
             GradientPrefs.save(ctx, coverResId, vibrant, dark);
         }).start();
     }

@@ -89,7 +89,6 @@ public class PlaylistRepository {
                 for (Integer id : p.getSongAudioResIds()) {
                     updated.addSong(id);
                 }
-
                 playlists.add(updated);
                 break;
             }

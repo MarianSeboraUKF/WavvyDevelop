@@ -53,8 +53,10 @@ public class PlaybackManager {
                 long pos = player.getCurrentPosition();
                 long dur = player.getDuration();
                 if (dur < 0) dur = 0;
+
                 notifyProgress(pos, dur);
                 long now = System.currentTimeMillis();
+
                 if (player.isPlaying() && now - lastSave > 3000) {
                     NowPlayingRepository.savePosition(appContext, pos);
                     lastSave = now;
@@ -65,13 +67,13 @@ public class PlaybackManager {
     };
     public void saveCurrentPositionNow() {
         if (player == null) return;
-
         long pos = player.getCurrentPosition();
         NowPlayingRepository.savePosition(appContext, pos);
     }
     private PlaybackManager(Context appContext) {
         this.appContext = appContext;
         this.player = new ExoPlayer.Builder(appContext).build();
+
         notificationManager = new MediaNotificationManager(appContext);
         mediaSession = new MediaSessionCompat(appContext, "WavvySession");
         mediaSession.setActive(true);
@@ -84,6 +86,7 @@ public class PlaybackManager {
             public void onIsPlayingChanged(boolean isPlaying) {
                 notifyIsPlaying(isPlaying);
                 updateNotification();
+
                 if (isPlaying && currentAudioResId != 0 && currentAudioResId != lastCountedAudioId) {
                     PlayCountRepository.increment(appContext, currentAudioResId);
                     lastCountedAudioId = currentAudioResId;
@@ -147,6 +150,7 @@ public class PlaybackManager {
 
         player.setMediaItem(item);
         player.prepare();
+
         long savedPos = NowPlayingRepository.getPosition(appContext);
         if (savedPos > 0) {
             player.seekTo(savedPos);
@@ -184,6 +188,7 @@ public class PlaybackManager {
         if (currentAudioResId != 0 && activeQueue != null) {
             l.onNowPlayingChanged(currentAudioResId, activeQueue, queueIndex);
         }
+
         l.onIsPlayingChanged(player.isPlaying());
         l.onProgress(player.getCurrentPosition(), player.getDuration());
         cleanupListeners();
@@ -210,13 +215,7 @@ public class PlaybackManager {
         }
         Song s = SongRepository.findByAudioResId(currentAudioResId);
         if (s != null) {
-            notificationManager.showNotification(
-                    s,
-                    player.isPlaying(),
-                    mediaSession,
-                    player.getCurrentPosition(),
-                    player.getDuration()
-            );
+            notificationManager.showNotification(s, player.isPlaying(), mediaSession, player.getCurrentPosition(), player.getDuration());
         }
     }
     private void notifyIsPlaying(boolean isPlaying) {
@@ -327,6 +326,7 @@ public class PlaybackManager {
 
         shuffleEnabled = !shuffleEnabled;
         int keepId = currentAudioResId;
+
         if (shuffleEnabled) {
             activeQueue = buildShuffledQueueKeepingCurrent(originalQueue, keepId);
             queueIndex = 0;
@@ -350,6 +350,7 @@ public class PlaybackManager {
         }
 
         int keepId = currentAudioResId;
+
         if (shuffleEnabled) {
             activeQueue = buildShuffledQueueKeepingCurrent(originalQueue, keepId);
             queueIndex = 0;
@@ -475,13 +476,7 @@ public class PlaybackManager {
                 mediaSession.setActive(false);
             }
         }
-
-        NowPlayingRepository.saveNowPlaying(
-                appContext,
-                currentAudioResId,
-                activeQueue,
-                queueIndex
-        );
+        NowPlayingRepository.saveNowPlaying(appContext, currentAudioResId, activeQueue, queueIndex);
         notifyNowPlaying();
     }
     public void playFromQueue(int position) {

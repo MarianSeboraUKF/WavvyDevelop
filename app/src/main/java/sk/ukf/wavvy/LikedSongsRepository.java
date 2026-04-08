@@ -29,15 +29,12 @@ public class LikedSongsRepository {
                 list.addAll(oldSet);
                 JSONArray arr = new JSONArray(list);
                 prefs.edit().putString(KEY, arr.toString()).apply();
-
                 return list;
             } catch (Exception ignored) {}
         } catch (Exception ignored) {}
         return list;
     }
-    public static boolean isLiked(Context context, String songId) {
-        return getLikedSongs(context).contains(songId);
-    }
+    public static boolean isLiked(Context context, String songId) { return getLikedSongs(context).contains(songId); }
     public static void toggleLike(Context context, String songId) {
         SharedPreferences prefs = context.getSharedPreferences(PREFS, Context.MODE_PRIVATE);
         ArrayList<String> liked = getLikedSongs(context);
@@ -47,6 +44,7 @@ public class LikedSongsRepository {
         } else {
             liked.add(songId);
         }
+
         JSONArray arr = new JSONArray(liked);
         prefs.edit().putString(KEY, arr.toString()).commit();
         android.content.Intent intent = new android.content.Intent(ACTION_LIKED_CHANGED);

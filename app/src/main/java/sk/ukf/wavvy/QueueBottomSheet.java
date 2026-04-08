@@ -34,13 +34,8 @@ public class QueueBottomSheet extends BottomSheetDialogFragment {
             if (s != null) songs.add(s);
         }
 
-        SongAdapter adapter = new SongAdapter(
-                songs,
-                true,
-                false,
-                song -> {
+        SongAdapter adapter = new SongAdapter(songs, true, false, song -> {
                     int position = songs.indexOf(song);
-
                     if (position != -1) {
                         pm.playFromQueue(position);
                     }
@@ -61,14 +56,12 @@ public class QueueBottomSheet extends BottomSheetDialogFragment {
         }
 
         ItemTouchHelper.SimpleCallback callback =
-                new ItemTouchHelper.SimpleCallback(
-                        ItemTouchHelper.UP | ItemTouchHelper.DOWN,
-                        ItemTouchHelper.LEFT | ItemTouchHelper.RIGHT
-                ) {
+                new ItemTouchHelper.SimpleCallback(ItemTouchHelper.UP | ItemTouchHelper.DOWN, ItemTouchHelper.LEFT | ItemTouchHelper.RIGHT) {
                     @Override
                     public boolean onMove(@NonNull RecyclerView recyclerView, @NonNull RecyclerView.ViewHolder viewHolder, @NonNull RecyclerView.ViewHolder target) {
                         int fromPos = viewHolder.getAdapterPosition();
                         int toPos = target.getAdapterPosition();
+
                         Collections.swap(songs, fromPos, toPos);
                         adapter.notifyItemMoved(fromPos, toPos);
 
@@ -81,7 +74,6 @@ public class QueueBottomSheet extends BottomSheetDialogFragment {
 
                         pm.removeFromQueue(position);
                         songs.remove(position);
-
                         adapter.notifyItemRemoved(position);
                         adapter.notifyItemRangeChanged(position, songs.size());
                     }

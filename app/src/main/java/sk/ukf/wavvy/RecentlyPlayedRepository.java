@@ -14,7 +14,6 @@ public class RecentlyPlayedRepository {
         ArrayList<Integer> list = new ArrayList<>();
 
         if (!existing.isEmpty()) {
-
             String[] parts = existing.split(",");
 
             for (String p : parts) {
@@ -42,11 +41,8 @@ public class RecentlyPlayedRepository {
     }
 
     public static ArrayList<Integer> get(Context ctx) {
-
         SharedPreferences sp = ctx.getSharedPreferences(PREFS, Context.MODE_PRIVATE);
-
         String csv = sp.getString(KEY_RECENT, "");
-
         ArrayList<Integer> list = new ArrayList<>();
 
         if (csv.isEmpty()) return list;
