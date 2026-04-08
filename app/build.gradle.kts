@@ -1,6 +1,5 @@
 plugins {
     alias(libs.plugins.android.application)
-    id("com.google.gms.google-services")
 }
 
 android {
@@ -48,6 +47,4 @@ dependencies {
     androidTestImplementation(libs.espresso.core)
     implementation(libs.core.splashscreen)
     implementation(libs.media)
-    implementation(platform("com.google.firebase:firebase-bom:34.1.0"))
-    implementation("com.google.firebase:firebase-firestore")
 }

@@ -121,25 +121,26 @@ public class HomeFragment extends Fragment implements PlaybackManager.Listener {
 
         TextView btnViewMore = view.findViewById(R.id.btnViewMore);
         rvSongs.setItemAnimator(new androidx.recyclerview.widget.DefaultItemAnimator());
+
         btnViewMore.setOnClickListener(v -> {
             if (!isExpanded) {
                 isExpanded = true;
-                int oldSize = adapter.getItemCount();
-                ArrayList<Song> fullList = new ArrayList<>(allSongs);
-                adapter.updateData(fullList);
-                adapter.notifyItemRangeInserted(oldSize, fullList.size() - oldSize);
+                adapter.updateData(new ArrayList<>(allSongs));
+                rvSongs.scheduleLayoutAnimation();
                 btnViewMore.setText("Show less");
-                rvSongs.post(() -> rvSongs.smoothScrollToPosition(oldSize));
+
             } else {
                 isExpanded = false;
-                int oldSize = adapter.getItemCount();
-                int newSize = Math.min(10, allSongs.size());
                 adapter.updateData(getDisplayedSongs());
-                adapter.notifyItemRangeRemoved(newSize, oldSize - newSize);
+                rvSongs.scheduleLayoutAnimation();
                 btnViewMore.setText("View more");
-                rvSongs.post(() -> rvSongs.smoothScrollToPosition(0));
+                rvSongs.scrollToPosition(0);
             }
         });
+
+        rvSongs.setHasFixedSize(true);
+        rvSongs.setItemViewCacheSize(20);
+        rvSongs.setItemAnimator(new androidx.recyclerview.widget.DefaultItemAnimator());
 
         mostPlayed = SongRepository.getMostPlayedSongs(requireContext());
         mostPlayedAdapter = new SmallSongAdapter(
@@ -163,7 +164,6 @@ public class HomeFragment extends Fragment implements PlaybackManager.Listener {
         rvSongs.setAdapter(adapter);
 
         rvMostPlayed.setAdapter(mostPlayedAdapter);
-        rvSongs.setItemAnimator(null);
 
         rvAlbums = view.findViewById(R.id.rvAlbums);
         rvAlbums.setLayoutManager(new LinearLayoutManager(requireContext(), LinearLayoutManager.HORIZONTAL, false));
