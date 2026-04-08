@@ -3,7 +3,7 @@
     android:layout_width="wrap_content"
     android:layout_height="wrap_content"
     android:orientation="vertical"
-    android:background="@drawable/bg_popup_menu"
+    android:background="@drawable/background_popup_menu"
     android:elevation="12dp"
     android:padding="10dp">
 
@@ -18,7 +18,7 @@
         <ImageView
             android:layout_width="22dp"
             android:layout_height="22dp"
-            android:src="@drawable/ic_add"
+            android:src="@drawable/icon_add"
             android:tint="#F3F3F3"/>
 
         <TextView
@@ -41,7 +41,7 @@
         <ImageView
             android:layout_width="22dp"
             android:layout_height="22dp"
-            android:src="@drawable/ic_info"
+            android:src="@drawable/icon_info"
             android:tint="#F3F3F3"/>
 
         <TextView

@@ -3,12 +3,12 @@
     android:layout_width="wrap_content"
     android:layout_height="wrap_content"
     android:orientation="vertical"
-    android:background="@drawable/bg_popup_menu"
+    android:background="@drawable/background_popup_menu"
     android:elevation="12dp"
     android:padding="10dp">
 
     <LinearLayout
-        android:id="@+id/actionImport"
+        android:id="@+id/actionAddToFavorites"
         android:layout_width="match_parent"
         android:layout_height="48dp"
         android:gravity="center_vertical"
@@ -18,20 +18,20 @@
         <ImageView
             android:layout_width="22dp"
             android:layout_height="22dp"
-            android:src="@drawable/ic_add"
+            android:src="@drawable/icon_like"
             android:tint="#F3F3F3"/>
 
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="Import"
+            android:text="Add to favorites"
             android:textSize="16sp"
             android:textColor="@color/textPrimary"
             android:layout_marginStart="10dp"/>
     </LinearLayout>
 
     <LinearLayout
-        android:id="@+id/actionEdit"
+        android:id="@+id/actionAddPlaylist"
         android:layout_width="match_parent"
         android:layout_height="48dp"
         android:gravity="center_vertical"
@@ -41,13 +41,57 @@
         <ImageView
             android:layout_width="22dp"
             android:layout_height="22dp"
-            android:src="@drawable/ic_edit"
+            android:src="@drawable/icon_add"
             android:tint="#F3F3F3"/>
 
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="Edit playlist"
+            android:text="Add to playlist"
+            android:textSize="16sp"
+            android:textColor="@color/textPrimary"
+            android:layout_marginStart="10dp"/>
+    </LinearLayout>
+
+    <LinearLayout
+        android:id="@+id/actionGoAlbum"
+        android:layout_width="match_parent"
+        android:layout_height="48dp"
+        android:gravity="center_vertical"
+        android:paddingHorizontal="14dp"
+        android:background="@drawable/popup_item_selected">
+
+        <ImageView
+            android:layout_width="22dp"
+            android:layout_height="22dp"
+            android:src="@drawable/icon_album"
+            android:tint="#F3F3F3"/>
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Go to album"
+            android:textSize="16sp"
+            android:textColor="@color/textPrimary"
+            android:layout_marginStart="10dp"/>
+    </LinearLayout>
+
+    <LinearLayout
+        android:id="@+id/actionEditSong"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:padding="12dp">
+
+        <ImageView
+            android:layout_width="24dp"
+            android:layout_height="24dp"
+            android:src="@drawable/icon_edit"/>
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Edit song"
             android:textSize="16sp"
             android:textColor="@color/textPrimary"
             android:layout_marginStart="10dp"/>
@@ -64,20 +108,20 @@
         <ImageView
             android:layout_width="22dp"
             android:layout_height="22dp"
-            android:src="@drawable/ic_info"
+            android:src="@drawable/icon_info"
             android:tint="#F3F3F3"/>
 
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="Playlist info"
+            android:text="Credits"
             android:textSize="16sp"
             android:textColor="@color/textPrimary"
             android:layout_marginStart="10dp"/>
     </LinearLayout>
 
     <LinearLayout
-        android:id="@+id/actionDelete"
+        android:id="@+id/actionDeleteSong"
         android:layout_width="match_parent"
         android:layout_height="48dp"
         android:gravity="center_vertical"
@@ -87,13 +131,13 @@
         <ImageView
             android:layout_width="22dp"
             android:layout_height="22dp"
-            android:src="@drawable/ic_delete"
+            android:src="@drawable/icon_delete"
             android:tint="@color/danger"/>
 
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="Delete playlist"
+            android:text="Delete song"
             android:textSize="16sp"
             android:textColor="@color/danger"
             android:layout_marginStart="10dp"/>

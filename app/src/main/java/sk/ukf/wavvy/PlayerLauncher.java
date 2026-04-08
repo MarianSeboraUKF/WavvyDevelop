@@ -27,7 +27,7 @@ public class PlayerLauncher {
         ctx.startActivity(intent);
 
         if (ctx instanceof Activity) {
-            ((Activity) ctx).overridePendingTransition(R.anim.slide_in_right_fast, R.anim.slide_out_left_fast);
+            ((Activity) ctx).overridePendingTransition(R.anim.slide_in_right_animation, R.anim.slide_out_left_animation);
         }
     }
 }

@@ -82,7 +82,7 @@ public class SongAdapter extends RecyclerView.Adapter<SongAdapter.SongViewHolder
 
         if (isPlaying) {
             holder.viewNowPlayingStripe.setVisibility(View.VISIBLE);
-            holder.itemView.setForeground(ContextCompat.getDrawable(holder.itemView.getContext(), R.drawable.bg_item_playing_overlay));
+            holder.itemView.setForeground(ContextCompat.getDrawable(holder.itemView.getContext(), R.drawable.background_item_playing_overlay));
             holder.itemView.animate().cancel();
             holder.itemView.setAlpha(0.85f);
             holder.itemView.animate().alpha(1f).setDuration(260).setInterpolator(new android.view.animation.DecelerateInterpolator()).start();
@@ -102,7 +102,7 @@ public class SongAdapter extends RecyclerView.Adapter<SongAdapter.SongViewHolder
         if (!isQueue && holder.btnSongMenu != null) {
             holder.btnSongMenu.setOnClickListener(v -> {
                 android.content.Context ctx = holder.itemView.getContext();
-                View popupView = LayoutInflater.from(ctx).inflate(R.layout.dialog_song_menu, null);
+                View popupView = LayoutInflater.from(ctx).inflate(R.layout.popup_song_menu, null);
 
                 PopupWindow popupWindow = new PopupWindow(popupView, ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT, true);
                 popupWindow.setBackgroundDrawable(new ColorDrawable(android.graphics.Color.TRANSPARENT));
@@ -143,11 +143,11 @@ public class SongAdapter extends RecyclerView.Adapter<SongAdapter.SongViewHolder
                 }
 
                 if (liked) {
-                    favIcon.setImageResource(R.drawable.ic_liked);
+                    favIcon.setImageResource(R.drawable.icon_liked);
                     favIcon.setColorFilter(ContextCompat.getColor(ctx, R.color.accent));
                     favText.setText("Remove from favorites");
                 } else {
-                    favIcon.setImageResource(R.drawable.ic_like);
+                    favIcon.setImageResource(R.drawable.icon_like);
                     favIcon.setColorFilter(ContextCompat.getColor(ctx, R.color.textPrimary));
                     favText.setText("Add to favorites");
                 }

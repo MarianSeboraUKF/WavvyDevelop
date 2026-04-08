@@ -9,7 +9,7 @@
         android:id="@+id/ivCover"
         android:layout_width="120dp"
         android:layout_height="120dp"
-        android:background="@drawable/bg_card"
+        android:background="@drawable/background_card"
         android:scaleType="centerCrop"
         android:clipToOutline="true"/>
 

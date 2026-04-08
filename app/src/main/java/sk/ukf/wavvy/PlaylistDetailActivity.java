@@ -105,7 +105,7 @@ public class PlaylistDetailActivity extends AppCompatActivity implements Playbac
 
         findViewById(R.id.btnBack).setOnClickListener(v -> {
             finish();
-            overridePendingTransition(R.anim.slide_in_left_fast, R.anim.slide_out_right_fast);
+            overridePendingTransition(R.anim.slide_in_left_animation, R.anim.slide_out_right_animation);
         });
 
         if (tvTopTitle != null) {
@@ -136,14 +136,14 @@ public class PlaylistDetailActivity extends AppCompatActivity implements Playbac
         if (playlistId != null) {
             ViewGroup.LayoutParams params = coverIcon.getLayoutParams();
             if ("liked".equals(playlistId)) {
-                coverBg.setBackgroundResource(R.drawable.bg_liked_gradient);
-                coverIcon.setImageResource(R.drawable.ic_liked);
+                coverBg.setBackgroundResource(R.drawable.background_liked_gradient);
+                coverIcon.setImageResource(R.drawable.icon_liked);
                 coverIcon.setColorFilter(android.graphics.Color.BLACK);
 
                 params.width = 350;
                 params.height = 350;
             } else if ("local".equals(playlistId)) {
-                coverBg.setBackgroundResource(R.drawable.bg_local_gradient);
+                coverBg.setBackgroundResource(R.drawable.background_local_gradient);
                 coverIcon.setImageResource(R.drawable.icon_local);
                 coverIcon.setColorFilter(android.graphics.Color.BLACK);
 
@@ -249,7 +249,7 @@ public class PlaylistDetailActivity extends AppCompatActivity implements Playbac
     @Override
     public void onIsPlayingChanged(boolean isPlaying) {
         if (btnMiniPlay != null) {
-            btnMiniPlay.setImageResource(isPlaying ? R.drawable.ic_pause : R.drawable.ic_play);
+            btnMiniPlay.setImageResource(isPlaying ? R.drawable.icon_pause : R.drawable.icon_play);
         }
         if (adapter != null) {
             adapter.notifyDataSetChanged();
@@ -292,7 +292,7 @@ public class PlaylistDetailActivity extends AppCompatActivity implements Playbac
         }
         tvMiniTitle.setText(s.getTitle());
         tvMiniArtist.setText(s.getArtist());
-        btnMiniPlay.setImageResource(pm.isPlaying() ? R.drawable.ic_pause : R.drawable.ic_play);
+        btnMiniPlay.setImageResource(pm.isPlaying() ? R.drawable.icon_pause : R.drawable.icon_play);
 
         int[] q = pm.getQueueIds();
         int idx = pm.getQueueIndex();
@@ -379,7 +379,7 @@ public class PlaylistDetailActivity extends AppCompatActivity implements Playbac
         startActivity(i);
     }
     private void showSortPopup(View anchor) {
-        View popupView = getLayoutInflater().inflate(R.layout.dialog_sort_playlist, null);
+        View popupView = getLayoutInflater().inflate(R.layout.popup_sort_playlist, null);
         PopupWindow popup = new PopupWindow(popupView, ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT, true);
         popup.setBackgroundDrawable(new ColorDrawable(android.graphics.Color.TRANSPARENT));
         popup.setElevation(12f);
@@ -521,7 +521,7 @@ public class PlaylistDetailActivity extends AppCompatActivity implements Playbac
         btnCancel.setOnClickListener(v -> dialog.dismiss());
     }
     private void showPlaylistMenu(View anchor) {
-        View popupView = getLayoutInflater().inflate(R.layout.dialog_playlist_menu, null);
+        View popupView = getLayoutInflater().inflate(R.layout.popup_playlist_menu, null);
 
         final PopupWindow popup = new PopupWindow(popupView, ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT, true);
         popup.setBackgroundDrawable(new ColorDrawable(android.graphics.Color.TRANSPARENT));
@@ -582,8 +582,8 @@ public class PlaylistDetailActivity extends AppCompatActivity implements Playbac
             ((FrameLayout.LayoutParams) coverIcon.getLayoutParams()).gravity = android.view.Gravity.CENTER;
 
             coverIcon.setScaleType(ImageView.ScaleType.CENTER_CROP);
-            coverBg.setBackgroundResource(R.drawable.bg_liked_gradient);
-            coverIcon.setImageResource(R.drawable.ic_liked);
+            coverBg.setBackgroundResource(R.drawable.background_liked_gradient);
+            coverIcon.setImageResource(R.drawable.icon_liked);
             coverIcon.setColorFilter(android.graphics.Color.BLACK);
             coverIcon.setAlpha(1f);
         } else if ("local".equals(playlistId)) {
@@ -595,7 +595,7 @@ public class PlaylistDetailActivity extends AppCompatActivity implements Playbac
             ((FrameLayout.LayoutParams) coverIcon.getLayoutParams()).gravity = android.view.Gravity.CENTER;
 
             coverIcon.setScaleType(ImageView.ScaleType.CENTER_CROP);
-            coverBg.setBackgroundResource(R.drawable.bg_local_gradient);
+            coverBg.setBackgroundResource(R.drawable.background_local_gradient);
             coverIcon.setImageResource(R.drawable.icon_local);
             coverIcon.setColorFilter(android.graphics.Color.BLACK);
             coverIcon.setAlpha(1f);

@@ -8,14 +8,14 @@
     <FrameLayout
         android:layout_width="match_parent"
         android:layout_height="140dp"
-        android:background="@drawable/bg_card_selector">
+        android:background="@drawable/background_card_selector">
 
         <ImageView
             android:id="@+id/ivCover"
             android:layout_width="match_parent"
             android:layout_height="match_parent"
             android:scaleType="centerCrop"
-            android:background="@drawable/bg_liked_gradient"/>
+            android:background="@drawable/background_liked_gradient"/>
 
         <ImageView
             android:id="@+id/ivIcon"
@@ -23,7 +23,7 @@
             android:layout_height="100dp"
             android:layout_gravity="center"
             android:tint="@android:color/black"
-            android:src="@drawable/ic_liked"/>
+            android:src="@drawable/icon_liked"/>
     </FrameLayout>
 
     <TextView

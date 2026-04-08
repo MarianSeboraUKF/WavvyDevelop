@@ -13,12 +13,12 @@ import java.util.Collections;
 import sk.ukf.wavvy.adapter.SongAdapter;
 import sk.ukf.wavvy.model.Song;
 
-public class QueueBottomSheet extends BottomSheetDialogFragment {
+public class QueueBottom extends BottomSheetDialogFragment {
 
     @Nullable
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
-        View view = inflater.inflate(R.layout.bottom_sheet_queue, container, false);
+        View view = inflater.inflate(R.layout.bottom_queue, container, false);
         RecyclerView rvQueue = view.findViewById(R.id.rvQueue);
         PlaybackManager pm = PlaybackManager.get(requireContext());
 

@@ -20,7 +20,7 @@
             android:layout_width="80dp"
             android:layout_height="4dp"
             android:layout_gravity="center"
-            android:background="@drawable/bg_handle"
+            android:background="@drawable/background_handle"
             android:alpha="0.4"
             android:layout_marginBottom="12dp"/>
 

@@ -6,7 +6,7 @@
     android:layout_height="wrap_content"
     android:layout_margin="4dp"
     android:padding="8dp"
-    android:background="@drawable/bg_playlist_pick_ripple">
+    android:background="@drawable/background_playlist_ripple">
 
     <com.google.android.material.imageview.ShapeableImageView
         android:id="@+id/ivPlaylistCover"
@@ -23,7 +23,7 @@
         android:id="@+id/ivOverlayIcon"
         android:layout_width="80dp"
         android:layout_height="80dp"
-        android:src="@drawable/ic_liked"
+        android:src="@drawable/icon_liked"
         android:tint="@android:color/black"
         android:visibility="gone"
         app:layout_constraintTop_toTopOf="@id/ivPlaylistCover"
@@ -61,7 +61,7 @@
         android:layout_width="30dp"
         android:layout_height="30dp"
         android:background="@android:color/transparent"
-        android:src="@drawable/ic_more"
+        android:src="@drawable/icon_more"
         android:scaleType="center"
         app:tint="@color/accent"
         app:layout_constraintTop_toTopOf="@id/tvPlaylistName"

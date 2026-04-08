@@ -22,7 +22,7 @@
             android:layout_width="48dp"
             android:layout_height="48dp"
             android:background="@android:color/transparent"
-            android:src="@drawable/ic_back"
+            android:src="@drawable/icon_back"
             android:tint="@color/textPrimary"/>
 
         <TextView
@@ -41,7 +41,7 @@
             android:layout_width="48dp"
             android:layout_height="48dp"
             android:background="@android:color/transparent"
-            android:src="@drawable/ic_more"
+            android:src="@drawable/icon_more"
             android:tint="@color/textPrimary"/>
 
     </LinearLayout>
@@ -62,14 +62,14 @@
                 android:layout_height="250dp"
                 android:layout_gravity="center_horizontal"
                 android:layout_marginTop="20dp"
-                android:background="@drawable/bg_cover_rounded"
+                android:background="@drawable/background_cover_rounded"
                 android:clipToOutline="true">
 
                 <View
                     android:id="@+id/playlistCoverBg"
                     android:layout_width="match_parent"
                     android:layout_height="match_parent"
-                    android:background="@drawable/bg_liked_gradient"/>
+                    android:background="@drawable/background_liked_gradient"/>
 
                 <ImageView
                     android:id="@+id/playlistCoverIcon"

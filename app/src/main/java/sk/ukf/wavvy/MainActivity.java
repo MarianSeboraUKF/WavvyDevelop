@@ -303,7 +303,7 @@ public class MainActivity extends AppCompatActivity implements PlaybackManager.L
         super.onStop();
         PlaybackManager.get(this).removeListener(this);
     }
-    @Override public void onIsPlayingChanged(boolean playing){ btnMiniPlay.setImageResource(playing?R.drawable.ic_pause:R.drawable.ic_play); }
+    @Override public void onIsPlayingChanged(boolean playing){ btnMiniPlay.setImageResource(playing?R.drawable.icon_pause :R.drawable.icon_play); }
     @Override public void onNowPlayingChanged(int a,int[]b,int c){
         updateMiniPlayer();
     }

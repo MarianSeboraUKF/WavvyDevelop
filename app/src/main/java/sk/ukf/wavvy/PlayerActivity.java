@@ -66,7 +66,7 @@ public class PlayerActivity extends AppCompatActivity implements PlaybackManager
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_player);
-        overridePendingTransition(R.anim.slide_in_right_fast, R.anim.slide_out_left_fast);
+        overridePendingTransition(R.anim.slide_in_right_animation, R.anim.slide_out_left_animation);
 
         WindowCompat.setDecorFitsSystemWindows(getWindow(), false);
         getWindow().setStatusBarColor(android.graphics.Color.TRANSPARENT);
@@ -117,7 +117,7 @@ public class PlayerActivity extends AppCompatActivity implements PlaybackManager
                     }
                     if (deltaY > SWIPE_THRESHOLD) {
                         finish();
-                        overridePendingTransition(R.anim.slide_in_left_fast, R.anim.slide_out_right_fast);
+                        overridePendingTransition(R.anim.slide_in_left_animation, R.anim.slide_out_right_animation);
                     }
                     v.performClick();
                     return true;
@@ -150,7 +150,7 @@ public class PlayerActivity extends AppCompatActivity implements PlaybackManager
             boolean liked = LikedSongsRepository.isLiked(this, songId);
 
             if (liked) {
-                btnFavourite.setImageResource(R.drawable.ic_liked);
+                btnFavourite.setImageResource(R.drawable.icon_liked);
 
                 android.widget.Toast.makeText(
                         this,
@@ -158,7 +158,7 @@ public class PlayerActivity extends AppCompatActivity implements PlaybackManager
                         android.widget.Toast.LENGTH_SHORT
                 ).show();
             } else {
-                btnFavourite.setImageResource(R.drawable.ic_like);
+                btnFavourite.setImageResource(R.drawable.icon_like);
 
                 android.widget.Toast.makeText(
                         this,
@@ -170,13 +170,13 @@ public class PlayerActivity extends AppCompatActivity implements PlaybackManager
 
         btnBack.setOnClickListener(v -> {
             finish();
-            overridePendingTransition(R.anim.slide_in_left_fast, R.anim.slide_out_right_fast);
+            overridePendingTransition(R.anim.slide_in_left_animation, R.anim.slide_out_right_animation);
         });
 
         btnMore.setOnClickListener(v -> {
             Song song = SongRepository.findByAudioResId(pm.getCurrentAudioResId());
             if (song == null) return;
-            View popupView = getLayoutInflater().inflate(R.layout.dialog_player_menu, null);
+            View popupView = getLayoutInflater().inflate(R.layout.popup_player_menu, null);
             android.widget.PopupWindow popupWindow = new android.widget.PopupWindow(
                     popupView,
                     android.view.ViewGroup.LayoutParams.WRAP_CONTENT,
@@ -194,11 +194,11 @@ public class PlayerActivity extends AppCompatActivity implements PlaybackManager
             boolean liked = LikedSongsRepository.isLiked(this, songId);
 
             if (liked) {
-                favIcon.setImageResource(R.drawable.ic_liked);
+                favIcon.setImageResource(R.drawable.icon_liked);
                 favIcon.setColorFilter(ContextCompat.getColor(this, R.color.accent));
                 favText.setText("Remove from favorites");
             } else {
-                favIcon.setImageResource(R.drawable.ic_like);
+                favIcon.setImageResource(R.drawable.icon_like);
                 favIcon.setColorFilter(ContextCompat.getColor(this, R.color.textPrimary));
                 favText.setText("Add to favorites");
             }
@@ -209,10 +209,10 @@ public class PlayerActivity extends AppCompatActivity implements PlaybackManager
 
                 boolean newLiked = LikedSongsRepository.isLiked(this, songId);
                 if (newLiked) {
-                    btnFavourite.setImageResource(R.drawable.ic_liked);
+                    btnFavourite.setImageResource(R.drawable.icon_liked);
                     android.widget.Toast.makeText(this, "Added to favorites", android.widget.Toast.LENGTH_SHORT).show();
                 } else {
-                    btnFavourite.setImageResource(R.drawable.ic_like);
+                    btnFavourite.setImageResource(R.drawable.icon_like);
                     android.widget.Toast.makeText(this, "Removed from favorites", android.widget.Toast.LENGTH_SHORT).show();
                 }
                 popupWindow.dismiss();
@@ -443,7 +443,7 @@ public class PlayerActivity extends AppCompatActivity implements PlaybackManager
         bottomArea.setOnClickListener(v -> {
             if (getSupportFragmentManager().isStateSaved()) return;
             if (getSupportFragmentManager().findFragmentByTag("queue") != null) { return; }
-            QueueBottomSheet sheet = new QueueBottomSheet();
+            QueueBottom sheet = new QueueBottom();
             sheet.show(getSupportFragmentManager(), "queue");
         });
     }
@@ -659,9 +659,9 @@ public class PlayerActivity extends AppCompatActivity implements PlaybackManager
         if (s != null) {
             String songId = String.valueOf(s.getAudioResId());
             if (LikedSongsRepository.isLiked(this, songId)) {
-                btnFavourite.setImageResource(R.drawable.ic_liked);
+                btnFavourite.setImageResource(R.drawable.icon_liked);
             } else {
-                btnFavourite.setImageResource(R.drawable.ic_like);
+                btnFavourite.setImageResource(R.drawable.icon_like);
             }
         }
     }
@@ -671,7 +671,7 @@ public class PlayerActivity extends AppCompatActivity implements PlaybackManager
     }
     private void updatePlayPauseIcon() {
         if (player == null) return;
-        btnPlayPause.setImageResource(player.isPlaying() ? R.drawable.ic_pause : R.drawable.ic_play);
+        btnPlayPause.setImageResource(player.isPlaying() ? R.drawable.icon_pause : R.drawable.icon_play);
     }
     private void updateNavButtons() {
         int[] q = pm.getQueueIds();
@@ -695,15 +695,15 @@ public class PlayerActivity extends AppCompatActivity implements PlaybackManager
     private void updateRepeatUi() {
         PlaybackManager.RepeatMode rm = pm.getRepeatMode();
         if (rm == PlaybackManager.RepeatMode.OFF) {
-            btnRepeat.setImageResource(R.drawable.ic_repeat);
+            btnRepeat.setImageResource(R.drawable.icon_repeat);
             tintOff(btnRepeat);
             return;
         }
 
         if (rm == PlaybackManager.RepeatMode.ONE) {
-            btnRepeat.setImageResource(R.drawable.ic_repeat_one);
+            btnRepeat.setImageResource(R.drawable.icon_repeat_one);
         } else {
-            btnRepeat.setImageResource(R.drawable.ic_repeat);
+            btnRepeat.setImageResource(R.drawable.icon_repeat);
         }
         tintOn(btnRepeat);
     }

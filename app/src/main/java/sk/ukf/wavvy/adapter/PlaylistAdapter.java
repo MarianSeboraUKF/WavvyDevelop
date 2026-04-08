@@ -75,14 +75,14 @@ public class PlaylistAdapter extends RecyclerView.Adapter<PlaylistAdapter.Playli
 
         if (p.getId().equals("liked")) {
             holder.ivCover.setImageResource(0);
-            holder.ivCover.setBackgroundResource(R.drawable.bg_liked_gradient);
+            holder.ivCover.setBackgroundResource(R.drawable.background_liked_gradient);
             holder.ivOverlayIcon.setVisibility(View.VISIBLE);
-            holder.ivOverlayIcon.setImageResource(R.drawable.ic_liked);
+            holder.ivOverlayIcon.setImageResource(R.drawable.icon_liked);
         }
 
         else if (p.getId().equals("local")) {
             holder.ivCover.setImageResource(0);
-            holder.ivCover.setBackgroundResource(R.drawable.bg_local_gradient);
+            holder.ivCover.setBackgroundResource(R.drawable.background_local_gradient);
             holder.ivOverlayIcon.setVisibility(View.VISIBLE);
             holder.ivOverlayIcon.setImageResource(R.drawable.icon_local);
         }

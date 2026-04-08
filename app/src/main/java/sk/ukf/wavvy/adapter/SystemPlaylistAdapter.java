@@ -63,10 +63,10 @@ public class SystemPlaylistAdapter extends RecyclerView.Adapter<SystemPlaylistAd
         }
 
         if (p.getId().equals("liked")) {
-            h.ivCover.setBackgroundResource(R.drawable.bg_liked_gradient);
-            h.ivIcon.setImageResource(R.drawable.ic_liked);
+            h.ivCover.setBackgroundResource(R.drawable.background_liked_gradient);
+            h.ivIcon.setImageResource(R.drawable.icon_liked);
         } else {
-            h.ivCover.setBackgroundResource(R.drawable.bg_local_gradient);
+            h.ivCover.setBackgroundResource(R.drawable.background_local_gradient);
             h.ivIcon.setImageResource(R.drawable.icon_local);
         }
         h.itemView.setOnClickListener(v -> listener.onClick(p));

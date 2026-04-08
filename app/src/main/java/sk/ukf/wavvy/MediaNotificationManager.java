@@ -58,13 +58,13 @@ public class MediaNotificationManager {
                 .setContentText(song.getArtist())
                 .setPriority(NotificationCompat.PRIORITY_HIGH)
                 .setLargeIcon(cover)
-                .setSmallIcon(R.drawable.ic_launcher_foreground)
+                .setSmallIcon(R.drawable.icon_launcher_foreground)
                 .setColor(color)
                 .setColorized(true)
                 .setContentIntent(contentIntent)
-                .addAction(R.drawable.ic_prev, "Prev", prevIntent)
-                .addAction(isPlaying ? R.drawable.ic_pause : R.drawable.ic_play, "Play", playPauseIntent)
-                .addAction(R.drawable.ic_next, "Next", nextIntent)
+                .addAction(R.drawable.icon_prev, "Prev", prevIntent)
+                .addAction(isPlaying ? R.drawable.icon_pause : R.drawable.icon_play, "Play", playPauseIntent)
+                .addAction(R.drawable.icon_next, "Next", nextIntent)
                 .setVisibility(NotificationCompat.VISIBILITY_PUBLIC)
                 .setOnlyAlertOnce(true);
         Notification notification = builder.build();

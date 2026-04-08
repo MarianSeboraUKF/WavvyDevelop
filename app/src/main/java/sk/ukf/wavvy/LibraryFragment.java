@@ -137,7 +137,7 @@ public class LibraryFragment extends Fragment {
                     intent.putExtra(PlaylistDetailActivity.EXTRA_PLAYLIST_ID, playlist.getId());
                     intent.putExtra(PlaylistDetailActivity.EXTRA_PLAYLIST_NAME, playlist.getName());
                     startActivity(intent);
-                    requireActivity().overridePendingTransition(R.anim.slide_in_right_fast, R.anim.slide_out_left_fast);
+                    requireActivity().overridePendingTransition(R.anim.slide_in_right_animation, R.anim.slide_out_left_animation);
                 },
                 (playlist, anchor) -> showPopupMenu(playlist, anchor)
         );
@@ -169,7 +169,7 @@ public class LibraryFragment extends Fragment {
                     Intent intent = new Intent(requireContext(), AlbumDetailActivity.class);
                     intent.putExtra("album_title", album.getTitle());
                     startActivity(intent);
-                    requireActivity().overridePendingTransition(R.anim.slide_in_right_fast, R.anim.slide_out_left_fast);
+                    requireActivity().overridePendingTransition(R.anim.slide_in_right_animation, R.anim.slide_out_left_animation);
                 }
         );
         rvAlbums.setAdapter(albumAdapter);
@@ -281,7 +281,7 @@ public class LibraryFragment extends Fragment {
         intent.putExtra(PlaylistDetailActivity.EXTRA_PLAYLIST_ID, playlist.getId());
         intent.putExtra(PlaylistDetailActivity.EXTRA_PLAYLIST_NAME, playlist.getName());
         startActivity(intent);
-        requireActivity().overridePendingTransition(R.anim.slide_in_right_fast, R.anim.slide_out_left_fast);
+        requireActivity().overridePendingTransition(R.anim.slide_in_right_animation, R.anim.slide_out_left_animation);
     }
     @Override
     public void onActivityResult(int requestCode, int resultCode, @Nullable Intent data) {
@@ -362,7 +362,7 @@ public class LibraryFragment extends Fragment {
         card.findViewById(R.id.btnCancel).setOnClickListener(x -> dialog.dismiss());
     }
     private void showPopupMenu(Playlist playlist, View anchor) {
-        View popupView = LayoutInflater.from(requireContext()).inflate(R.layout.dialog_playlist_menu, null);
+        View popupView = LayoutInflater.from(requireContext()).inflate(R.layout.popup_playlist_menu, null);
 
         PopupWindow popup = new PopupWindow(popupView, ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT, true);
         popup.setBackgroundDrawable(new ColorDrawable(Color.TRANSPARENT));
@@ -448,12 +448,12 @@ public class LibraryFragment extends Fragment {
         tvLength.setText(formatDuration(totalMs));
 
         if (playlist.getId().equals("liked")) {
-            cover.setImageResource(R.drawable.ic_liked);
-            cover.setBackgroundResource(R.drawable.bg_liked_gradient);
+            cover.setImageResource(R.drawable.icon_liked);
+            cover.setBackgroundResource(R.drawable.background_liked_gradient);
         }
         else if (playlist.getId().equals("local")) {
             cover.setImageResource(R.drawable.icon_local);
-            cover.setBackgroundResource(R.drawable.bg_local_gradient);
+            cover.setBackgroundResource(R.drawable.background_local_gradient);
         }
         else if (!songs.isEmpty()) {
             cover.setImageResource(songs.get(0).getCoverResId());

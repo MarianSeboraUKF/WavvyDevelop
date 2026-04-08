@@ -2,7 +2,7 @@
     android:layout_width="220dp"
     android:layout_height="wrap_content"
     android:orientation="vertical"
-    android:background="@drawable/bg_popup_menu"
+    android:background="@drawable/background_popup_menu"
     android:padding="8dp">
 
     <LinearLayout

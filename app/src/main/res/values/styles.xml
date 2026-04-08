@@ -52,7 +52,7 @@
     </style>
 
     <style name="PopupMenuStyle" parent="Widget.AppCompat.PopupMenu">
-        <item name="android:popupBackground">@drawable/bg_popup_menu</item>
+        <item name="android:popupBackground">@drawable/background_popup_menu</item>
         <item name="android:itemBackground">@drawable/popup_item_selected</item>
     </style>
 

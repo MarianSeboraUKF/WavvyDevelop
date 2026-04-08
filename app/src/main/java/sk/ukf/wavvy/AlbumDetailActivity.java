@@ -81,7 +81,7 @@ public class AlbumDetailActivity extends AppCompatActivity implements PlaybackMa
 
         findViewById(R.id.btnBack).setOnClickListener(v -> {
             finish();
-            overridePendingTransition(R.anim.slide_in_left_fast, R.anim.slide_out_right_fast);
+            overridePendingTransition(R.anim.slide_in_left_animation, R.anim.slide_out_right_animation);
         });
 
         miniPlayer.setOnClickListener(v -> PlayerLauncher.openExisting(this));
@@ -110,10 +110,10 @@ public class AlbumDetailActivity extends AppCompatActivity implements PlaybackMa
         boolean isSaved = SavedAlbumsRepository.isSaved(this, album.getTitle());
 
         if (isSaved) {
-            btnSaveAlbum.setImageResource(R.drawable.ic_bookmark_added);
+            btnSaveAlbum.setImageResource(R.drawable.icon_bookmark_added);
             btnSaveAlbum.setTag(true);
         } else {
-            btnSaveAlbum.setImageResource(R.drawable.ic_bookmark_add);
+            btnSaveAlbum.setImageResource(R.drawable.icon_bookmark_add);
             btnSaveAlbum.setTag(false);
         }
 
@@ -121,14 +121,14 @@ public class AlbumDetailActivity extends AppCompatActivity implements PlaybackMa
             boolean selected = btnSaveAlbum.getTag() != null && (boolean) btnSaveAlbum.getTag();
 
             if (!selected) {
-                btnSaveAlbum.setImageResource(R.drawable.ic_bookmark_added);
+                btnSaveAlbum.setImageResource(R.drawable.icon_bookmark_added);
                 btnSaveAlbum.setTag(true);
 
                 SavedAlbumsRepository.add(this, album.getTitle());
 
                 android.widget.Toast.makeText(this, "Album added to library", android.widget.Toast.LENGTH_SHORT).show();
             } else {
-                btnSaveAlbum.setImageResource(R.drawable.ic_bookmark_add);
+                btnSaveAlbum.setImageResource(R.drawable.icon_bookmark_add);
                 btnSaveAlbum.setTag(false);
 
                 SavedAlbumsRepository.remove(this, album.getTitle());
@@ -138,7 +138,7 @@ public class AlbumDetailActivity extends AppCompatActivity implements PlaybackMa
         });
 
         btnAlbumMore.setOnClickListener(v -> {
-            View popupView = getLayoutInflater().inflate(R.layout.dialog_album_menu, null);
+            View popupView = getLayoutInflater().inflate(R.layout.popup_album_menu, null);
 
             android.widget.PopupWindow popupWindow = new android.widget.PopupWindow(
                     popupView,
@@ -157,11 +157,11 @@ public class AlbumDetailActivity extends AppCompatActivity implements PlaybackMa
             boolean saved = SavedAlbumsRepository.isSaved(this, album.getTitle());
 
             if (saved) {
-                libraryIcon.setImageResource(R.drawable.ic_bookmark_remove);
+                libraryIcon.setImageResource(R.drawable.icon_bookmark_remove);
                 libraryIcon.setColorFilter(ContextCompat.getColor(this, R.color.danger));
                 libraryText.setText("Remove from library");
             } else {
-                libraryIcon.setImageResource(R.drawable.ic_add);
+                libraryIcon.setImageResource(R.drawable.icon_add);
                 libraryIcon.setColorFilter(ContextCompat.getColor(this, R.color.textPrimary));
                 libraryText.setText("Add to library");
             }
@@ -171,12 +171,12 @@ public class AlbumDetailActivity extends AppCompatActivity implements PlaybackMa
 
                 if (!currentlySaved) {
                     SavedAlbumsRepository.add(this, album.getTitle());
-                    btnSaveAlbum.setImageResource(R.drawable.ic_bookmark_added);
+                    btnSaveAlbum.setImageResource(R.drawable.icon_bookmark_added);
                     btnSaveAlbum.setTag(true);
                     android.widget.Toast.makeText(this, "Added to library", android.widget.Toast.LENGTH_SHORT).show();
                 } else {
                     SavedAlbumsRepository.remove(this, album.getTitle());
-                    btnSaveAlbum.setImageResource(R.drawable.ic_bookmark_add);
+                    btnSaveAlbum.setImageResource(R.drawable.icon_bookmark_add);
                     btnSaveAlbum.setTag(false);
                     android.widget.Toast.makeText(this, "Removed from library", android.widget.Toast.LENGTH_SHORT).show();
                 }
@@ -285,7 +285,7 @@ public class AlbumDetailActivity extends AppCompatActivity implements PlaybackMa
         tvMiniTitle.setText(s.getTitle());
         tvMiniArtist.setText(s.getArtist());
 
-        btnMiniPlay.setImageResource(pm.isPlaying() ? R.drawable.ic_pause : R.drawable.ic_play);
+        btnMiniPlay.setImageResource(pm.isPlaying() ? R.drawable.icon_pause : R.drawable.icon_play);
     }
     private void showAlbumInfo(Album album) {
         View dialogView = getLayoutInflater().inflate(R.layout.dialog_album_info, null);
