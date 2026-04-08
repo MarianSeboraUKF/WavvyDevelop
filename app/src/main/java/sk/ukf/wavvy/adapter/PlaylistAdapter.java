@@ -15,8 +15,12 @@ import sk.ukf.wavvy.model.Playlist;
 import sk.ukf.wavvy.model.Song;
 
 public class PlaylistAdapter extends RecyclerView.Adapter<PlaylistAdapter.PlaylistVH> {
-    public interface OnPlaylistClickListener { void onPlaylistClick(Playlist playlist);}
-    public interface OnPlaylistMenuClickListener { void onPlaylistMenuClick(Playlist playlist, View anchor);}
+    public interface OnPlaylistClickListener {
+        void onPlaylistClick(Playlist playlist);
+    }
+    public interface OnPlaylistMenuClickListener {
+        void onPlaylistMenuClick(Playlist playlist, View anchor);
+    }
     private final List<Playlist> playlists;
     private final OnPlaylistClickListener clickListener;
     private final OnPlaylistMenuClickListener menuClickListener;

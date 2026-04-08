@@ -13,7 +13,9 @@ import sk.ukf.wavvy.SongRepository;
 import sk.ukf.wavvy.model.Playlist;
 
 public class SystemPlaylistAdapter extends RecyclerView.Adapter<SystemPlaylistAdapter.VH> {
-    public interface OnClick { void onClick(Playlist p); }
+    public interface OnClick {
+        void onClick(Playlist p);
+    }
     private final List<Playlist> list;
     private final OnClick listener;
     public SystemPlaylistAdapter(List<Playlist> list, OnClick listener) {
@@ -28,10 +30,12 @@ public class SystemPlaylistAdapter extends RecyclerView.Adapter<SystemPlaylistAd
         View v = LayoutInflater.from(parent.getContext()).inflate(R.layout.item_playlist_large, parent, false);
         return new VH(v);
     }
+
     @Override
     public long getItemId(int position) {
         return list.get(position).getId().hashCode();
     }
+
     @Override
     public void onBindViewHolder(@NonNull VH h, int i) {
         Playlist p = list.get(i);

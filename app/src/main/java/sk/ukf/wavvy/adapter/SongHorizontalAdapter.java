@@ -49,12 +49,7 @@ public class SongHorizontalAdapter extends RecyclerView.Adapter<SongHorizontalAd
             if (s != null) filtered.add(s);
         }
 
-        SongAdapter adapter = new SongAdapter(
-                filtered,
-                false,
-                false,
-                listener::onClick
-        );
+        SongAdapter adapter = new SongAdapter(filtered, false, false, listener::onClick);
         holder.rv.setAdapter(adapter);
     }
     public void updateData(List<List<Song>> newPages) {

@@ -16,7 +16,6 @@ public class PickPlaylistViewHolder extends RecyclerView.ViewHolder {
     private final ImageView ivCover;
     public PickPlaylistViewHolder(@NonNull View itemView) {
         super(itemView);
-
         tvName = itemView.findViewById(R.id.tvPlaylistName);
         tvCount = itemView.findViewById(R.id.tvPlaylistCount);
         ivCover = itemView.findViewById(R.id.ivPlaylistCover);
@@ -27,6 +26,7 @@ public class PickPlaylistViewHolder extends RecyclerView.ViewHolder {
 
         if (!p.getSongAudioResIds().isEmpty()) {
             int firstSongId = p.getSongAudioResIds().get(0);
+
             Song song = SongRepository.findByAudioResId(firstSongId);
             if (song != null) {
                 if (song.getCoverUri() != null && !song.getCoverUri().isEmpty()) {

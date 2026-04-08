@@ -23,13 +23,13 @@ public class PickPlaylistAdapter extends RecyclerView.Adapter<PickPlaylistViewHo
     @NonNull
     @Override
     public PickPlaylistViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
-        View v = LayoutInflater.from(parent.getContext())
-                .inflate(R.layout.item_playlist, parent, false);
+        View v = LayoutInflater.from(parent.getContext()).inflate(R.layout.item_playlist, parent, false);
         return new PickPlaylistViewHolder(v);
     }
     @Override
     public void onBindViewHolder(@NonNull PickPlaylistViewHolder holder, int position) {
         Playlist p = playlists.get(position);
+
         holder.bind(p);
         holder.itemView.setOnClickListener(v -> {
             if (listener != null) listener.onPick(p);
@@ -37,7 +37,5 @@ public class PickPlaylistAdapter extends RecyclerView.Adapter<PickPlaylistViewHo
     }
 
     @Override
-    public int getItemCount() {
-        return playlists.size();
-    }
+    public int getItemCount() { return playlists.size(); }
 }

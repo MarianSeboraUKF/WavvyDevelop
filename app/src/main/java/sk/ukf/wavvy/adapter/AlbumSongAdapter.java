@@ -25,9 +25,7 @@ public class AlbumSongAdapter extends RecyclerView.Adapter<AlbumSongAdapter.View
     @NonNull
     @Override
     public ViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
-        View view = LayoutInflater.from(parent.getContext())
-                .inflate(R.layout.item_album_song, parent, false);
-
+        View view = LayoutInflater.from(parent.getContext()).inflate(R.layout.item_album_song, parent, false);
         return new ViewHolder(view);
     }
 
@@ -59,14 +57,11 @@ public class AlbumSongAdapter extends RecyclerView.Adapter<AlbumSongAdapter.View
     }
 
     @Override
-    public int getItemCount() {
-        return songs.size();
-    }
+    public int getItemCount() { return songs.size(); }
     private String formatDuration(long ms) {
         long totalSeconds = ms / 1000;
         long minutes = totalSeconds / 60;
         long seconds = totalSeconds % 60;
-
         return minutes + ":" + String.format("%02d", seconds);
     }
     static class ViewHolder extends RecyclerView.ViewHolder {

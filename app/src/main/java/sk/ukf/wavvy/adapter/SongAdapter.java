@@ -32,7 +32,9 @@ import android.widget.LinearLayout;
 import sk.ukf.wavvy.LikedSongsRepository;
 
 public class SongAdapter extends RecyclerView.Adapter<SongAdapter.SongViewHolder> {
-    public interface OnSongClickListener { void onSongClick(Song song);}
+    public interface OnSongClickListener {
+        void onSongClick(Song song);
+    }
     private final List<Song> songs;
     private final OnSongClickListener clickListener;
     private String highlightQuery = "";
@@ -122,11 +124,13 @@ public class SongAdapter extends RecyclerView.Adapter<SongAdapter.SongViewHolder
                 LinearLayout removeFromPlaylist = popupView.findViewById(R.id.actionRemoveFromPlaylist);
                 LinearLayout actionDelete = popupView.findViewById(R.id.actionDeleteSong);
                 LinearLayout actionEdit = popupView.findViewById(R.id.actionEditSong);
+
                 if (song.getUriString() != null) {
                     actionEdit.setVisibility(View.VISIBLE);
                 } else {
                     actionEdit.setVisibility(View.GONE);
                 }
+
                 ImageView favIcon = (ImageView) favAction.getChildAt(0);
                 TextView favText = (TextView) favAction.getChildAt(1);
                 String songId = String.valueOf(song.getAudioResId());
@@ -435,9 +439,7 @@ public class SongAdapter extends RecyclerView.Adapter<SongAdapter.SongViewHolder
     }
 
     @Override
-    public int getItemCount() {
-        return songs.size();
-    }
+    public int getItemCount() { return songs.size(); }
     static class SongViewHolder extends RecyclerView.ViewHolder {
         TextView tvTitle, tvArtist, tvAlbum;
         ImageView ivCover;
