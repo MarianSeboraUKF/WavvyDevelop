@@ -20,6 +20,7 @@ public class Playlist {
     }
 
     public String getId() { return id; }
+
     public String getName() { return name; }
     public boolean isSystem() { return isSystem;}
     public ArrayList<Integer> getSongAudioResIds() {
@@ -30,8 +31,5 @@ public class Playlist {
         if (!getSongAudioResIds().contains(audioResId)) {
             getSongAudioResIds().add(audioResId);
         }
-    }
-    public void removeSong(int audioResId) {
-        getSongAudioResIds().remove((Integer) audioResId);
     }
 }
