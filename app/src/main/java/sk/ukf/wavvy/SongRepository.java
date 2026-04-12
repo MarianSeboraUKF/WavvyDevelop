@@ -8,6 +8,7 @@ import sk.ukf.wavvy.model.Song;
 public class SongRepository {
     private static ArrayList<Song> cached;
     private static ArrayList<Song> localSongs = new ArrayList<>();
+    private static ArrayList<Song> onlineCached;
 
     public static ArrayList<Song> getSongs() {
         if (cached == null) {
@@ -44,8 +45,34 @@ public class SongRepository {
         result.addAll(localSongs);
         return result;
     }
-    public static Song findByAudioResId(int audioResId) {
-        ArrayList<Song> songs = getSongs();
+    public static ArrayList<Song> getOnlineSongs(Context ctx) {
+        if (onlineCached != null) return onlineCached;
+        onlineCached = new ArrayList<>();
+
+        String[] urls = {
+                "https://drive.google.com/uc?export=download&id=1ewJ4CkhSuXGghdwRcmDLPFPJkAdT6Pam",
+                "https://drive.google.com/uc?export=download&id=10lkXOqaEs-DZnX8Idu-liDVEch73RZP4",
+                "https://drive.google.com/uc?export=download&id=16A9b14vff_fBI-mQb6D4fodjxB6NVVxh",
+                "https://drive.google.com/uc?export=download&id=1-MO_WfHriddQv1Ar-qmqdYgsPpDDFKGf",
+                "https://drive.google.com/uc?export=download&id=1rBBT3UQ-GLLjgz5NE6YieYN-cz67gqCQ"
+        };
+
+        for (String url : urls) {
+            onlineCached.add(createOnlineSong(url));
+        }
+        return onlineCached;
+    }
+    private static Song createOnlineSong(String url) {
+        int id = ("online_" + url).hashCode();
+
+        Song s = new Song("Unknown", "Unknown", "", "Unknown", "Unknown", "-", 0, R.drawable.default_cover, id);
+        s.setDownloadUrl(url);
+        return s;
+    }
+    public static Song findByAudioResId(Context ctx, int audioResId) {
+        ArrayList<Song> songs = new ArrayList<>(getSongs());
+        songs.addAll(getOnlineSongs(ctx));
+
         for (Song s : songs) {
             if (s.getAudioResId() == audioResId) return s;
         }
@@ -74,7 +101,7 @@ public class SongRepository {
         ArrayList<Song> songs = new ArrayList<>();
 
         for (Integer id : ids) {
-            Song s = findByAudioResId(id);
+            Song s = findByAudioResId(ctx, id);
             if (s != null) {
                 songs.add(s);
             }
@@ -88,7 +115,7 @@ public class SongRepository {
         for (String id : liked) {
             try {
                 int audioId = Integer.parseInt(id);
-                Song s = findByAudioResId(audioId);
+                Song s = findByAudioResId(ctx, audioId);
                 if (s != null) {
                     result.add(s);
                 }
@@ -154,11 +181,17 @@ public class SongRepository {
     }
     public static void deleteLocalSong(Context ctx, int audioResId) {
         localSongs.removeIf(s -> s.getAudioResId() == audioResId);
+        cached = null;
+
         saveLocalSongs(ctx);
+
         PlaybackManager pm = PlaybackManager.get(ctx);
         if (pm.getCurrentAudioResId() == audioResId) {
             pm.getPlayer().stop();
         }
+        Intent intent = new Intent("songs_updated");
+        intent.setPackage(ctx.getPackageName());
+        ctx.sendBroadcast(intent);
     }
     public static void updateLocalSong(Context ctx, int audioResId, String title, String artist, String feat, String albumartist, String album, String producer, String coverUri, int trackNumber) {
         for (Song s : localSongs) {

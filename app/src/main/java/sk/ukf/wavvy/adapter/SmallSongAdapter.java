@@ -33,7 +33,7 @@ public class SmallSongAdapter extends RecyclerView.Adapter<SmallSongAdapter.View
     @Override
     public void onBindViewHolder(@NonNull ViewHolder holder, int position) {
         Song song = songs.get(position);
-        Song fresh = SongRepository.findByAudioResId(song.getAudioResId());
+        Song fresh = SongRepository.findByAudioResId(holder.itemView.getContext(), song.getAudioResId());
 
         final Song finalSong = (fresh != null) ? fresh : song;
         if (finalSong.getCoverUri() != null) {

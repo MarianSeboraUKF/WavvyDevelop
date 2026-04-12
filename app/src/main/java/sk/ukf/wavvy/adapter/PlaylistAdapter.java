@@ -53,7 +53,7 @@ public class PlaylistAdapter extends RecyclerView.Adapter<PlaylistAdapter.Playli
         }
 
         if (!p.getSongAudioResIds().isEmpty()) {
-            Song firstSong = SongRepository.findByAudioResId(p.getSongAudioResIds().get(0));
+            Song firstSong = SongRepository.findByAudioResId(holder.itemView.getContext(), p.getSongAudioResIds().get(0));
             if (firstSong != null) {
                 if (firstSong.getCoverUri() != null && !firstSong.getCoverUri().isEmpty()) {
                     holder.ivCover.setImageURI(android.net.Uri.parse(firstSong.getCoverUri()));

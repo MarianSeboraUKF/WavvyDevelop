@@ -319,7 +319,7 @@ public class MainActivity extends AppCompatActivity implements PlaybackManager.L
             return;
         }
 
-        Song s = SongRepository.findByAudioResId(NowPlayingRepository.getAudioResId(this));
+        Song s = SongRepository.findByAudioResId(this, NowPlayingRepository.getAudioResId(this));
         if(s==null)return;
         miniPlayer.setVisibility(View.VISIBLE);
 

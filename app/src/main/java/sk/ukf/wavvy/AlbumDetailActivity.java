@@ -269,7 +269,7 @@ public class AlbumDetailActivity extends AppCompatActivity implements PlaybackMa
             return;
         }
 
-        Song s = SongRepository.findByAudioResId(NowPlayingRepository.getAudioResId(this));
+        Song s = SongRepository.findByAudioResId(this, NowPlayingRepository.getAudioResId(this));
 
         if (s == null) {
             miniPlayer.setVisibility(View.GONE);

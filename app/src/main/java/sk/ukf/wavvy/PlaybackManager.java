@@ -11,6 +11,9 @@ import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Random;
+import android.graphics.ImageDecoder;
+import android.net.Uri;
+import android.provider.MediaStore;
 import android.support.v4.media.session.MediaSessionCompat;
 import sk.ukf.wavvy.model.Song;
 import android.support.v4.media.MediaMetadataCompat;
@@ -108,12 +111,27 @@ public class PlaybackManager {
     private void updateNotification() {
         if (currentAudioResId == 0) return;
 
-        Song song = SongRepository.findByAudioResId(currentAudioResId);
+        Song song = SongRepository.findByAudioResId(appContext, currentAudioResId);
         if (song == null) return;
         long duration = player.getDuration();
         if (duration < 0) duration = 0;
 
-        Bitmap cover = BitmapFactory.decodeResource(appContext.getResources(), song.getCoverResId());
+        Bitmap cover;
+        if (song.getCoverUri() != null) {
+            try {
+                Uri uri = Uri.parse(song.getCoverUri());
+                if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.P) {
+                    cover = ImageDecoder.decodeBitmap(ImageDecoder.createSource(appContext.getContentResolver(), uri));
+                } else {
+                    cover = MediaStore.Images.Media.getBitmap(appContext.getContentResolver(), uri);
+                }
+            } catch (Exception e) {
+                cover = BitmapFactory.decodeResource(appContext.getResources(), song.getCoverResId());
+            }
+        } else {
+            cover = BitmapFactory.decodeResource(appContext.getResources(), song.getCoverResId());
+        }
+
         MediaMetadataCompat metadata = new MediaMetadataCompat.Builder()
                 .putString(MediaMetadataCompat.METADATA_KEY_TITLE, song.getTitle())
                 .putString(MediaMetadataCompat.METADATA_KEY_ARTIST, song.getArtist())
@@ -121,6 +139,47 @@ public class PlaybackManager {
                 .build();
         mediaSession.setMetadata(metadata);
         notificationManager.showNotification(song, player.isPlaying(), mediaSession, player.getCurrentPosition(), duration);
+    }
+    public static void loadOnlineMetadata(Context ctx, Song song, Runnable onDone) {
+        new Thread(() -> {
+            android.media.MediaMetadataRetriever mmr = new android.media.MediaMetadataRetriever();
+            try {
+                mmr.setDataSource(song.getDownloadUrl(), new java.util.HashMap<>());
+
+                String title = mmr.extractMetadata(android.media.MediaMetadataRetriever.METADATA_KEY_TITLE);
+                String artist = mmr.extractMetadata(android.media.MediaMetadataRetriever.METADATA_KEY_ARTIST);
+                String album = mmr.extractMetadata(android.media.MediaMetadataRetriever.METADATA_KEY_ALBUM);
+                String duration = mmr.extractMetadata(android.media.MediaMetadataRetriever.METADATA_KEY_DURATION);
+
+                byte[] art = mmr.getEmbeddedPicture();
+
+                if (title != null) song.setTitle(title);
+                if (artist != null) song.setMainArtist(artist);
+                if (album != null) song.setAlbum(album);
+                if (duration != null) song.setDurationMs(Long.parseLong(duration));
+
+                if (art != null) {
+                    java.io.File file = new java.io.File(ctx.getCacheDir(), "cover_" + song.getAudioResId() + ".png");
+                    java.io.FileOutputStream fos = new java.io.FileOutputStream(file);
+                    fos.write(art);
+                    fos.close();
+                    song.setCoverUri(file.toURI().toString());
+                }
+
+            } catch (Exception e) {
+                e.printStackTrace();
+            } finally {
+                try { mmr.release(); } catch (Exception ignored) {}
+            }
+
+            new android.os.Handler(android.os.Looper.getMainLooper()).post(() -> {
+                PlaybackManager pm = PlaybackManager.get(ctx);
+                pm.refreshCurrentSong();
+                if (onDone != null) {
+                    onDone.run();
+                }
+            });
+        }).start();
     }
     private void restoreFromNowPlayingRepository() {
         if (!NowPlayingRepository.hasNowPlaying(appContext)) return;
@@ -140,7 +199,7 @@ public class PlaybackManager {
         queueIndex = idx;
         currentAudioResId = activeQueue[queueIndex];
 
-        Song s = SongRepository.findByAudioResId(currentAudioResId);
+        Song s = SongRepository.findByAudioResId(appContext, currentAudioResId);
         MediaItem item;
         if (s != null && s.getUriString() != null) {
             item = MediaItem.fromUri(s.getUriString());
@@ -213,7 +272,7 @@ public class PlaybackManager {
             Listener l = wr.get();
             if (l != null) l.onNowPlayingChanged(currentAudioResId, activeQueue, queueIndex);
         }
-        Song s = SongRepository.findByAudioResId(currentAudioResId);
+        Song s = SongRepository.findByAudioResId(appContext, currentAudioResId);
         if (s != null) {
             notificationManager.showNotification(s, player.isPlaying(), mediaSession, player.getCurrentPosition(), player.getDuration());
         }
@@ -378,10 +437,34 @@ public class PlaybackManager {
         if (activeQueue == null || activeQueue.length == 0) return;
         currentAudioResId = activeQueue[queueIndex];
         lastCountedAudioId = -1;
-        Song s = SongRepository.findByAudioResId(currentAudioResId);
+
+        Song s = SongRepository.findByAudioResId(appContext, currentAudioResId);
         MediaItem item;
 
-        if (s != null && s.getUriString() != null) {
+        if (s != null && s.getDownloadUrl() != null && !s.getDownloadUrl().isEmpty()) {
+            if (!hasInternet()) {
+                android.widget.Toast.makeText(appContext, "No internet", android.widget.Toast.LENGTH_SHORT).show();
+                return;
+            }
+
+            if (s.getDurationMs() == 0) {
+                PlaybackManager.loadOnlineMetadata(appContext, s, null);
+            }
+            MediaItem track = MediaItem.fromUri(s.getDownloadUrl());
+            player.setMediaItem(track);
+            player.prepare();
+
+            NowPlayingRepository.saveNowPlaying(appContext, currentAudioResId, activeQueue, queueIndex);
+
+            if (autoPlay) {
+                RecentlyPlayedRepository.add(appContext, currentAudioResId);
+                player.play();
+            }
+            notifyNowPlaying();
+            updateNotification();
+            return;
+        }
+        else if (s != null && s.getUriString() != null) {
             item = MediaItem.fromUri(s.getUriString());
         } else {
             item = MediaItem.fromUri("android.resource://" + appContext.getPackageName() + "/" + currentAudioResId);
@@ -516,6 +599,17 @@ public class PlaybackManager {
         }
         NowPlayingRepository.saveNowPlaying(appContext, currentAudioResId, activeQueue, queueIndex);
         notifyNowPlaying();
+    }
+    private boolean hasInternet() {
+        android.net.ConnectivityManager cm = (android.net.ConnectivityManager) appContext.getSystemService(Context.CONNECTIVITY_SERVICE);
+
+        if (cm == null) return false;
+
+        android.net.Network network = cm.getActiveNetwork();
+        if (network == null) return false;
+
+        android.net.NetworkCapabilities caps = cm.getNetworkCapabilities(network);
+        return caps != null && (caps.hasTransport(android.net.NetworkCapabilities.TRANSPORT_WIFI) || caps.hasTransport(android.net.NetworkCapabilities.TRANSPORT_CELLULAR));
     }
     public void insertNext(int audioResId) {
         ensureQueueLoadedIfPossible();

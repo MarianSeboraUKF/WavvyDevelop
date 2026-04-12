@@ -46,6 +46,8 @@ public class SystemPlaylistAdapter extends RecyclerView.Adapter<SystemPlaylistAd
             count = SongRepository.getLikedSongs(h.itemView.getContext()).size();
         } else if (p.getId().equals("local")) {
             count = SongRepository.getSongs().size();
+        } else if (p.getId().equals("online")) {
+            count = SongRepository.getOnlineSongs(h.itemView.getContext()).size();
         } else {
             count = p.getSongAudioResIds().size();
         }
@@ -65,6 +67,9 @@ public class SystemPlaylistAdapter extends RecyclerView.Adapter<SystemPlaylistAd
         if (p.getId().equals("liked")) {
             h.ivCover.setBackgroundResource(R.drawable.background_liked_gradient);
             h.ivIcon.setImageResource(R.drawable.icon_liked);
+        } else if (p.getId().equals("online")) {
+            h.ivCover.setBackgroundResource(R.drawable.background_online_gradient);
+            h.ivIcon.setImageResource(R.drawable.icon_online);
         } else {
             h.ivCover.setBackgroundResource(R.drawable.background_local_gradient);
             h.ivIcon.setImageResource(R.drawable.icon_local);

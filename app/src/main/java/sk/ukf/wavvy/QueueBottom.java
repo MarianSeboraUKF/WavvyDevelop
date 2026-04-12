@@ -30,7 +30,7 @@ public class QueueBottom extends BottomSheetDialogFragment {
         ArrayList<Song> songs = new ArrayList<>();
 
         for (int id : queueIds) {
-            Song s = SongRepository.findByAudioResId(id);
+            Song s = SongRepository.findByAudioResId(requireContext(), id);
             if (s != null) songs.add(s);
         }
 

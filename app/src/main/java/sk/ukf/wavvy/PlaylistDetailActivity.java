@@ -30,6 +30,7 @@ import sk.ukf.wavvy.model.Playlist;
 import sk.ukf.wavvy.model.Song;
 import java.text.Collator;
 import java.util.Locale;
+import java.util.concurrent.atomic.AtomicInteger;
 
 public class PlaylistDetailActivity extends AppCompatActivity implements PlaybackManager.Listener {
     public static final String EXTRA_PLAYLIST_ID = "playlist_id";
@@ -58,6 +59,7 @@ public class PlaylistDetailActivity extends AppCompatActivity implements Playbac
     private String currentSort = "TITLE_AZ";
     private Collator collator;
     private BroadcastReceiver songsUpdatedReceiver;
+    private ProgressBar loading;
 
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
@@ -94,16 +96,12 @@ public class PlaylistDetailActivity extends AppCompatActivity implements Playbac
         btnPlay = findViewById(R.id.btnPlay);
         btnShuffle = findViewById(R.id.btnShuffle);
         btnSort = findViewById(R.id.btnSort);
+        loading = findViewById(R.id.loading);
         ImageButton btnBack = findViewById(R.id.btnBack);
         ImageButton btnMenu = findViewById(R.id.btnMenu);
         TextView tvTopTitle = findViewById(R.id.tvTopTitle);
 
         btnBack.setOnClickListener(v -> {
-            finish();
-            overridePendingTransition(0, 0);
-        });
-
-        findViewById(R.id.btnBack).setOnClickListener(v -> {
             finish();
             overridePendingTransition(R.anim.slide_in_left_animation, R.anim.slide_out_right_animation);
         });
@@ -115,7 +113,7 @@ public class PlaylistDetailActivity extends AppCompatActivity implements Playbac
         btnMenu.setOnClickListener(v -> showPlaylistMenu(v));
 
         tvPlaylistTitle.setText(playlistName);
-        boolean isSystem = "liked".equals(playlistId) || "local".equals(playlistId);
+        boolean isSystem = "liked".equals(playlistId) || "local".equals(playlistId) || "online".equals(playlistId);
         btnSort.setVisibility(isSystem ? View.GONE : View.VISIBLE);
         btnPlay.setOnClickListener(v -> {
             if (songsInPlaylist.isEmpty()) return;
@@ -149,6 +147,14 @@ public class PlaylistDetailActivity extends AppCompatActivity implements Playbac
 
                 params.width = 350;
                 params.height = 350;
+            } else if ("online".equals(playlistId)) {
+                coverBg.setBackgroundResource(R.drawable.background_online_gradient);
+                coverIcon.setImageResource(R.drawable.icon_online);
+                coverIcon.setColorFilter(android.graphics.Color.BLACK);
+
+                params.width = 350;
+                params.height = 350;
+
             } else {
                 coverIcon.clearColorFilter();
                 params.width = ViewGroup.LayoutParams.MATCH_PARENT;
@@ -156,7 +162,7 @@ public class PlaylistDetailActivity extends AppCompatActivity implements Playbac
                 Playlist p = PlaylistRepository.findById(this, playlistId);
 
                 if (p != null && !p.getSongAudioResIds().isEmpty()) {
-                    Song s = SongRepository.findByAudioResId(p.getSongAudioResIds().get(0));
+                    Song s = SongRepository.findByAudioResId(this, p.getSongAudioResIds().get(0));
                     if (s != null) {
                         coverBg.setBackgroundColor(android.graphics.Color.TRANSPARENT);
                         if (s.getCoverUri() != null && !s.getCoverUri().isEmpty()) {
@@ -276,7 +282,7 @@ public class PlaylistDetailActivity extends AppCompatActivity implements Playbac
         }
 
         int audioResId = NowPlayingRepository.getAudioResId(this);
-        Song s = SongRepository.findByAudioResId(audioResId);
+        Song s = SongRepository.findByAudioResId(this, audioResId);
 
         if (s == null) {
             miniPlayer.setVisibility(View.GONE);
@@ -346,7 +352,7 @@ public class PlaylistDetailActivity extends AppCompatActivity implements Playbac
 
             if (artist == null) artist = "Unknown";
             if (album == null) album = "Unknown";
-            int id = uri.toString().hashCode();
+            int id = ("local_" + uri.toString()).hashCode();
 
             Song newSong = new Song(title, artist, "", album, artist, "-", 0, R.drawable.default_cover, id);
             newSong.setUriString(uri.toString());
@@ -460,11 +466,72 @@ public class PlaylistDetailActivity extends AppCompatActivity implements Playbac
             songsInPlaylist.addAll(SongRepository.getLikedSongs(this));
         } else if ("local".equals(playlistId)) {
             songsInPlaylist.addAll(SongRepository.getSongs());
+        } else if ("online".equals(playlistId)) {
+
+            loading.setVisibility(View.VISIBLE);
+            rvPlaylistSongs.setVisibility(View.GONE);
+
+            new Thread(() -> {
+                ArrayList<Song> loaded = SongRepository.getOnlineSongs(this);
+                AtomicInteger done = new AtomicInteger(0);
+                int total = loaded.size();
+                boolean[] finished = {false};
+
+                for (Song s : loaded) {
+                    if (s.getDurationMs() == 0) {
+                        PlaybackManager.loadOnlineMetadata(this, s, () -> {
+                            if (done.incrementAndGet() == total) {
+                                runOnUiThread(() -> {
+                                    songsInPlaylist.clear();
+                                    songsInPlaylist.addAll(loaded);
+
+                                    new android.os.Handler(android.os.Looper.getMainLooper()).postDelayed(() -> {
+                                        loading.setVisibility(View.GONE);
+                                        rvPlaylistSongs.setVisibility(View.VISIBLE);
+                                    }, 200);
+                                    adapter.notifyDataSetChanged();
+                                    updateMeta();
+                                });
+                            }
+                        });
+                    } else {
+                        if (done.incrementAndGet() == total && !finished[0]) {
+                            finished[0] = true;
+                            runOnUiThread(() -> {
+                                songsInPlaylist.clear();
+                                songsInPlaylist.addAll(loaded);
+
+                                new android.os.Handler(android.os.Looper.getMainLooper()).postDelayed(() -> {
+                                    loading.setVisibility(View.GONE);
+                                    rvPlaylistSongs.setVisibility(View.VISIBLE);
+                                }, 200);
+                                adapter.notifyDataSetChanged();
+                                updateMeta();
+                            });
+                        }
+                    }
+                }
+
+                if (total == 0 || done.get() == total) {
+                    runOnUiThread(() -> {
+                        songsInPlaylist.clear();
+                        songsInPlaylist.addAll(loaded);
+
+                        new android.os.Handler(android.os.Looper.getMainLooper()).postDelayed(() -> {
+                            loading.setVisibility(View.GONE);
+                            rvPlaylistSongs.setVisibility(View.VISIBLE);
+                        }, 200);
+                        adapter.notifyDataSetChanged();
+                        updateMeta();
+                    });
+                }
+            }).start();
+            return;
         } else {
             Playlist p = PlaylistRepository.findById(this, playlistId);
             if (p != null) {
                 for (Integer id : p.getSongAudioResIds()) {
-                    Song s = SongRepository.findByAudioResId(id);
+                    Song s = SongRepository.findByAudioResId(this, id);
                     if (s != null) {
                         songsInPlaylist.add(s);
                     }
@@ -474,6 +541,17 @@ public class PlaylistDetailActivity extends AppCompatActivity implements Playbac
         updateMeta();
         updateCover();
         adapter.notifyDataSetChanged();
+
+        if ("online".equals(playlistId)) {
+            for (Song s : songsInPlaylist) {
+                if (s.getDurationMs() == 0) {
+                    PlaybackManager.loadOnlineMetadata(this, s, () -> {
+                        adapter.notifyDataSetChanged();
+                        updateMeta();
+                    });
+                }
+            }
+        }
     }
     public void updateMeta() {
         long totalMs = 0;
@@ -536,24 +614,16 @@ public class PlaylistDetailActivity extends AppCompatActivity implements Playbac
         actionEdit.setVisibility(View.GONE);
         actionDelete.setVisibility(View.GONE);
 
-        if ("liked".equals(playlistId)) {}
-        else if ("local".equals(playlistId)) {
+        boolean isSystemPlaylist = "liked".equals(playlistId) || "local".equals(playlistId) || "online".equals(playlistId);
+        if ("local".equals(playlistId)) {
             actionImport.setVisibility(View.VISIBLE);
-            actionImport.setOnClickListener(v -> {
-                popup.dismiss();
-                openFilePicker();
-            });
-        } else {
+            actionImport.setOnClickListener(v -> {popup.dismiss();openFilePicker();});
+        }
+        if (!isSystemPlaylist) {
             actionEdit.setVisibility(View.VISIBLE);
             actionDelete.setVisibility(View.VISIBLE);
-            actionEdit.setOnClickListener(v -> {
-                popup.dismiss();
-                showRenameDialog();
-            });
-            actionDelete.setOnClickListener(v -> {
-                popup.dismiss();
-                showDeletePlaylistDialog();
-            });
+            actionEdit.setOnClickListener(v -> {popup.dismiss();showRenameDialog();});
+            actionDelete.setOnClickListener(v -> {popup.dismiss();showDeletePlaylistDialog();});
         }
         actionInfo.setOnClickListener(v -> {
             popup.dismiss();
@@ -599,6 +669,17 @@ public class PlaylistDetailActivity extends AppCompatActivity implements Playbac
             coverIcon.setImageResource(R.drawable.icon_local);
             coverIcon.setColorFilter(android.graphics.Color.BLACK);
             coverIcon.setAlpha(1f);
+        } else if ("online".equals(playlistId)) {
+            coverBg.setBackgroundResource(R.drawable.background_online_gradient);
+            coverIcon.setImageResource(R.drawable.icon_online);
+            coverIcon.setColorFilter(android.graphics.Color.BLACK);
+
+            ViewGroup.LayoutParams params = coverIcon.getLayoutParams();
+            params.width = 350;
+            params.height = 350;
+            coverIcon.setLayoutParams(params);
+
+            ((FrameLayout.LayoutParams) coverIcon.getLayoutParams()).gravity = android.view.Gravity.CENTER;
         } else {
             coverBg.setBackgroundColor(android.graphics.Color.TRANSPARENT);
             ViewGroup.LayoutParams params = coverIcon.getLayoutParams();
@@ -637,6 +718,7 @@ public class PlaylistDetailActivity extends AppCompatActivity implements Playbac
     public void updateCover() {
         if ("liked".equals(playlistId)) return;
         if ("local".equals(playlistId)) return;
+        if ("online".equals(playlistId)) return;
 
         if (songsInPlaylist.isEmpty()) {
             coverBg.setBackgroundColor(android.graphics.Color.TRANSPARENT);

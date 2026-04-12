@@ -13,6 +13,7 @@ public class Song implements java.io.Serializable {
     private final int audioResId;
     private long durationMs;
     private String uriString;
+    private String downloadUrl;
 
     public Song(String title, String mainArtist, String featArtist, String album, String albumArtist, String producedBy, int trackNumber, int coverResId, int audioResId) {
         this.title = title;
@@ -87,4 +88,6 @@ public class Song implements java.io.Serializable {
 
     public String getCoverUri() { return coverUri; }
     public void setCoverUri(String coverUri) { this.coverUri = coverUri; }
+    public String getDownloadUrl() { return downloadUrl; }
+    public void setDownloadUrl(String downloadUrl) { this.downloadUrl = downloadUrl; }
 }

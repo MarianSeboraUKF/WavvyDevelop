@@ -141,7 +141,7 @@ public class PlayerActivity extends AppCompatActivity implements PlaybackManager
         tvBottomTrack.setSelected(true);
 
         btnFavourite.setOnClickListener(v -> {
-            Song song = SongRepository.findByAudioResId(pm.getCurrentAudioResId());
+            Song song = SongRepository.findByAudioResId(this, pm.getCurrentAudioResId());
             if (song == null) return;
 
             String songId = String.valueOf(song.getAudioResId());
@@ -174,7 +174,7 @@ public class PlayerActivity extends AppCompatActivity implements PlaybackManager
         });
 
         btnMore.setOnClickListener(v -> {
-            Song song = SongRepository.findByAudioResId(pm.getCurrentAudioResId());
+            Song song = SongRepository.findByAudioResId(this, pm.getCurrentAudioResId());
             if (song == null) return;
             View popupView = getLayoutInflater().inflate(R.layout.popup_player_menu, null);
             android.widget.PopupWindow popupWindow = new android.widget.PopupWindow(
@@ -558,7 +558,7 @@ public class PlayerActivity extends AppCompatActivity implements PlaybackManager
         long elapsedSinceTrackChange = System.currentTimeMillis() - lastTrackChangeTime;
 
         if (elapsedSinceTrackChange < 1200) {
-            Song current = SongRepository.findByAudioResId(pm.getCurrentAudioResId());
+            Song current = SongRepository.findByAudioResId(this, pm.getCurrentAudioResId());
             if (current != null) {
                 animateBottomText("Now playing", current.getTitle());
             }
@@ -569,20 +569,20 @@ public class PlayerActivity extends AppCompatActivity implements PlaybackManager
             int[] q = pm.getQueueIds();
             int idx = pm.getQueueIndex();
             if (q != null && idx < q.length - 1) {
-                Song nextSong = SongRepository.findByAudioResId(q[idx + 1]);
+                Song nextSong = SongRepository.findByAudioResId(this, q[idx + 1]);
                 if (nextSong != null) {
                     animateBottomText("Next up", nextSong.getTitle());
                 }
             }
         } else {
-            Song current = SongRepository.findByAudioResId(pm.getCurrentAudioResId());
+            Song current = SongRepository.findByAudioResId(this, pm.getCurrentAudioResId());
             if (current != null) {
                 animateBottomText("Now playing", current.getTitle());
             }
         }
     }
     private void showSongInfo() {
-        Song song = SongRepository.findByAudioResId(pm.getCurrentAudioResId());
+        Song song = SongRepository.findByAudioResId(this, pm.getCurrentAudioResId());
         if (song == null) return;
         View dialogView = getLayoutInflater().inflate(R.layout.dialog_song_info, null);
 
@@ -615,7 +615,7 @@ public class PlayerActivity extends AppCompatActivity implements PlaybackManager
     }
     private void updateNowPlayingUiFromRepo() {
         int audioResId = pm.getCurrentAudioResId();
-        Song s = SongRepository.findByAudioResId(audioResId);
+        Song s = SongRepository.findByAudioResId(this, audioResId);
 
         if (s != null) {
             if (!lastTitle.equals(s.getTitle())) {

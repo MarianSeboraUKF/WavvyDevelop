@@ -61,20 +61,37 @@ public class LibraryFragment extends Fragment {
         View view = inflater.inflate(R.layout.fragment_library, container, false);
         RecyclerView rvSystem = view.findViewById(R.id.rvSystemPlaylists);
         RecyclerView rv = view.findViewById(R.id.rvPlaylists);
-        rvSystem.setLayoutManager(new GridLayoutManager(requireContext(), 2));
+
+        GridLayoutManager layoutManager = new GridLayoutManager(requireContext(), 2);
+        layoutManager.setSpanSizeLookup(new GridLayoutManager.SpanSizeLookup() {
+            @Override
+            public int getSpanSize(int position) {
+                if (position == 2) return 2;
+                return 1;
+            }
+        });
+        rvSystem.setLayoutManager(layoutManager);
         rv.setLayoutManager(new GridLayoutManager(requireContext(), 2));
         rv.setNestedScrollingEnabled(false);
 
         systemPlaylists = new ArrayList<>();
         Playlist liked = new Playlist("liked", "Liked songs", true);
         Playlist local = new Playlist("local", "Local songs", true);
+        Playlist online = new Playlist("online", "Online songs", true);
 
         for (Song s : SongRepository.getSongs()) {
             local.addSong(s.getAudioResId());
         }
 
+        ArrayList<Song> onlineSongs = SongRepository.getOnlineSongs(requireContext());
+        for (Song s : onlineSongs) {
+            online.addSong(s.getAudioResId());
+        }
+
         systemPlaylists.add(liked);
         systemPlaylists.add(local);
+        systemPlaylists.add(online);
+
         systemAdapter = new SystemPlaylistAdapter(systemPlaylists, this::openPlaylist);
         rvSystem.setAdapter(systemAdapter);
 
@@ -179,6 +196,14 @@ public class LibraryFragment extends Fragment {
                 reload();
             }
         };
+
+        new Thread(() -> {
+            for (Song s : SongRepository.getOnlineSongs(requireContext())) {
+                if (s.getDurationMs() == 0 && s.getDownloadUrl() != null) {
+                    PlaybackManager.loadOnlineMetadata(requireContext(), s, null);
+                }
+            }
+        }).start();
         return view;
     }
     private void setupSongs() {
@@ -235,13 +260,20 @@ public class LibraryFragment extends Fragment {
         }
         Playlist liked = new Playlist("liked", "Liked songs", true);
         Playlist local = new Playlist("local", "Local songs", true);
+        Playlist online = new Playlist("online", "Online songs", true);
 
         for (Song s : SongRepository.getSongs()) {
             local.addSong(s.getAudioResId());
         }
 
+        ArrayList<Song> onlineSongs = SongRepository.getOnlineSongs(requireContext());
+        for (Song s : onlineSongs) {
+            online.addSong(s.getAudioResId());
+        }
+
         systemPlaylists.add(liked);
         systemPlaylists.add(local);
+        systemPlaylists.add(online);
         systemAdapter.notifyDataSetChanged();
 
         ArrayList<Playlist> sorted = new ArrayList<>(PlaylistRepository.getPlaylists(requireContext()));
@@ -277,11 +309,21 @@ public class LibraryFragment extends Fragment {
         albumAdapter.notifyDataSetChanged();
     }
     private void openPlaylist(Playlist playlist) {
+        if (playlist.getId().equals("online")) {
+            if (!hasInternet()) {
+                Toast.makeText(requireContext(), "No internet connection", Toast.LENGTH_SHORT).show();
+                return;
+            }
+            Intent intent = new Intent(requireContext(), PlaylistDetailActivity.class);
+            intent.putExtra(PlaylistDetailActivity.EXTRA_PLAYLIST_ID, "online");
+            intent.putExtra(PlaylistDetailActivity.EXTRA_PLAYLIST_NAME, "Online songs");
+            startActivity(intent);
+            return;
+        }
         Intent intent = new Intent(requireContext(), PlaylistDetailActivity.class);
         intent.putExtra(PlaylistDetailActivity.EXTRA_PLAYLIST_ID, playlist.getId());
         intent.putExtra(PlaylistDetailActivity.EXTRA_PLAYLIST_NAME, playlist.getName());
         startActivity(intent);
-        requireActivity().overridePendingTransition(R.anim.slide_in_right_animation, R.anim.slide_out_left_animation);
     }
     @Override
     public void onActivityResult(int requestCode, int resultCode, @Nullable Intent data) {
@@ -323,7 +365,7 @@ public class LibraryFragment extends Fragment {
 
             if (artist == null) artist = "Unknown";
             if (album == null) album = "Unknown";
-            int id = uri.toString().hashCode();
+            int id = ("local_" + uri.toString()).hashCode();
 
             Song newSong = new Song(title, artist, "", album, artist, "-", 0, R.drawable.default_cover, id);
             newSong.setUriString(uri.toString());
@@ -428,13 +470,13 @@ public class LibraryFragment extends Fragment {
         ArrayList<Song> songs = new ArrayList<>();
         if (playlist.getId().equals("liked")) {
             songs.addAll(SongRepository.getLikedSongs(requireContext()));
-        }
-        else if (playlist.getId().equals("local")) {
+        } else if (playlist.getId().equals("local")) {
             songs.addAll(SongRepository.getSongs());
-        }
-        else {
+        } else if (playlist.getId().equals("online")) {
+            songs.addAll(SongRepository.getOnlineSongs(requireContext()));
+        } else {
             for (Integer id : playlist.getSongAudioResIds()) {
-                Song s = SongRepository.findByAudioResId(id);
+                Song s = SongRepository.findByAudioResId(requireContext(), id);
                 if (s != null) songs.add(s);
             }
         }
@@ -454,6 +496,10 @@ public class LibraryFragment extends Fragment {
         else if (playlist.getId().equals("local")) {
             cover.setImageResource(R.drawable.icon_local);
             cover.setBackgroundResource(R.drawable.background_local_gradient);
+        }
+        else if (playlist.getId().equals("online")) {
+            cover.setImageResource(R.drawable.icon_online);
+            cover.setBackgroundResource(R.drawable.background_online_gradient);
         }
         else if (!songs.isEmpty()) {
             cover.setImageResource(songs.get(0).getCoverResId());
@@ -477,6 +523,16 @@ public class LibraryFragment extends Fragment {
             android.widget.Toast.makeText(requireContext(), "Playlist deleted", android.widget.Toast.LENGTH_SHORT).show();
         });
         card.findViewById(R.id.btnCancel).setOnClickListener(v -> dialog.dismiss());
+    }
+    private boolean hasInternet() {
+        android.net.ConnectivityManager cm = (android.net.ConnectivityManager) requireContext().getSystemService(Context.CONNECTIVITY_SERVICE);
+
+        if (cm == null) return false;
+        android.net.Network network = cm.getActiveNetwork();
+
+        if (network == null) return false;
+        android.net.NetworkCapabilities caps = cm.getNetworkCapabilities(network);
+        return caps != null && (caps.hasTransport(android.net.NetworkCapabilities.TRANSPORT_WIFI) || caps.hasTransport(android.net.NetworkCapabilities.TRANSPORT_CELLULAR));
     }
     private String formatDuration(long ms) {
         long totalSeconds = ms / 1000;

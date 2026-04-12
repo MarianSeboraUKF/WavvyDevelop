@@ -180,7 +180,7 @@ public class HomeFragment extends Fragment implements PlaybackManager.Listener {
             return;
         }
 
-        Song s = SongRepository.findByAudioResId(audioResId);
+        Song s = SongRepository.findByAudioResId(requireContext(), audioResId);
 
         if (s == null) {
             cardContinue.setVisibility(View.GONE);

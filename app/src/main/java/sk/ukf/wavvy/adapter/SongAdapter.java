@@ -289,9 +289,7 @@ public class SongAdapter extends RecyclerView.Adapter<SongAdapter.SongViewHolder
                     PlaylistDetailActivity act = (PlaylistDetailActivity) ctx;
                     String playlistId = act.getIntent().getStringExtra(PlaylistDetailActivity.EXTRA_PLAYLIST_ID);
 
-                    if ("liked".equals(playlistId)) {
-                        removeFromPlaylist.setVisibility(View.GONE);
-                    } else if ("local".equals(playlistId)) {
+                    if ("liked".equals(playlistId) || "local".equals(playlistId) || "online".equals(playlistId)) {
                         removeFromPlaylist.setVisibility(View.GONE);
                     } else {
                         removeFromPlaylist.setVisibility(View.VISIBLE);
@@ -391,7 +389,7 @@ public class SongAdapter extends RecyclerView.Adapter<SongAdapter.SongViewHolder
                 int spaceBelow = screenHeight - (anchorY + anchor.getHeight());
                 int spaceAbove = anchorY;
 
-                int margin = (int) (4 * anchor.getResources().getDisplayMetrics().density); // optional
+                int margin = (int) (4 * anchor.getResources().getDisplayMetrics().density);
                 int xOffset = screenWidth - (anchorX + popupWidth) - margin;
                 int yOffset = (int) (4 * anchor.getResources().getDisplayMetrics().density);
 
