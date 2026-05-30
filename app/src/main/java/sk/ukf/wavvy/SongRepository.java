@@ -23,7 +23,6 @@ public class SongRepository {
             cached.add(new Song("Parabola", "Chawo", "Erik Tresor", "Glitch ve systému", "Chawo", "Mikaelbeatz", 8, R.drawable.glitch_ve_systemu_cover, R.raw.parabola));
             cached.add(new Song("E85", "Don Toliver", "", "OCTANE", "Don Toliver", "206derek, Aaron Paris, Dillon Brophy, Jess Jackson, Jaasu, Travis Scott", 1, R.drawable.octane_cover, R.raw.e85));
             cached.add(new Song("HALLE LUYAH FREESTYLE", "RAYYY P", "", "kto.som.?", "RAYYY P", "RAYYY P", 4, R.drawable.kto_som_album_cover, R.raw.halle_luyah_freestyle));
-            cached.add(new Song("K T O . $ O M . !", "RAYYY P", "", "R A Y . $ A V E D . M E", "RAYYY P", "RAYYY P", 1, R.drawable.kto_som_ep_cover, R.raw.kto_som));
             cached.add(new Song("ROZMÝŠLAM", "RAYYY P", "Majkyyy", "kto.som.?", "RAYYY P", "Majkyyy", 5, R.drawable.kto_som_album_cover, R.raw.rozmyslam));
             cached.add(new Song("NEBOJÍM SA", "RAYYY P", "Relon", "kto.som.?", "RAYYY P", "-", 6, R.drawable.kto_som_album_cover, R.raw.nebojim_sa));
             cached.add(new Song("Tsunami", "DJ Snake", "Future, Travis Scott", "Nomad", "DJ Snake", "DJ Snake", 8, R.drawable.nomad_cover, R.raw.tsunami));
@@ -32,14 +31,11 @@ public class SongRepository {
             cached.add(new Song("BBL", "P T K", "", "KARAKORAM", "P T K", "Rigas Beats, Anyvibe", 16, R.drawable.karakoram_cover, R.raw.bbl));
             cached.add(new Song("TAK DOSŤ!", "RAYYY P", "", "kto.som.?", "RAYYY P", "-", 9, R.drawable.kto_som_album_cover, R.raw.tak_dost));
             cached.add(new Song("12 FREESTYLE", "RAYYY P", "", "kto.som.?", "RAYYY P", "-", 11, R.drawable.kto_som_album_cover, R.raw.freestyle_1_2));
-            cached.add(new Song("Z A M E $ T N Á V A M . H O E $", "RAYYY P", "ICOиO, Relon", "R A Y . $ A V E D . M E", "RAYYY P", "RAYYY P, Relon, Majkyyy", 2, R.drawable.kto_som_ep_cover, R.raw.zamestnavam_hoes));
             cached.add(new Song("CHODÍM SPAŤ RÁNO", "RAYYY P", "", "kto.som.?", "RAYYY P", "-", 12, R.drawable.kto_som_album_cover, R.raw.chodim_spat_rano));
             cached.add(new Song("MOON", "RAYYY P", "", "kto.som.?", "RAYYY P", "-", 13, R.drawable.kto_som_album_cover, R.raw.moon));
             cached.add(new Song("DOKORÁN", "RAYYY P", "", "kto.som.?", "RAYYY P", "-", 14, R.drawable.kto_som_album_cover, R.raw.dokoran));
-            cached.add(new Song("BERI 2", "RAYYY P", "", "R A Y . $ A V E D . M E", "RAYYY P", "Segway Beats, JacobD", 3, R.drawable.kto_som_ep_cover, R.raw.beri_2));
             cached.add(new Song("ALLRIGHT", "RAYYY P", "ICOиO, Patez", "kto.som.?", "RAYYY P", "-", 15, R.drawable.kto_som_album_cover, R.raw.allright));
             cached.add(new Song("OUTRO", "RAYYY P", "", "kto.som.?", "RAYYY P", "-", 16, R.drawable.kto_som_album_cover, R.raw.outro));
-            cached.add(new Song("BOO - Bonus Track", "RAYYY P", "dum13o", "R A Y . $ A V E D . M E", "RAYYY P", "RAYYY P, Relon", 4, R.drawable.kto_som_ep_cover, R.raw.boo));
         }
         ArrayList<Song> result = new ArrayList<>(cached);
         result.addAll(localSongs);
